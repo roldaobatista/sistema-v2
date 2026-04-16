@@ -271,12 +271,6 @@ parameters:
 			path: app/Console/Commands/ProcessPeripheralAlerts.php
 
 		-
-			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
-			identifier: larastan.noEnvCallsOutsideOfConfig
-			count: 1
-			path: app/Console/Commands/Run400FlowsCommand.php
-
-		-
 			message: '#^Method App\\Console\\Commands\\Run400FlowsCommand\:\:apiDelete\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1

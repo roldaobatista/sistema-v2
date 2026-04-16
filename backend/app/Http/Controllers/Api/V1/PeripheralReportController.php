@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Reports\TimesheetReportRequest;
+use App\Http\Requests\HR\TimesheetReportRequest;
 use App\Models\CustomerComplaint;
 use App\Models\FleetVehicle;
 use App\Models\QualityProcedure;
@@ -26,7 +26,9 @@ class PeripheralReportController extends Controller
     public function timesheetReport(TimesheetReportRequest $request): Response
     {
         $tenantId = $this->resolvedTenantId();
-        $month = Carbon::createFromFormat('Y-m', $request->month);
+        $validated = $request->validated();
+        $monthValue = (string) $validated['month'];
+        $month = Carbon::parse($monthValue.'-01');
         $startDate = $month->copy()->startOfMonth();
         $endDate = $month->copy()->endOfMonth();
 
@@ -34,8 +36,8 @@ class PeripheralReportController extends Controller
             ->whereBetween('clock_in', [$startDate, $endDate])
             ->with('user:id,name');
 
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->user_id);
+        if (isset($validated['user_id'])) {
+            $query->where('user_id', (int) $validated['user_id']);
         }
 
         $entries = $query->orderBy('user_id')->orderBy('clock_in')->get();
@@ -47,7 +49,7 @@ class PeripheralReportController extends Controller
 
         return new Response($html, 200, [
             'Content-Type' => 'text/html; charset=utf-8',
-            'Content-Disposition' => "inline; filename=\"folha-ponto-{$request->month}.html\"",
+            'Content-Disposition' => "inline; filename=\"folha-ponto-{$monthValue}.html\"",
         ]);
     }
 

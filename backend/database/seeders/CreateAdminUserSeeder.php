@@ -40,8 +40,8 @@ class CreateAdminUserSeeder extends Seeder
             return;
         }
 
-        $adminEmail = (string) env('SEED_ADMIN_EMAIL', 'admin@example.test');
-        $adminPassword = (string) env('SEED_ADMIN_PASSWORD', Str::random(32));
+        $adminEmail = (string) config('seeding.admin_email', 'admin@example.test');
+        $adminPassword = (string) (config('seeding.admin_password') ?: Str::random(32));
 
         $user = User::firstOrCreate(
             ['email' => $adminEmail],

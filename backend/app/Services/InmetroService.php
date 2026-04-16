@@ -952,7 +952,7 @@ class InmetroService
                 ];
             });
 
-            $html = view('reports.inmetro-leads', [
+            $html = view('inmetro.leads', [
                 'tenant' => $tenant,
                 'leads' => $rows,
                 'generated_at' => now()->format('d/m/Y H:i'),

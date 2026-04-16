@@ -113,7 +113,7 @@ class DatabaseSeeder extends Seeder
         // ── Usuários ──────────────────
 
         // Super Admin (acesso a todas as empresas)
-        $seedAdminEmail = (string) env('SEED_ADMIN_EMAIL', 'admin@example.test');
+        $seedAdminEmail = (string) config('seeding.admin_email', 'admin@example.test');
         $sa = $this->createUser('Administrador', $seedAdminEmail, $t1, $superAdmin);
         $sa->tenants()->syncWithoutDetaching([$t2->id, $t3->id]);
 
@@ -187,7 +187,7 @@ class DatabaseSeeder extends Seeder
             ['email' => $email],
             [
                 'name' => $name,
-                'password' => (string) env('SEED_USER_PASSWORD', Str::random(32)),
+                'password' => (string) (config('seeding.user_password') ?: Str::random(32)),
                 'is_active' => true,
                 'tenant_id' => $tenant->id,
                 'current_tenant_id' => $tenant->id,

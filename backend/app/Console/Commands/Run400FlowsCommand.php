@@ -85,9 +85,9 @@ class Run400FlowsCommand extends Command
     public function __construct()
     {
         parent::__construct();
-        $this->baseUrl = rtrim(env('FLOWS_BASE_URL', config('app.url', 'http://127.0.0.1:8000')), '/');
-        $this->adminEmail = (string) env('FLOWS_ADMIN_EMAIL', 'admin@example.test');
-        $this->adminPassword = (string) env('FLOWS_ADMIN_PASSWORD', '');
+        $this->baseUrl = rtrim((string) config('flows.base_url', 'http://127.0.0.1:8000'), '/');
+        $this->adminEmail = (string) config('flows.admin_email', 'admin@example.test');
+        $this->adminPassword = (string) config('flows.admin_password', '');
         $this->logPath = base_path('../docs/tests/EXECUTION_LOG.md');
     }
 
