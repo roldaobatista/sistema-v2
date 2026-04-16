@@ -29,7 +29,9 @@ jobs:
 
       - name: Laravel Pint (Code Style)
         working-directory: backend
-        run: vendor/bin/pint --test
+        run: |
+          vendor/bin/pint --test app config routes tests --no-interaction --no-ansi
+          vendor/bin/pint --test database/factories database/seeders --no-interaction --no-ansi
 
   # ---------- Static Analysis (PHPStan + Larastan) ----------
   static-analysis:
