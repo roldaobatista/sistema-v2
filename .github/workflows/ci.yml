@@ -5,12 +5,14 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   # ---------- Code Formatting (Laravel Pint) ----------
   code-formatting:
     name: Laravel Pint
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -34,6 +36,7 @@ jobs:
     name: PHPStan (Level 7)
     needs: [code-formatting]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -56,6 +59,7 @@ jobs:
   frontend-lint:
     name: ESLint + TypeScript
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -82,6 +86,7 @@ jobs:
   backend-tests:
     needs: [static-analysis, code-formatting]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -121,6 +126,7 @@ jobs:
   frontend-build:
     needs: [frontend-lint]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -142,8 +148,10 @@ jobs:
   # ---------- Accessibility (axe-core) ----------
   accessibility:
     name: Accessibility (axe-core)
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     needs: [frontend-build]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -215,6 +223,7 @@ jobs:
 
   e2e-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [frontend-build, backend-tests]
     steps:
       - uses: actions/checkout@v4

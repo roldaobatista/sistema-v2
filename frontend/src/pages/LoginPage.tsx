@@ -182,7 +182,7 @@ export function LoginPage() {
                             <div className="flex justify-end">
                                 <Link
                                     to="/esqueci-senha"
-                                    className="text-sm font-medium text-prix-500 hover:text-prix-600 dark:hover:text-prix-400 transition-colors"
+                                    className="text-sm font-medium text-prix-700 hover:text-prix-600 dark:text-prix-300 dark:hover:text-prix-200 transition-colors"
                                 >
                                     Esqueceu sua senha?
                                 </Link>
@@ -211,7 +211,7 @@ export function LoginPage() {
                         </form>
                     </div>
 
-                    <p className="mt-6 text-center text-xs text-surface-400">
+                    <p className="mt-6 text-center text-xs text-surface-600 dark:text-surface-300">
                         KALIBRIUM © 2026 — Gestão empresarial inteligente
                     </p>
                 </div>

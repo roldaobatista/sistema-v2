@@ -27,6 +27,7 @@ jobs:
     bundle-size:
         name: Bundle Size Check
         runs-on: ubuntu-latest
+        timeout-minutes: 10
         env:
             MAX_BUNDLE_SIZE_KB: "2500"
         steps:
@@ -85,7 +86,9 @@ jobs:
     # ---------- Lighthouse CI ----------
     lighthouse:
         name: Lighthouse CI
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         runs-on: ubuntu-latest
+        timeout-minutes: 15
         steps:
             - uses: actions/checkout@v4
 
@@ -125,6 +128,7 @@ jobs:
     k6-tests:
         name: k6 ${{ github.event.inputs.test_type || 'load' }} test
         runs-on: ubuntu-latest
+        timeout-minutes: 30
         # k6 requires a live API server (staging/prod) — cannot run in PR CI environment
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         steps:
