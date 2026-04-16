@@ -138,7 +138,7 @@ jobs:
 
       - name: Run Backend Tests
         working-directory: backend
-        run: php artisan test --parallel --profile
+        run: vendor/bin/pest --parallel --processes=16 --no-coverage
 
   frontend-build:
     needs: [frontend-lint]
