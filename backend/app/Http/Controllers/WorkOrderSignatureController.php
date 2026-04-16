@@ -7,6 +7,4 @@ use App\Http\Controllers\Api\V1\Os\WorkOrderSignatureController as V1WorkOrderSi
 /**
  * @deprecated Use App\Http\Controllers\Api\V1\Os\WorkOrderSignatureController.
  */
-class WorkOrderSignatureController extends V1WorkOrderSignatureController
-{
-}
+class WorkOrderSignatureController extends V1WorkOrderSignatureController {}

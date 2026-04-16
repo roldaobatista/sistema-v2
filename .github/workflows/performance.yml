@@ -138,14 +138,29 @@ jobs:
                   sudo apt-get update
                   sudo apt-get install k6
 
+            - name: Validate k6 Secrets
+              run: |
+                  MISSING=0
+                  for VAR_NAME in BASE_URL TEST_EMAIL TEST_PASSWORD; do
+                    if [ -z "${!VAR_NAME}" ]; then
+                      echo "::error::$VAR_NAME is required for k6 performance tests"
+                      MISSING=1
+                    fi
+                  done
+                  exit $MISSING
+              env:
+                  BASE_URL: ${{ secrets.STAGING_API_URL }}
+                  TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
+                  TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+
             - name: Run k6 Load Test
               if: github.event.inputs.test_type == 'load' || github.event_name == 'schedule'
               run: k6 run tests/performance/load-test.js --out json=results/k6-load-results.json
               env:
-                  BASE_URL: ${{ secrets.STAGING_API_URL || 'http://localhost:8000/api/v1' }}
-                  TEST_EMAIL: ${{ secrets.TEST_EMAIL || 'admin@kalibrium.com' }}
-                  TEST_PASSWORD: ${{ secrets.TEST_PASSWORD || 'password' }}
-                  COMPANY_ID: "1"
+                  BASE_URL: ${{ secrets.STAGING_API_URL }}
+                  TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
+                  TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+                  COMPANY_ID: ${{ vars.TEST_COMPANY_ID || '1' }}
 
             - name: Run k6 Stress Test
               if: github.event.inputs.test_type == 'stress'
@@ -154,7 +169,7 @@ jobs:
                   BASE_URL: ${{ secrets.STAGING_API_URL }}
                   TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
                   TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
-                  COMPANY_ID: "1"
+                  COMPANY_ID: ${{ vars.TEST_COMPANY_ID || '1' }}
 
             - name: Run k6 Soak Test
               if: github.event.inputs.test_type == 'soak'
@@ -163,7 +178,7 @@ jobs:
                   BASE_URL: ${{ secrets.STAGING_API_URL }}
                   TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
                   TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
-                  COMPANY_ID: "1"
+                  COMPANY_ID: ${{ vars.TEST_COMPANY_ID || '1' }}
 
             - name: Upload Results
               uses: actions/upload-artifact@v4

@@ -5,6 +5,7 @@ namespace Tests\Critical;
 use App\Http\Middleware\EnsureTenantScope;
 use App\Models\Tenant;
 use App\Models\User;
+use Database\Seeders\PermissionsSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Sanctum\Sanctum;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -64,7 +65,7 @@ class RbacPermissionMatrixTest extends TestCase
 
     public function test_permissions_seeder_includes_platform_tenant_switch_for_super_admin(): void
     {
-        $this->seed(\Database\Seeders\PermissionsSeeder::class);
+        $this->seed(PermissionsSeeder::class);
 
         $this->assertDatabaseHas('permissions', [
             'name' => 'platform.tenant.switch',

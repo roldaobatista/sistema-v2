@@ -255,7 +255,7 @@ class PortalController extends Controller
                     'measurements_count' => (int) ($measurementCounts[$certificate->equipment_id] ?? 0),
                 ];
             })
-            ->values()
+                ->values()
         );
 
         return ApiResponse::paginated($paginator);
