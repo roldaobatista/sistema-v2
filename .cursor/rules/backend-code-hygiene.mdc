@@ -1,0 +1,249 @@
+---
+description: Higiene de código no backend (PHP/Laravel) para evitar debug logs em produção, sintaxe obsoleta e inconsistências
+globs: backend/**/*.php
+---
+
+# Backend – Higiene de Código (REGRA OBRIGATÓRIA — NÃO-NEGOCIÁVEL)
+
+> [!CAUTION]
+> **Violação de QUALQUER regra abaixo torna o código REJEITADO.** A IA DEVE aplicar TODAS estas regras em qualquer código PHP que criar ou editar, sem exceção.
+
+## Contexto
+
+Debug logs, sintaxe antiga e código de diagnóstico deixados no backend acabam em produção, causando lentidão (I/O extra), vazamento de informação e confusão na manutenção.
+
+## Regras
+
+### 1. NUNCA deixar logs de debug/agente no código
+
+Blocos `#region agent log` / `#endregion`, `file_put_contents` para arquivos de debug, `dd()`, `dump()`, `var_dump()`, `print_r()` e `ray()` devem ser removidos antes de commitar.
+
+```php
+// ERRADO — log de agente deixado no serviço
+$logPath = base_path('../debug-xxx.log');
+@file_put_contents($logPath, json_encode([...]), FILE_APPEND);
+
+// ERRADO — debug direto
+dd($response->json());
+dump($validated);
+
+// CORRETO — usar Log facade do Laravel
+Log::debug('Auvo: HTTP options', ['verify' => $opts['verify'] ?? null]);
+```
+
+- **Regra:** Buscar por `file_put_contents`, `dd(`, `dump(`, `var_dump(`, `print_r(`, `ray(`, `#region agent log` antes de commitar.
+- **Exceção:** `dd()` em testes é aceitável temporariamente, mas deve ser removido antes do merge.
+- **Testes (tests/**):** Não deixar `dump()` nem `dd()` em testes; usar asserções ou `$this->fail('mensagem')` para diagnóstico.
+
+### 1b. Scripts de diagnóstico não versionados
+
+Scripts temporários como `check_*.php`, `debug_*.php`, `check_cols.php`, `check_schema.php` são para uso local ou ferramentas de suporte. **NÃO** commitar no repositório. Remover antes do push ou mantê-los fora do repo.
+
+### 2. Sintaxe de rotas: SEMPRE usar array syntax
+
+A sintaxe `Controller@method` está deprecated no Laravel 8+. Usar sempre array syntax.
+
+```php
+// ERRADO — sintaxe antiga
+Route::get('endpoint', WarehouseStockController::class . '@index');
+
+// CORRETO — array syntax
+Route::get('endpoint', [WarehouseStockController::class, 'index']);
+```
+
+### 3. Services devem usar Log facade, não escrever em arquivos
+
+```php
+// ERRADO
+@file_put_contents(storage_path('logs/custom.log'), $data, FILE_APPEND);
+
+// CORRETO
+Log::channel('daily')->info('Mensagem', ['data' => $data]);
+```
+
+### 4. Aliases de rota devem ser documentados
+
+Quando uma rota duplicada existir por compatibilidade (ex.: `account-payable-categories` e `accounts-payable-categories`), o comentário `// compat` deve estar presente. Rotas duplicadas sem justificativa devem ser removidas.
+
+### 5. Controllers DEVEM usar Form Requests (NUNCA inline `$request->validate()`)
+
+A padronização para Form Requests foi concluída em todo o backend. Código novo DEVE seguir o mesmo padrão.
+
+- **NUNCA** usar `$request->validate([...])` inline em controllers. Criar Form Request dedicado.
+- **NUNCA** usar `$request->all()` diretamente para persistir dados (create/update). Isso permite mass assignment.
+- Em rotas **públicas** (sem autenticação), usar sempre whitelist explícita de campos no Form Request.
+- Endpoints de listagem com filtros devem validar pelo menos os tipos dos parâmetros.
+
+**Padrão obrigatório para Form Requests:**
+
+```php
+// Localização: backend/app/Http/Requests/{Módulo}/
+// Nomenclatura: Store{Entidade}Request, Update{Entidade}Request
+
+class Store{Entidade}Request extends FormRequest
+{
+    public function authorize(): bool
+    {
+        // OBRIGATÓRIO: verificar permissão REAL via Spatie ou Policy
+        return $this->user()->can('modulo.criar');
+        // OU: return $this->user()->hasPermissionTo('modulo.criar');
+        // OU: return Gate::allows('create', Entidade::class);
+
+        // PROIBIDO: return true; (sem lógica de verificação)
+        // ÚNICA EXCEÇÃO: endpoints genuinamente públicos — comentar:
+        // return true; // Public endpoint — no auth required
+    }
+
+    public function rules(): array
+    {
+        return [
+            // regras de validação
+            // PROIBIDO: incluir 'tenant_id' ou 'created_by' aqui
+            // Estes campos são atribuídos no Controller via $request->user()
+        ];
+    }
+}
+```
+
+- **Nomenclatura:** `Store{Entidade}Request` para criação, `Update{Entidade}Request` para atualização, `{Ação}{Entidade}Request` para ações específicas.
+- **Localização:** `backend/app/Http/Requests/{Módulo}/` (ex.: `Crm/`, `Financial/`, `HR/`, `Features/`, `Os/`).
+- **authorize():** DEVE verificar permissão real via Spatie (`can()`, `hasPermissionTo()`) ou Policy. **PROIBIDO** retornar `true` sem lógica (Lei 3b do Iron Protocol). Referência: `ApprovePayrollRequest.php`.
+- **No controller:** type-hint do Form Request no método e usar `$request->validated()`.
+- **tenant_id/created_by:** Atribuir no Controller via `$request->user()->current_tenant_id` e `$request->user()->id`. NUNCA como campos do FormRequest.
+- **Referência completa:** `.agent/rules/iron-protocol.md` (Lei 3b) e `.agent/rules/mandatory-completeness.md` (seção 2.3).
+
+### 6. Namespace de Controller em rotas DEVE corresponder ao arquivo real
+
+Ao referenciar um controller numa rota, o namespace completo deve corresponder EXATAMENTE ao local do arquivo.
+
+```php
+// ERRADO — controller esta em Api/V1/HRAdvancedController.php mas rota usa subpasta inexistente
+Route::post('hr/break-start', [\App\Http\Controllers\Api\V1\Hr\HrAdvancedController::class, 'breakStart']);
+
+// CORRETO — namespace corresponde ao arquivo real
+Route::post('hr/break-start', [\App\Http\Controllers\Api\V1\HRAdvancedController::class, 'breakStart']);
+```
+
+**Regra:** Ao adicionar ou mover rotas, verificar que o controller referenciado existe no namespace indicado. Rotas com controller inexistente causam erro 500 em producao.
+
+### 7. Variáveis de ambiente: .env.example DEVE refletir config/*.php
+
+Toda variável usada via `env('NOME')` em arquivos `config/*.php` deve existir no `.env.example` (ativa ou comentada com valor de exemplo). Variáveis ausentes do `.env.example` causam falhas silenciosas em novos ambientes.
+
+```php
+// config/services.php
+'focusnfe' => [
+    'token' => env('FOCUSNFE_TOKEN'),        // deve existir no .env.example
+    'environment' => env('FOCUSNFE_ENV', 'homologation'),
+],
+```
+
+- **Regra:** Ao adicionar `env('NOVA_VARIAVEL')` em qualquer arquivo de config, adicionar a variável correspondente no `.env.example` (comentada se opcional, ativa se obrigatória).
+- **Regra:** Variáveis opcionais (integrações externas) podem ficar comentadas com `#` no `.env.example`.
+- **Regra:** NUNCA colocar valores reais (tokens, senhas, IPs de produção) no `.env.example` — usar placeholders.
+
+### 8. Formatação PSR-12 Obrigatória (PROIBIDO controllers minificados)
+
+Todo código PHP DEVE seguir PSR-12 via Laravel Pint. Controllers com métodos em uma única linha são **PROIBIDOS**.
+
+```php
+// ❌ ERRADO — controller minificado (PROIBIDO)
+public function store(StoreRequest $r) { $m = Model::create([...$r->validated(), 'tenant_id' => $r->user()->current_tenant_id]); return response()->json($m, 201); }
+
+// ✅ CORRETO — formatado PSR-12
+public function store(StoreRequest $request): JsonResponse
+{
+    $model = Model::create([
+        ...$request->validated(),
+        'tenant_id' => $request->user()->current_tenant_id,
+        'created_by' => $request->user()->id,
+    ]);
+
+    return response()->json($model, 201);
+}
+```
+
+- **Regra:** Rodar `./vendor/bin/pint backend/app/Http/Controllers/` após criar/editar controllers
+- **Variáveis:** Usar nomes descritivos (`$request`, `$model`), NUNCA abreviações (`$r`, `$m`)
+- **Return types:** Declarar return type em todos os métodos (`: JsonResponse`, `: void`, etc.)
+
+### 8b. ApiResponse Helper — Namespace Correto
+
+O namespace correto é `App\Support\ApiResponse`. NUNCA usar `App\Http\Helpers\ApiResponse`.
+
+```php
+// ❌ ERRADO — namespace inexistente
+use App\Http\Helpers\ApiResponse;
+
+// ✅ CORRETO
+use App\Support\ApiResponse;
+```
+
+- `index()` → `ApiResponse::paginated($paginator)` (PROIBIDO `response()->json($paginator)`)
+- `show()/store()/update()` → `response()->json($model)` com status code adequado
+- `destroy()` → `response()->noContent()`
+
+### 9. TOLERÂNCIA ZERO para Strings Hardcoded (Regra de Enums)
+
+NUNCA utilize strings literais para comparar status, tipos ou categorias no Backend (ex: `$status == 'PENDENTE'`).
+
+- **Lógica obrigatória:** Uso exclusivo de Enums fortemente tipados do PHP 8.1+.
+- Se o Enum não existir para um dado domínio, crie-o antes de implementar a lógica.
+- **Por quê:** Previne bugs silenciosos onde o banco de dados recusa a gravação por divergência de string (ex: "Em Andamento" vs "Em_Andamento").
+
+### 9. Blindagem Multi-Tenant Explícita
+
+Toda query Eloquent (`Model::query()`), regra de validação (`Rule::unique()`) ou Job em background deve, OBRIGATORIAMENTE, ser escopada por `tenant_id` (via trait `BelongsToTenant` com global scope automático).
+
+- **NUNCA** usar `company_id` — o campo correto é `tenant_id` e o valor vem de `$request->user()->current_tenant_id`.
+- **Proibido:** Criar consultas que furem o escopo de tenant. A trait `BelongsToTenant` aplica o filtro automaticamente — NÃO adicionar `where('tenant_id', ...)` manualmente.
+- Se a IA ou desenvolvedor for sugerir uma consulta sem verificar o Tenant atual, deve ser recusado.
+- **Por quê:** Impede vazamento de dados entre tenants, o erro mais crítico num ERP SaaS.
+
+### 10. Controllers — Paginação e Eager Loading OBRIGATÓRIOS
+
+```php
+// ERRADO — retorna TODOS os registros sem limite
+public function index()
+{
+    return response()->json(Model::all()); // PROIBIDO
+}
+
+// CORRETO — paginado com eager loading e safety cap
+public function index(Request $request)
+{
+    return Model::with(['relationship:id,name'])
+        ->paginate(min((int) $request->input('per_page', 25), 100));
+}
+```
+
+- **index()** DEVE usar `->paginate()` ou `->simplePaginate()`. PROIBIDO `Model::all()` ou `->get()` sem limite.
+- **index()** e **show()** DEVEM usar `->with([...])` para eager loading. PROIBIDO N+1 queries.
+- **store()** DEVE atribuir `tenant_id` e `created_by` a partir de `$request->user()`, NUNCA do input.
+- **Referência:** `EquipmentController.php` mostra o padrão correto.
+
+## Checklist antes de commitar (backend)
+
+### Higiene de Código
+- [ ] Sem `dd()`, `dump()`, `var_dump()`, `print_r()`, `ray()` no código (incluindo tests/)
+- [ ] Sem `file_put_contents` para logs manuais (usar `Log::`)
+- [ ] Sem blocos `#region agent log` / `#endregion`
+- [ ] Rotas usam array syntax `[Controller::class, 'method']`
+- [ ] Rotas duplicadas têm comentário `// compat` justificando
+- [ ] Controller referenciado em rota existe no namespace indicado
+- [ ] Novas variáveis `env()` em config/*.php existem no `.env.example`
+
+### Controllers e FormRequests (Lei 3b do Iron Protocol)
+- [ ] Endpoints com input do usuário usam Form Requests (não `$request->validate()` inline)
+- [ ] Nenhum `$request->all()` sem Form Request antes de create/update
+- [ ] FormRequest `authorize()` tem lógica REAL (PROIBIDO: `return true;` sem verificação)
+- [ ] Endpoints `index()` usam `->paginate()` (PROIBIDO: `Model::all()` ou `->get()` sem limite)
+- [ ] Controllers usam `->with([...])` para eager loading (PROIBIDO: N+1 queries)
+- [ ] `tenant_id` e `created_by` atribuídos no controller, NÃO no FormRequest
+- [ ] Usa `tenant_id` (NUNCA `company_id`)
+
+### Testes (mínimo 8 por controller novo)
+- [ ] Sucesso CRUD (index/store/show/update/destroy)
+- [ ] Validação 422 (assertJsonValidationErrors)
+- [ ] Cross-tenant 404 (recurso de outro tenant → assertNotFound)
+- [ ] Estrutura JSON validada (assertJsonStructure)

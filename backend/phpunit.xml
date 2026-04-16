@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" backupGlobals="false" colors="true" processIsolation="false" stopOnFailure="false" bootstrap="tests/bootstrap.php" defaultTestSuite="Default">
+    <testsuites>
+        <testsuite name="Default">
+            <directory suffix="Test.php">./tests/Unit</directory>
+            <directory suffix="Test.php">./tests/Feature</directory>
+            <directory suffix="Test.php">./tests/Smoke</directory>
+            <directory suffix="Test.php">./tests/Arch</directory>
+        </testsuite>
+        <testsuite name="Unit">
+            <directory suffix="Test.php">./tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory suffix="Test.php">./tests/Feature</directory>
+        </testsuite>
+        <testsuite name="Smoke">
+            <directory suffix="Test.php">./tests/Smoke</directory>
+        </testsuite>
+        <testsuite name="Arch">
+            <directory suffix="Test.php">./tests/Arch</directory>
+        </testsuite>
+        <testsuite name="Critical">
+            <directory suffix="Test.php">./tests/Critical</directory>
+        </testsuite>
+        <testsuite name="E2E">
+            <directory suffix="Test.php">./tests/E2E</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory suffix=".php">./app</directory>
+        </include>
+        <exclude>
+            <directory suffix=".php">./app/Console</directory>
+            <directory suffix=".php">./app/Providers</directory>
+        </exclude>
+    </source>
+
+    <php>
+        <ini name="memory_limit" value="4G"/>
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_KEY" value="base64:3Q3jZV4PSsS0RmjP6cWv6dpWWq7eWQf7xN+BrRXJQ+Q=" force="true"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file" force="true"/>
+        <env name="BCRYPT_ROUNDS" value="4" force="true"/>
+        <env name="BROADCAST_CONNECTION" value="null" force="true"/>
+        <env name="CACHE_STORE" value="array" force="true"/>
+        <env name="DB_CONNECTION" value="sqlite" force="true"/>
+        <env name="DB_DATABASE" value=":memory:" force="true"/>
+        <env name="MAIL_MAILER" value="array" force="true"/>
+        <env name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <env name="SESSION_DRIVER" value="array" force="true"/>
+        <env name="SANCTUM_STATEFUL_DOMAINS" value="" force="true"/>
+        <env name="PULSE_ENABLED" value="false" force="true"/>
+        <env name="TELESCOPE_ENABLED" value="false" force="true"/>
+        <env name="NIGHTWATCH_ENABLED" value="false" force="true"/>
+        <env name="OTEL_SDK_DISABLED" value="true" force="true"/>
+        <env name="OTEL_PHP_DISABLED_INSTRUMENTATIONS" value="laravel" force="true"/>
+    </php>
+</phpunit>

@@ -1,0 +1,526 @@
+<?php
+
+namespace App\Services\Auvo;
+
+use App\Models\TenantSetting;
+use App\Services\Integration\CircuitBreaker;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+class AuvoApiClient
+{
+    private const BASE_URL = 'https://api.auvo.com.br/v2';
+
+    private const TOKEN_TTL_SECONDS = 1700;
+
+    private const MAX_RETRIES = 3;
+
+    private const RETRY_DELAY_MS = 500;
+
+    private const TIMEOUT_SECONDS = 30;
+
+    private const DEFAULT_PAGE_SIZE = 100;
+
+    private const RATE_LIMIT_DELAY_MS = 150;
+
+    private string $apiKey;
+
+    private string $apiToken;
+
+    private ?int $tenantId;
+
+    public function __construct(string $apiKey, string $apiToken, ?int $tenantId = null)
+    {
+        $this->apiKey = $apiKey;
+        $this->apiToken = $apiToken;
+        $this->tenantId = $tenantId;
+    }
+
+    /**
+     * Create a client from tenant DB settings, with fallback to .env config.
+     */
+    public static function forTenant(int $tenantId): self
+    {
+        $credentials = TenantSetting::getValue($tenantId, 'auvo_credentials');
+
+        $apiKey = (string) ($credentials['api_key'] ?? config('services.auvo.api_key') ?? '');
+        $apiToken = (string) ($credentials['api_token'] ?? config('services.auvo.api_token') ?? '');
+
+        return new self($apiKey, $apiToken, $tenantId);
+    }
+
+    /**
+     * Create from raw config (for when credentials are passed explicitly).
+     */
+    public static function fromConfig(): self
+    {
+        return new self(
+            (string) (config('services.auvo.api_key') ?? ''),
+            (string) (config('services.auvo.api_token') ?? ''),
+        );
+    }
+
+    public function hasCredentials(): bool
+    {
+        return ! empty($this->apiKey) && ! empty($this->apiToken);
+    }
+
+    private function tokenCacheKey(): string
+    {
+        $suffix = $this->tenantId ? "_{$this->tenantId}" : '_global';
+
+        return 'auvo_api_token'.$suffix;
+    }
+
+    /**
+     * HTTP client options for SSL (fixes cURL 60 on Windows when CA bundle is missing).
+     * Em produção (APP_ENV=production) a verificação SSL nunca é desativada.
+     * Em local/staging, desativa verificação por padrão para evitar cURL 60.
+     */
+    private function httpOptions(): array
+    {
+        $cafile = config('services.auvo.ssl_cafile');
+        if ($cafile && is_string($cafile) && trim($cafile) !== '' && is_file($cafile)) {
+            return ['verify' => $cafile];
+        }
+        if (config('app.env') === 'production') {
+            return [];
+        }
+        $verify = config('services.auvo.ssl_verify');
+        if ($verify === true || $verify === 'true' || $verify === '1') {
+            return [];
+        }
+        Log::debug('Auvo: SSL verification disabled (ambiente não-produção).');
+
+        return [
+            'verify' => false,
+            'curl' => [
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+            ],
+        ];
+    }
+
+    /**
+     * Authenticate and cache the Bearer token.
+     */
+    public function authenticate(): string
+    {
+        $cacheKey = $this->tokenCacheKey();
+        $cached = Cache::get($cacheKey);
+        if ($cached) {
+            return $cached;
+        }
+
+        Log::info('Auvo: authenticating', ['tenant' => $this->tenantId]);
+
+        $options = $this->httpOptions();
+
+        $response = Http::withOptions($options)
+            ->asJson()
+            ->acceptJson()
+            ->timeout(self::TIMEOUT_SECONDS)
+            ->post(self::BASE_URL.'/login', [
+                'apiKey' => $this->apiKey,
+                'apiToken' => $this->apiToken,
+            ]);
+
+        if ($response->failed()) {
+            $status = $response->status();
+            Log::error('Auvo: authentication failed', ['status' => $status]);
+
+            throw new \RuntimeException("Auvo: autenticação falhou (HTTP {$status}). Verifique suas credenciais.");
+        }
+
+        $data = $response->json();
+
+        Log::debug('Auvo: login response structure', [
+            'keys' => is_array($data) ? array_keys($data) : 'not-array',
+            'result_keys' => isset($data['result']) && is_array($data['result']) ? array_keys($data['result']) : null,
+        ]);
+
+        // Auvo V2 may return token in different paths
+        $token = $data['result']['accessToken']
+            ?? $data['result']['access_token']
+            ?? $data['result']['token']
+            ?? $data['accessToken']
+            ?? $data['access_token']
+            ?? $data['token']
+            ?? null;
+
+        if (! $token) {
+            Log::error('Auvo: no token in response', ['keys' => is_array($data) ? array_keys($data) : 'not-array']);
+
+            throw new \RuntimeException('Auvo: resposta de login não contém token. Verifique suas credenciais.');
+        }
+
+        Cache::put($cacheKey, $token, self::TOKEN_TTL_SECONDS);
+
+        Log::info('Auvo: authenticated successfully', ['tenant' => $this->tenantId]);
+
+        return $token;
+    }
+
+    public function clearToken(): void
+    {
+        Cache::forget($this->tokenCacheKey());
+    }
+
+    /**
+     * Perform authenticated GET request with retry logic.
+     *
+     * @param  int|null  $timeoutSeconds  Override default timeout (avoids gateway 504 when fetching counts).
+     */
+    public function get(string $endpoint, array $params = [], ?int $timeoutSeconds = null): ?array
+    {
+        $url = self::BASE_URL.'/'.ltrim($endpoint, '/');
+
+        $response = $this->authenticatedRequest('get', $url, $params, $timeoutSeconds);
+
+        if (! $response || $response->failed()) {
+            Log::warning('Auvo: GET failed', [
+                'endpoint' => $endpoint,
+                'status' => $response?->status(),
+            ]);
+
+            return null;
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Fetch all records from a paginated endpoint using a generator.
+     *
+     * @return \Generator<array>
+     */
+    public function fetchAll(string $endpoint, array $filters = [], int $pageSize = self::DEFAULT_PAGE_SIZE): \Generator
+    {
+        $page = 1;
+
+        $filters = $this->applyRequiredFilters($endpoint, $filters);
+
+        while (true) {
+            $params = array_merge($filters, [
+                'page' => $page,
+                'pageSize' => $pageSize,
+            ]);
+
+            $response = $this->get($endpoint, $params);
+
+            if (! $response) {
+                Log::warning('Auvo: pagination stopped - empty response', compact('endpoint', 'page'));
+                break;
+            }
+
+            $records = $this->extractRecords($response);
+
+            if (empty($records)) {
+                if ($page === 1) {
+                    $logContext = [
+                        'endpoint' => $endpoint,
+                        'response_keys' => array_keys($response),
+                        'result_keys' => isset($response['result']) && is_array($response['result'])
+                            ? array_keys($response['result'])
+                            : null,
+                    ];
+                    if (isset($response['result']['pagedSearchReturnData']) && is_array($response['result']['pagedSearchReturnData'])) {
+                        $logContext['pagedSearchReturnData_keys'] = array_keys($response['result']['pagedSearchReturnData']);
+                    }
+                    Log::info('Auvo: first page empty', $logContext);
+                }
+                break;
+            }
+
+            foreach ($records as $record) {
+                if (is_array($record)) {
+                    yield $record;
+                }
+            }
+
+            if (count($records) < $pageSize) {
+                break;
+            }
+
+            $page++;
+            usleep(self::RATE_LIMIT_DELAY_MS * 1000);
+        }
+    }
+
+    /**
+     * Count total available records for an entity.
+     *
+     * @param  int|null  $timeoutSeconds  Shorter timeout for status/counts (e.g. 6) to avoid gateway 504.
+     */
+    public function count(string $endpoint, array $filters = [], ?int $timeoutSeconds = null): int
+    {
+        $filters = $this->applyRequiredFilters($endpoint, $filters);
+        $params = array_merge($filters, ['page' => 1, 'pageSize' => 1]);
+        $response = $this->get($endpoint, $params, $timeoutSeconds);
+
+        if (! $response) {
+            return 0;
+        }
+
+        return $response['result']['pagedSearchReturnData']['totalItems']
+            ?? $response['result']['pagedSearchReturnData']['totalCount']
+            ?? $response['result']['totalCount']
+            ?? $response['result']['total']
+            ?? $response['totalCount']
+            ?? 0;
+    }
+
+    /**
+     * Test connection by attempting authentication.
+     */
+    public function testConnection(): array
+    {
+        if (! $this->hasCredentials()) {
+            return [
+                'connected' => false,
+                'message' => 'Credenciais não configuradas. Informe API Key e API Token.',
+            ];
+        }
+
+        try {
+            $this->clearToken();
+            $this->authenticate();
+
+            return [
+                'connected' => true,
+                'message' => 'Conexão com a API Auvo estabelecida com sucesso.',
+            ];
+        } catch (\Exception $e) {
+            return [
+                'connected' => false,
+                'message' => 'Falha na conexão: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /** Timeout per entity when fetching counts (avoids gateway 504). */
+    private const COUNTS_TIMEOUT_SECONDS = 6;
+
+    /**
+     * Get available entity counts for dashboard.
+     * Uses a short timeout per entity so the status endpoint does not trigger gateway timeout (504).
+     */
+    public function getEntityCounts(): array
+    {
+        $entities = [
+            'customers' => 'customers',
+            'segments' => 'segments',
+            'customer_groups' => 'customerGroups',
+            'equipments' => 'equipments',
+            'products' => 'products',
+            'services' => 'services',
+            'tasks' => 'tasks',
+            'expenses' => 'expenses',
+            'quotations' => 'quotations',
+            'users' => 'users',
+            'teams' => 'teams',
+        ];
+
+        $counts = [];
+        foreach ($entities as $key => $endpoint) {
+            try {
+                $counts[$key] = $this->count($endpoint, [], self::COUNTS_TIMEOUT_SECONDS);
+            } catch (\Exception $e) {
+                $counts[$key] = -1;
+                Log::warning("Auvo: count failed for {$key}", ['error' => $e->getMessage()]);
+            }
+        }
+
+        return $counts;
+    }
+
+    /**
+     * Perform authenticated POST request.
+     */
+    public function post(string $endpoint, array $data): ?array
+    {
+        return $this->mutatingRequest('post', $endpoint, $data);
+    }
+
+    /**
+     * Perform authenticated PUT request.
+     */
+    public function put(string $endpoint, array $data): ?array
+    {
+        return $this->mutatingRequest('put', $endpoint, $data);
+    }
+
+    /**
+     * Perform authenticated PATCH request.
+     */
+    public function patch(string $endpoint, array $data): ?array
+    {
+        return $this->mutatingRequest('patch', $endpoint, $data);
+    }
+
+    // ─── Internal ────────────────────────────────────────────
+
+    /**
+     * Some Auvo endpoints (quotations, tickets) require date filters.
+     * If none provided, default to a wide range to fetch all records.
+     */
+    private function applyRequiredFilters(string $endpoint, array $filters): array
+    {
+        $needsDate = ['quotations', 'tickets'];
+
+        if (! in_array($endpoint, $needsDate)) {
+            return $filters;
+        }
+
+        $hasDate = isset($filters['startDate']) || isset($filters['endDate'])
+            || isset($filters['lastUpdateStartDate']) || isset($filters['lastUpdateEndDate']);
+
+        if (! $hasDate) {
+            $filters['startDate'] = '2020-01-01';
+            $filters['endDate'] = now()->addDay()->format('Y-m-d');
+        }
+
+        return $filters;
+    }
+
+    /**
+     * Extract the list of records from an Auvo API response.
+     * Suporta variações: entityList, list, quotationList, quotations, pagedSearchReturnData.content, orcamentos, etc.
+     */
+    private function extractRecords(array $response): array
+    {
+        $result = $response['result'] ?? null;
+
+        if (is_array($result)) {
+            $paged = $result['pagedSearchReturnData'] ?? null;
+            if (is_array($paged)) {
+                foreach (['content', 'list', 'entityList', 'quotationList', 'quotations', 'orcamentos'] as $key) {
+                    if (isset($paged[$key]) && is_array($paged[$key]) && array_is_list($paged[$key])) {
+                        return $paged[$key];
+                    }
+                }
+            }
+
+            foreach ([
+                'entityList', 'list',
+                'customerList', 'taskList', 'equipmentList', 'productList',
+                'serviceList', 'expenseList', 'quotationList', 'ticketList',
+                'customers', 'tasks', 'equipments', 'products', 'services',
+                'expenses', 'quotations', 'tickets', 'orcamentos',
+                'data', 'items', 'results',
+            ] as $key) {
+                if (isset($result[$key]) && is_array($result[$key]) && array_is_list($result[$key])) {
+                    return $result[$key];
+                }
+            }
+            if (array_is_list($result)) {
+                return $result;
+            }
+        }
+
+        if (isset($response['data']) && is_array($response['data']) && array_is_list($response['data'])) {
+            return $response['data'];
+        }
+
+        return [];
+    }
+
+    /**
+     * Perform an authenticated HTTP request with retry on 401 (token expired).
+     *
+     * @param  int|null  $timeoutSeconds  Override default timeout.
+     */
+    private function authenticatedRequest(string $method, string $url, array $params = [], ?int $timeoutSeconds = null): ?Response
+    {
+        return CircuitBreaker::for('auvo_api')
+            ->withThreshold(5)
+            ->withTimeout(120)
+            ->executeOrFallback(function () use ($method, $url, $params, $timeoutSeconds) {
+                $token = $this->authenticate();
+                $timeout = $timeoutSeconds ?? self::TIMEOUT_SECONDS;
+
+                /** @var Response $response */
+                $response = Http::withOptions($this->httpOptions())
+                    ->acceptJson()
+                    ->timeout($timeout)
+                    ->retry(self::MAX_RETRIES, self::RETRY_DELAY_MS, function (\Exception $exception) {
+                        if ($exception instanceof RequestException) {
+                            $status = $exception->response?->status();
+
+                            return in_array($status, [429, 500, 502, 503, 504]);
+                        }
+
+                        return true;
+                    }, throw: false)
+                    ->withToken($token)
+                    ->$method($url, $params);
+
+                // Token expired — re-auth and retry once
+                if ($response->status() === 401) {
+                    $this->clearToken();
+                    $token = $this->authenticate();
+
+                    $response = Http::withOptions($this->httpOptions())
+                        ->acceptJson()
+                        ->timeout($timeout)
+                        ->withToken($token)
+                        ->$method($url, $params);
+                }
+
+                if ($response->failed()) {
+                    throw new \RuntimeException("Auvo API: {$method} {$url} returned HTTP {$response->status()}");
+                }
+
+                return $response;
+            });
+    }
+
+    /**
+     * Mutating request (POST/PUT/PATCH) with retry on 401.
+     */
+    private function mutatingRequest(string $method, string $endpoint, array $data): ?array
+    {
+        $url = self::BASE_URL.'/'.ltrim($endpoint, '/');
+
+        return CircuitBreaker::for('auvo_api')
+            ->withThreshold(5)
+            ->withTimeout(120)
+            ->execute(function () use ($method, $url, $endpoint, $data) {
+                $token = $this->authenticate();
+
+                /** @var Response $response */
+                $response = Http::withOptions($this->httpOptions())
+                    ->asJson()
+                    ->acceptJson()
+                    ->timeout(self::TIMEOUT_SECONDS)
+                    ->withToken($token)
+                    ->$method($url, $data);
+
+                if ($response->status() === 401) {
+                    $this->clearToken();
+                    $token = $this->authenticate();
+
+                    $response = Http::withOptions($this->httpOptions())
+                        ->asJson()
+                        ->acceptJson()
+                        ->timeout(self::TIMEOUT_SECONDS)
+                        ->withToken($token)
+                        ->$method($url, $data);
+                }
+
+                if ($response->failed()) {
+                    Log::error("Auvo: {$method} failed", [
+                        'endpoint' => $endpoint,
+                        'status' => $response->status(),
+                    ]);
+
+                    throw new \RuntimeException("Auvo API: {$method} {$endpoint} falhou (HTTP {$response->status()})");
+                }
+
+                return $response->json();
+            });
+    }
+}

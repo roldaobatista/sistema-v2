@@ -1,0 +1,699 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1\Financial;
+
+use App\Enums\ExpenseStatus;
+use App\Enums\FinancialCheckStatus;
+use App\Enums\FinancialStatus;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Financial\ReceivablesSimulatorRequest;
+use App\Http\Requests\Financial\StoreExpenseReimbursementRequest;
+use App\Http\Requests\Financial\StoreFinancialCheckRequest;
+use App\Http\Requests\Financial\StoreSupplierAdvanceRequest;
+use App\Http\Requests\Financial\StoreSupplierContractRequest;
+use App\Http\Requests\Financial\TaxCalculationRequest;
+use App\Http\Requests\Financial\UpdateFinancialCheckStatusRequest;
+use App\Http\Requests\Financial\UpdateSupplierContractRequest;
+use App\Models\AccountPayable;
+use App\Models\AccountReceivable;
+use App\Models\Expense;
+use App\Models\ExpenseStatusHistory;
+use App\Models\FinancialCheck;
+use App\Models\Lookups\SupplierContractPaymentFrequency;
+use App\Models\Supplier;
+use App\Models\SupplierContract;
+use App\Support\ApiResponse;
+use App\Support\LookupValueResolver;
+use App\Traits\ResolvesCurrentTenant;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+
+class FinancialAdvancedController extends Controller
+{
+    use ResolvesCurrentTenant;
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 1. SUPPLIER CONTRACTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * GET /financial/supplier-contracts
+     */
+    public function supplierContracts(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', AccountPayable::class);
+
+        $contracts = SupplierContract::where('tenant_id', $this->tenantId())
+            ->with('supplier:id,name')
+            ->when($request->input('status'), fn ($q, $s) => $q->where('status', $s))
+            ->when($request->input('supplier_id'), fn ($q, $s) => $q->where('supplier_id', $s))
+            ->orderByDesc('end_date')
+            ->paginate(20);
+
+        return ApiResponse::paginated($contracts);
+    }
+
+    /**
+     * POST /financial/supplier-contracts
+     */
+    public function storeSupplierContract(StoreSupplierContractRequest $request): JsonResponse
+    {
+        $this->authorize('create', AccountPayable::class);
+
+        $tenantId = $this->tenantId();
+        $validated = $request->validated();
+
+        try {
+            $contract = DB::transaction(function () use ($validated, $tenantId) {
+                $contract = SupplierContract::create([
+                    ...$validated,
+                    'tenant_id' => $tenantId,
+                    'status' => 'active',
+                ]);
+
+                $this->generateContractParcels($contract);
+
+                return $contract;
+            });
+
+            return ApiResponse::data($contract->load('supplier:id,name'), 201, ['message' => 'Contrato criado com sucesso']);
+        } catch (\Exception $e) {
+            Log::error('Supplier contract creation failed', ['error' => $e->getMessage()]);
+
+            return ApiResponse::message('Erro ao criar contrato', 500);
+        }
+    }
+
+    /**
+     * PUT /financial/supplier-contracts/{contract}
+     */
+    public function updateSupplierContract(UpdateSupplierContractRequest $request, int $contract): JsonResponse
+    {
+        $this->authorize('update', AccountPayable::class);
+
+        $tenantId = $this->tenantId();
+        $model = SupplierContract::where('tenant_id', $tenantId)->find($contract);
+
+        if (! $model) {
+            return ApiResponse::message('Contrato não encontrado', 404);
+        }
+
+        $validated = $request->validated();
+
+        try {
+            DB::transaction(function () use ($model, $validated): void {
+                $model->update($validated);
+                $this->generateContractParcels($model);
+            });
+
+            return ApiResponse::data($model->fresh()->load('supplier:id,name'), 200, ['message' => 'Contrato atualizado com sucesso']);
+        } catch (\Exception $e) {
+            Log::error('Supplier contract update failed', [
+                'id' => $model->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return ApiResponse::message('Erro ao atualizar contrato', 500);
+        }
+    }
+
+    /**
+     * DELETE /financial/supplier-contracts/{contract}
+     */
+    public function destroySupplierContract(int $contract): JsonResponse
+    {
+        $this->authorize('delete', AccountPayable::class);
+
+        $tenantId = $this->tenantId();
+        $model = SupplierContract::where('tenant_id', $tenantId)->find($contract);
+
+        if (! $model) {
+            return ApiResponse::message('Contrato não encontrado', 404);
+        }
+
+        try {
+            DB::transaction(function () use ($model): void {
+                // Delete pending parcels generated by this contract
+                AccountPayable::where('tenant_id', $model->tenant_id)
+                    ->where('description', 'LIKE', "[Contrato #{$model->id}]%")
+                    ->where('status', FinancialStatus::PENDING)
+                    ->delete();
+
+                $model->delete();
+            });
+
+            return ApiResponse::message('Contrato excluido com sucesso');
+        } catch (\Exception $e) {
+            Log::error('Supplier contract destroy failed', [
+                'id' => $model->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return ApiResponse::message('Erro ao excluir contrato', 500);
+        }
+    }
+
+    private function generateContractParcels(SupplierContract $contract): void
+    {
+        $startDate = Carbon::parse($contract->start_date);
+        $endDate = Carbon::parse($contract->end_date);
+        $frequency = $contract->payment_frequency;
+        $amount = (float) $contract->value;
+
+        if (! $frequency || $amount <= 0 || $startDate->gt($endDate)) {
+            return;
+        }
+
+        // Limpar parcelas pendentes deste contrato para recriar (útil no update)
+        AccountPayable::where('tenant_id', $contract->tenant_id)
+            ->where('description', 'LIKE', "[Contrato #{$contract->id}]%")
+            ->where('status', FinancialStatus::PENDING)
+            ->delete();
+
+        if ($contract->status !== 'active') {
+            return;
+        }
+
+        $currentDate = $startDate->copy();
+        $limitDate = $endDate->copy();
+        $parcelNumber = 1;
+
+        while ($currentDate->lte($limitDate)) {
+            // Não recriar se já existe uma parcela paga para ou próxima desta data
+            // Para simplificar: se houver alguma parcela paga (ou parcial) com exatamente esse mês/ano, nós pulamos?
+            // Mas as pendentes foram apagadas, então recriamos as que caem na mesma data que não estão pagas.
+            $existsPaid = AccountPayable::where('tenant_id', $contract->tenant_id)
+                ->where('description', 'LIKE', "[Contrato #{$contract->id}]%")
+                ->whereNotIn('status', [FinancialStatus::PENDING])
+                ->whereYear('due_date', $currentDate->year)
+                ->whereMonth('due_date', $currentDate->month)
+                ->exists();
+
+            if (! $existsPaid) {
+                AccountPayable::create([
+                    'tenant_id' => $contract->tenant_id,
+                    'created_by' => auth()->id(),
+                    'supplier_id' => $contract->supplier_id,
+                    'description' => "[Contrato #{$contract->id}] Parcela {$parcelNumber} - {$contract->title}",
+                    'amount' => $amount,
+                    'amount_paid' => 0,
+                    'due_date' => $currentDate->format('Y-m-d'),
+                    'status' => FinancialStatus::PENDING,
+                    'notes' => "Parcela gerada automaticamente a partir do Contrato #{$contract->id}",
+                ]);
+            }
+
+            // Incrementar data baseada na frequência
+            if ($frequency === 'monthly') {
+                $currentDate->addMonth();
+            } elseif ($frequency === 'quarterly') {
+                $currentDate->addMonths(3);
+            } elseif ($frequency === 'annual') {
+                $currentDate->addYear();
+            } elseif ($frequency === 'one_time') {
+                break;
+            } else {
+                break; // fallback just in case
+            }
+
+            $parcelNumber++;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 2. TAX CALCULATION
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * POST /financial/tax-calculation
+     * Calculates taxes for a given service amount.
+     */
+    public function taxCalculation(TaxCalculationRequest $request): JsonResponse
+    {
+        $this->authorize('viewAny', AccountPayable::class);
+
+        $validated = $request->validated();
+
+        $gross = (string) $validated['gross_amount'];
+        $regime = $validated['tax_regime'] ?? 'simples_nacional';
+
+        $rates = match ($regime) {
+            'simples_nacional' => [
+                'ISS' => '0.05',
+                'PIS' => '0.0065',
+                'COFINS' => '0.03',
+                'IRPJ' => '0',
+                'CSLL' => '0',
+            ],
+            'lucro_presumido' => [
+                'ISS' => '0.05',
+                'PIS' => '0.0065',
+                'COFINS' => '0.03',
+                'IRPJ' => '0.048',
+                'CSLL' => '0.0288',
+            ],
+            'lucro_real' => [
+                'ISS' => '0.05',
+                'PIS' => '0.0165',
+                'COFINS' => '0.076',
+                'IRPJ' => '0.15',
+                'CSLL' => '0.09',
+            ],
+        };
+
+        $taxes = [];
+        $totalTax = '0';
+        foreach ($rates as $name => $rate) {
+            $amount = bcmul($gross, $rate, 2);
+            $taxes[] = [
+                'tax' => $name,
+                'rate' => (float) bcmul($rate, '100', 4),
+                'amount' => $amount,
+            ];
+            $totalTax = bcadd($totalTax, $amount, 2);
+        }
+
+        $netAmount = bcsub($gross, $totalTax, 2);
+        $effectiveRate = bccomp($gross, '0', 2) > 0
+            ? bcmul(bcdiv($totalTax, $gross, 4), '100', 2)
+            : '0';
+
+        return ApiResponse::data([
+            'gross_amount' => $gross,
+            'regime' => $regime,
+            'taxes' => $taxes,
+            'total_tax' => $totalTax,
+            'net_amount' => $netAmount,
+            'effective_rate' => (float) $effectiveRate,
+        ]);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 3. EXPENSE REIMBURSEMENTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * GET /financial/expense-reimbursements
+     * Lists expenses eligible for reimbursement (approved status).
+     */
+    public function expenseReimbursements(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', AccountPayable::class);
+
+        $tenantId = $this->tenantId();
+        $statusFilter = $request->input('status', 'approved');
+
+        $statusMap = [
+            'approved' => ExpenseStatus::APPROVED,
+            'reimbursed' => ExpenseStatus::REIMBURSED,
+        ];
+
+        $expenseStatus = $statusMap[$statusFilter] ?? $statusFilter;
+
+        $expenses = Expense::where('tenant_id', $tenantId)
+            ->where('status', $expenseStatus)
+            ->with(['creator:id,name', 'category:id,name,color'])
+            ->orderByDesc('created_at')
+            ->paginate(20);
+
+        return ApiResponse::paginated($expenses);
+    }
+
+    /**
+     * POST /financial/expense-reimbursements
+     * Creates a new expense reimbursement request.
+     */
+    public function storeReimbursement(StoreExpenseReimbursementRequest $request): JsonResponse
+    {
+        $this->authorize('create', AccountPayable::class);
+
+        $validated = $request->validated();
+
+        $tenantId = $this->tenantId();
+
+        $data = [
+            'tenant_id' => $tenantId,
+            'created_by' => auth()->id(),
+            'status' => ExpenseStatus::PENDING,
+            'approval_channel' => $validated['approval_channel'],
+            'amount' => $validated['amount'] ?? 0,
+            'description' => $validated['description'] ?? 'Reembolso solicitado',
+            'category_id' => null,
+        ];
+
+        $expense = Expense::create($data);
+
+        return ApiResponse::data($expense, 201);
+    }
+
+    /**
+     * POST /financial/expense-reimbursements/{expense}/approve
+     * Marks an approved expense as reimbursed.
+     */
+    public function approveReimbursement(Request $request, int $expense): JsonResponse
+    {
+        $this->authorize('update', AccountPayable::class);
+
+        $tenantId = $this->tenantId();
+
+        try {
+            DB::transaction(function () use ($expense, $tenantId) {
+                $expenseModel = Expense::with('creator:id,name')->lockForUpdate()
+                    ->where('tenant_id', $tenantId)
+                    ->where('status', ExpenseStatus::APPROVED)
+                    ->find($expense);
+
+                if (! $expenseModel) {
+                    abort(404, 'Despesa não encontrada ou não está aprovada');
+                }
+
+                $ap = AccountPayable::create([
+                    'tenant_id' => $tenantId,
+                    'created_by' => auth()->id(),
+                    'description' => "[Reembolso] Despesa #{$expenseModel->id} - Colab: ".($expenseModel->creator?->name ?? 'N/D'),
+                    'amount' => $expenseModel->amount,
+                    'amount_paid' => $expenseModel->amount,
+                    'due_date' => now()->format('Y-m-d'),
+                    'paid_at' => now(),
+                    'status' => FinancialStatus::PAID,
+                    'notes' => "Reembolso gerado automaticamente a partir da Despesa #{$expenseModel->id}",
+                ]);
+
+                $expenseModel->forceFill([
+                    'status' => ExpenseStatus::REIMBURSED,
+                    'reimbursement_ap_id' => $ap->id,
+                ])->save();
+
+                ExpenseStatusHistory::create([
+                    'expense_id' => $expenseModel->id,
+                    'changed_by' => auth()->id(),
+                    'from_status' => ExpenseStatus::APPROVED->value,
+                    'to_status' => ExpenseStatus::REIMBURSED->value,
+                    'reason' => 'Reembolso aprovado via painel financeiro',
+                ]);
+            });
+
+            return ApiResponse::message('Reembolso aprovado com sucesso');
+        } catch (HttpException $e) {
+            return ApiResponse::message($e->getMessage(), $e->getStatusCode());
+        } catch (\Exception $e) {
+            Log::error('Expense reimbursement approval failed', ['error' => $e->getMessage()]);
+
+            return ApiResponse::message('Erro ao aprovar reembolso', 500);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 4. CHECK MANAGEMENT
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * GET /financial/checks
+     */
+    public function checks(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', AccountPayable::class);
+
+        $checks = FinancialCheck::where('tenant_id', $this->tenantId())
+            ->when($request->input('status'), fn ($q, $s) => $q->where('status', $s))
+            ->when($request->input('type'), fn ($q, $t) => $q->where('type', $t))
+            ->orderByDesc('due_date')
+            ->paginate(20);
+
+        return ApiResponse::paginated($checks);
+    }
+
+    /**
+     * POST /financial/checks
+     */
+    public function storeCheck(StoreFinancialCheckRequest $request): JsonResponse
+    {
+        $this->authorize('create', AccountPayable::class);
+
+        $validated = $request->validated();
+
+        try {
+            $check = FinancialCheck::create([
+                ...$validated,
+                'tenant_id' => $this->tenantId(),
+                'status' => FinancialCheckStatus::PENDING,
+            ]);
+
+            return ApiResponse::data($check, 201, ['message' => 'Cheque registrado com sucesso']);
+        } catch (\Exception $e) {
+            Log::error('Check creation failed', ['error' => $e->getMessage()]);
+
+            return ApiResponse::message('Erro ao registrar cheque', 500);
+        }
+    }
+
+    /**
+     * PATCH /financial/checks/{check}/status
+     */
+    public function updateCheckStatus(UpdateFinancialCheckStatusRequest $request, int $check): JsonResponse
+    {
+        $this->authorize('update', AccountPayable::class);
+
+        $validated = $request->validated();
+
+        $tenantId = $this->tenantId();
+
+        try {
+            DB::transaction(function () use ($check, $tenantId, $validated) {
+                $record = FinancialCheck::lockForUpdate()
+                    ->where('tenant_id', $tenantId)
+                    ->find($check);
+
+                if (! $record) {
+                    abort(404, 'Cheque não encontrado');
+                }
+
+                $record->update(['status' => $validated['status']]);
+            });
+
+            return ApiResponse::message('Status atualizado com sucesso');
+        } catch (HttpException $e) {
+            return ApiResponse::message($e->getMessage(), $e->getStatusCode());
+        } catch (\Exception $e) {
+            Log::error('Check status update failed', ['error' => $e->getMessage(), 'check_id' => $check]);
+
+            return ApiResponse::message('Erro ao atualizar status do cheque', 500);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 5. RECEIVABLES ANTICIPATION SIMULATOR
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * POST /financial/receivables-simulator
+     * Simulates anticipation of receivables with discount rate.
+     */
+    public function receivablesSimulator(ReceivablesSimulatorRequest $request): JsonResponse
+    {
+        $this->authorize('viewAny', AccountPayable::class);
+
+        $validated = $request->validated();
+
+        $tenantId = $this->tenantId();
+        $monthlyRate = bcdiv((string) $validated['monthly_rate'], '100', 6);
+        $minAmount = (string) ($validated['min_amount'] ?? '0');
+
+        $receivables = AccountReceivable::where('tenant_id', $tenantId)
+            ->where('status', FinancialStatus::PENDING->value)
+            ->where('due_date', '>', now())
+            ->when(bccomp($minAmount, '0', 2) > 0, fn ($q) => $q->whereRaw('(amount - amount_paid) >= ?', [$minAmount]))
+            ->with('customer:id,name')
+            ->orderBy('due_date')
+            ->get();
+
+        $results = $receivables->map(function ($r) use ($monthlyRate) {
+            $faceValue = bcsub((string) ($r->amount ?? '0'), (string) ($r->amount_paid ?? '0'), 2);
+            $daysToMaturity = max(1, now()->diffInDays($r->due_date));
+            $monthsToMaturity = $daysToMaturity / 30;
+            // Exponenciação: (1 + rate)^months — usa exp/log para precisão via bcmath intermediário
+            $base = bcadd('1', $monthlyRate, 8);
+            $discountFactor = (string) round(pow((float) $base, $monthsToMaturity), 8);
+            $presentValue = bcdiv($faceValue, $discountFactor, 2);
+            $discount = bcsub($faceValue, $presentValue, 2);
+            $effectiveRate = bccomp($faceValue, '0', 2) > 0
+                ? bcmul(bcdiv($discount, $faceValue, 4), '100', 2)
+                : '0';
+
+            return [
+                'id' => $r->id,
+                'customer' => $r->customer?->name ?? 'N/A',
+                'due_date' => $r->due_date,
+                'days_to_maturity' => $daysToMaturity,
+                'face_value' => $faceValue,
+                'present_value' => $presentValue,
+                'discount' => $discount,
+                'effective_rate' => (float) $effectiveRate,
+            ];
+        });
+
+        $totalFace = $results->reduce(fn (string $carry, $item) => bcadd($carry, (string) $item['face_value'], 2), '0');
+        $totalPresent = $results->reduce(fn (string $carry, $item) => bcadd($carry, (string) $item['present_value'], 2), '0');
+        $totalDiscount = bcsub($totalFace, $totalPresent, 2);
+        $avgRate = bccomp($totalFace, '0', 2) > 0
+            ? bcmul(bcdiv($totalDiscount, $totalFace, 4), '100', 2)
+            : '0';
+
+        return ApiResponse::data([
+            'data' => $results,
+            'summary' => [
+                'total_receivables' => $results->count(),
+                'total_face_value' => $totalFace,
+                'total_present_value' => $totalPresent,
+                'total_discount' => $totalDiscount,
+                'average_discount_rate' => (float) $avgRate,
+                'monthly_rate_used' => $validated['monthly_rate'],
+            ],
+        ]);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 6. COLLECTION RULES (RÉGUA DE COBRANÇA)
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * GET /financial/collection-rules
+     * Returns automated collection timeline and overdue receivables.
+     */
+    public function collectionRules(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', AccountPayable::class);
+
+        $tenantId = $this->tenantId();
+
+        $overdue = AccountReceivable::where('tenant_id', $tenantId)
+            ->whereNotIn('status', [
+                FinancialStatus::PAID->value,
+                FinancialStatus::CANCELLED->value,
+                FinancialStatus::RENEGOTIATED->value,
+            ])
+            ->where('due_date', '<', now())
+            ->with('customer:id,name,email,phone')
+            ->orderBy('due_date')
+            ->get()
+            ->map(function ($r) {
+                $daysOverdue = Carbon::parse($r->due_date)->startOfDay()->diffInDays(now()->startOfDay());
+                $outstanding = bcsub((string) ($r->amount ?? 0), (string) ($r->amount_paid ?? 0), 2);
+
+                return [
+                    'id' => $r->id,
+                    'customer' => $r->customer,
+                    'amount' => $outstanding,
+                    'due_date' => $r->due_date,
+                    'days_overdue' => $daysOverdue,
+                    'collection_stage' => match (true) {
+                        $daysOverdue <= 3 => 'reminder',
+                        $daysOverdue <= 7 => 'first_contact',
+                        $daysOverdue <= 15 => 'formal_notice',
+                        $daysOverdue <= 30 => 'negotiation',
+                        $daysOverdue <= 60 => 'restriction',
+                        default => 'legal',
+                    },
+                    'suggested_action' => match (true) {
+                        $daysOverdue <= 3 => 'Enviar lembrete amigável por WhatsApp/Email',
+                        $daysOverdue <= 7 => 'Ligar para o cliente',
+                        $daysOverdue <= 15 => 'Enviar notificação formal',
+                        $daysOverdue <= 30 => 'Propor renegociação/parcelamento',
+                        $daysOverdue <= 60 => 'Restringir serviços / Protestos em cartório',
+                        default => 'Encaminhar para cobrança judicial',
+                    },
+                ];
+            });
+
+        $groupByStage = $overdue->groupBy('collection_stage')->map(fn ($group) => [
+            'count' => $group->count(),
+            'total' => $group->reduce(fn (string $carry, $item) => bcadd($carry, (string) $item['amount'], 2), '0.00'),
+        ]);
+
+        $totalAmount = $overdue->reduce(fn (string $carry, $item) => bcadd($carry, (string) $item['amount'], 2), '0.00');
+
+        return ApiResponse::data([
+            'data' => $overdue,
+            'summary' => [
+                'total_overdue' => $overdue->count(),
+                'total_amount' => $totalAmount,
+                'by_stage' => $groupByStage,
+            ],
+        ]);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 7. SUPPLIER ADVANCE PAYMENTS
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * GET /financial/supplier-advances
+     */
+    public function supplierAdvances(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', AccountPayable::class);
+
+        $tenantId = $this->tenantId();
+
+        $advances = AccountPayable::where('tenant_id', $tenantId)
+            ->where('description', 'LIKE', '[Adiantamento]%')
+            ->with('supplierRelation:id,name')
+            ->orderByDesc('created_at')
+            ->paginate(20);
+
+        return ApiResponse::paginated($advances);
+    }
+
+    /**
+     * POST /financial/supplier-advances
+     */
+    public function storeSupplierAdvance(StoreSupplierAdvanceRequest $request): JsonResponse
+    {
+        $this->authorize('create', AccountPayable::class);
+
+        $validated = $request->validated();
+
+        try {
+            $advance = DB::transaction(function () use ($validated) {
+                return AccountPayable::create([
+                    'tenant_id' => $this->tenantId(),
+                    'created_by' => auth()->id(),
+                    'supplier_id' => $validated['supplier_id'],
+                    'description' => '[Adiantamento] '.$validated['description'],
+                    'amount' => $validated['amount'],
+                    'amount_paid' => 0,
+                    'due_date' => $validated['due_date'],
+                    'status' => FinancialStatus::PENDING,
+                    'notes' => $validated['notes'] ?? null,
+                ]);
+            });
+
+            return ApiResponse::data($advance, 201, ['message' => 'Adiantamento registrado com sucesso']);
+        } catch (\Exception $e) {
+            Log::error('Supplier advance creation failed', ['error' => $e->getMessage()]);
+
+            return ApiResponse::message('Erro ao registrar adiantamento', 500);
+        }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function allowedSupplierContractFrequencies(int $tenantId): array
+    {
+        return LookupValueResolver::allowedValues(
+            SupplierContractPaymentFrequency::class,
+            [
+                'monthly' => 'Mensal',
+                'quarterly' => 'Trimestral',
+                'annual' => 'Anual',
+                'one_time' => 'Unico',
+            ],
+            $tenantId
+        );
+    }
+}

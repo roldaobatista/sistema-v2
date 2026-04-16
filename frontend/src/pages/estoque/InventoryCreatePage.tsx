@@ -1,0 +1,127 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+    PackageSearch, ArrowLeft, Loader2, Warehouse,
+    ClipboardList, AlertCircle, PlayCircle
+} from 'lucide-react'
+import { useQuery, useMutation } from '@tanstack/react-query'
+import { stockApi } from '@/lib/stock-api'
+import { queryKeys } from '@/lib/query-keys'
+import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/lib/api'
+import { useAuthStore } from '@/stores/auth-store'
+export default function InventoryCreatePage() {
+    const { hasPermission } = useAuthStore()
+    const canCreate = hasPermission('estoque.inventory.create')
+    const navigate = useNavigate()
+    const [warehouseId, setWarehouseId] = useState('')
+    const [reference, setReference] = useState('')
+
+    const { data: warehousesRes, isLoading: loadingWarehouses } = useQuery({
+        queryKey: [...queryKeys.stock.warehouses.all, 'options'],
+        queryFn: () => stockApi.warehousesOptions(),
+    })
+    const warehouses = warehousesRes?.data?.data ?? warehousesRes?.data ?? []
+
+    const createMut = useMutation({
+        mutationFn: (data: { warehouse_id: string; reference: string }) => stockApi.inventories.create(data),
+        onSuccess: (res) => {
+            toast.success('Sessão de inventário iniciada!')
+                navigate(`/estoque/inventarios/${res.data.data.id}`)
+        },
+        onError: (err: unknown) => {
+            toast.error(getApiErrorMessage(err, 'Erro ao iniciar inventário'))
+        }
+    })
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!canCreate) {
+            toast.error('Você não tem permissão para iniciar inventários.')
+            return
+        }
+        if (!warehouseId) {
+            toast.error('Selecione um depósito para o inventário.')
+            return
+        }
+        createMut.mutate({
+            warehouse_id: warehouseId,
+            reference: reference
+        })
+    }
+
+    return (
+        <div className="p-6 max-w-2xl mx-auto space-y-6">
+            <button
+                onClick={() => navigate('/estoque/inventarios')}
+                className="flex items-center gap-2 text-sm text-surface-500 hover:text-brand-600 transition-colors"
+            >
+                <ArrowLeft className="w-4 h-4" /> Voltar para Listagem
+            </button>
+
+            <div className="bg-surface-0 rounded-3xl border border-default shadow-card overflow-hidden">
+                <div className="bg-brand-600 p-8 text-white relative overflow-hidden">
+                    <div className="relative z-10">
+                        <PackageSearch className="w-10 h-10 mb-4 opacity-80" />
+                        <h1 className="text-2xl font-bold">Iniciar Novo Inventário</h1>
+                        <p className="text-brand-100 text-sm mt-1">Configure a sessão de auditoria e contagem blindada.</p>
+                    </div>
+                    <div className="absolute top-0 right-0 p-8 opacity-10">
+                        <Warehouse className="w-32 h-32 rotate-12" />
+                    </div>
+                </div>
+
+                <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-surface-400 uppercase flex items-center gap-2">
+                                <Warehouse className="w-4 h-4" /> Depósito para Auditoria
+                            </label>
+                            <select
+                                value={warehouseId}
+                                onChange={(e) => setWarehouseId(e.target.value)}
+                                title="Depósito para Auditoria"
+                                className="w-full px-4 py-3 bg-surface-50 border border-default rounded-xl focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
+                                required
+                            >
+                                <option value="">Selecione um depósito...</option>
+                                {(warehouses || []).map((w: { id: number; name: string }) => (
+                                    <option key={w.id} value={w.id}>{w.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-surface-400 uppercase flex items-center gap-2">
+                                <ClipboardList className="w-4 h-4" /> Referência / Nome (Opcional)
+                            </label>
+                            <input
+                                type="text"
+                                value={reference}
+                                onChange={(e) => setReference(e.target.value)}
+                                placeholder="Ex: Inventário Mensal de Fevereiro"
+                                className="w-full px-4 py-3 bg-surface-50 border border-default rounded-xl focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                        <p className="text-xs text-amber-700 leading-relaxed">
+                            Ao iniciar, o sistema tirará uma foto instantânea do estoque atual. Qualquer movimentação realizada após o início não será considerada na expectativa original desta auditoria.
+                        </p>
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={createMut.isPending || loadingWarehouses || !canCreate}
+                        className="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-brand-500/25 disabled:opacity-50"
+                    >
+                        {createMut.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <PlayCircle className="w-5 h-5" />}
+                        {canCreate ? 'Começar Contagem Blindada' : 'Acesso Negado'}
+                    </button>
+                </form>
+            </div>
+        </div>
+    )
+}

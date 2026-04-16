@@ -1,0 +1,91 @@
+---
+description: Regras de seguranca do Git - prevenir commit de arquivos sensiveis, credenciais e dados de clientes
+globs:
+alwaysApply: true
+---
+
+# Git Safety (REGRA OBRIGATORIA)
+
+## Contexto
+
+Arquivos sensiveis commitados no Git permanecem no historico mesmo apos remocao.
+Repositorio privado reduz o risco, mas nao elimina — qualquer pessoa com acesso ao repo ve tudo.
+
+## NUNCA commitar estes arquivos
+
+### 1. Arquivos de ambiente com credenciais
+
+```
+.env                  # credenciais de producao/dev
+.env.local            # credenciais locais
+.env.docker           # credenciais Docker
+.env.production       # credenciais de producao
+```
+
+**Excecao:** `.env.example` e `.env.deploy-*.example` PODEM ser commitados (sao templates sem valores reais).
+
+**Regra:** Ao criar um novo `.env.*`, verificar IMEDIATAMENTE se esta no `.gitignore`. Se nao estiver, adicionar ANTES de qualquer commit.
+
+**Regra para .env.example:** Usar apenas placeholders genericos (ex.: `SEU-IP-OU-DOMINIO`, `sua-senha-redis`). NUNCA colocar IP, dominio ou senha real de producao no arquivo de exemplo.
+
+### 2. Dados de clientes ou documentos internos
+
+```
+*.pdf                 # certificados, boletins, documentos
+*.xlsm                # planilhas com macros
+*.xlsx                # planilhas
+*.docx                # documentos
+*.tar.gz              # arquivos compactados (podem conter qualquer coisa)
+*.zip                 # idem
+```
+
+**Regra:** Documentos e dados de clientes NUNCA devem estar no repositorio. Armazena-los no storage da aplicacao (S3, disco local do servidor) ou em sistema de arquivos separado.
+
+### 3. Scripts de diagnostico temporarios
+
+```
+check_*.php            # check_cols, check_schema, check_import, etc.
+debug_*.php            # scripts de debug
+```
+
+**Regra:** Nao commitar scripts de diagnostico. Usar apenas localmente ou em ferramentas fora do repo.
+
+### 4. Dependencias e artefatos de build
+
+```
+node_modules/         # dependencias Node
+vendor/               # dependencias PHP
+dist/                 # build frontend
+*.log                 # logs
+```
+
+**Regra:** Pastas de dependencias ja estao no `.gitignore`. Se por algum motivo aparecerem no `git status`, NUNCA adicionar com `git add`.
+
+## Checklist pre-commit (seguranca)
+
+Antes de executar `git add .` ou `git add -A`:
+
+- [ ] Nenhum arquivo `.env` (exceto `.example`) no staging
+- [ ] Nenhum PDF, XLSM, XLSX ou documento de cliente no staging
+- [ ] Nenhum `.tar.gz` ou `.zip` no staging
+- [ ] `node_modules/` e `vendor/` nao estao no staging
+- [ ] Nenhuma credencial hardcoded em arquivos de codigo (APP_KEY, DB_PASSWORD, etc.)
+- [ ] .env.example usa placeholders (nao IP/dominio real de producao)
+- [ ] Nenhum script check_*.php ou debug_*.php no staging
+
+## Se um arquivo sensivel foi commitado por acidente
+
+1. Remover do tracking: `git rm --cached <arquivo>`
+2. Adicionar ao `.gitignore`
+3. Commitar a remocao
+4. Se continha credenciais reais: trocar as credenciais IMEDIATAMENTE
+5. Se necessario limpeza do historico: usar `git-filter-repo` (requer force push)
+
+## Caminhos no Windows (evitar duplicatas)
+
+No Windows, o Git pode registrar o mesmo arquivo com barra (`frontend/src/foo.ts`) e com backslash (`frontend\src\foo.ts`), gerando entradas duplicadas no status. Preferir sempre caminhos com **barra normal** (`/`) ao usar `git add` (ex.: `git add frontend/src/foo.ts`).
+
+## Regra para a IA
+
+Ao executar `git add`, SEMPRE revisar o que esta sendo adicionado.
+Se detectar qualquer arquivo que se encaixe nas categorias acima, PARAR e alertar o usuario antes de commitar.

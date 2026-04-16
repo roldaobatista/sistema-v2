@@ -1,0 +1,123 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Enums\QuoteStatus;
+use App\Enums\ServiceCallStatus;
+use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\EnsureTenantScope;
+use App\Models\Customer;
+use App\Models\Quote;
+use App\Models\ServiceCall;
+use App\Models\Tenant;
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
+use Laravel\Sanctum\Sanctum;
+use Tests\TestCase;
+
+class ConvertToServiceCallTest extends TestCase
+{
+    private Tenant $tenant;
+
+    private User $user;
+
+    private Customer $customer;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Gate::before(fn () => true);
+
+        $this->withoutMiddleware([
+            EnsureTenantScope::class,
+            CheckPermission::class,
+        ]);
+
+        $this->tenant = Tenant::factory()->create();
+        $this->user = User::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'current_tenant_id' => $this->tenant->id,
+            'is_active' => true,
+        ]);
+        $this->customer = Customer::factory()->create([
+            'tenant_id' => $this->tenant->id,
+        ]);
+
+        app()->instance('current_tenant_id', $this->tenant->id);
+        Sanctum::actingAs($this->user, ['*']);
+    }
+
+    public function test_approved_quote_converts_to_service_call(): void
+    {
+        $quote = Quote::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'seller_id' => $this->user->id,
+            'status' => Quote::STATUS_APPROVED,
+            'quote_number' => 'ORC-SC-001',
+        ]);
+
+        $response = $this->postJson("/api/v1/quotes/{$quote->id}/convert-to-chamado");
+
+        $response->assertStatus(201);
+
+        $callId = $response->json('data.id');
+        $this->assertNotNull($callId);
+
+        $call = ServiceCall::find($callId);
+        $this->assertNotNull($call);
+        $this->assertEquals($this->customer->id, $call->customer_id);
+        $this->assertEquals($quote->id, $call->quote_id);
+        $this->assertEquals(ServiceCallStatus::PENDING_SCHEDULING, $call->status);
+        $this->assertStringStartsWith('CT-', $call->call_number);
+
+        // Quote should be marked as in execution (service call = scheduling work, not invoicing)
+        $this->assertEquals(QuoteStatus::IN_EXECUTION, $quote->fresh()->status);
+
+        // Audit log should exist
+        $this->assertDatabaseHas('audit_logs', [
+            'auditable_type' => ServiceCall::class,
+            'auditable_id' => $callId,
+            'action' => 'created',
+        ]);
+    }
+
+    public function test_non_approved_quote_cannot_convert_to_service_call(): void
+    {
+        $quote = Quote::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'seller_id' => $this->user->id,
+            'status' => Quote::STATUS_DRAFT,
+        ]);
+
+        $response = $this->postJson("/api/v1/quotes/{$quote->id}/convert-to-chamado");
+
+        $response->assertStatus(422);
+        $this->assertDatabaseMissing('service_calls', ['quote_id' => $quote->id]);
+    }
+
+    public function test_duplicate_conversion_blocked(): void
+    {
+        $quote = Quote::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'seller_id' => $this->user->id,
+            'status' => Quote::STATUS_APPROVED,
+        ]);
+
+        // First conversion succeeds
+        $this->postJson("/api/v1/quotes/{$quote->id}/convert-to-chamado")
+            ->assertStatus(201);
+
+        // Reset status for second attempt
+        $quote->update(['status' => Quote::STATUS_APPROVED]);
+
+        // Second conversion should be blocked
+        $this->postJson("/api/v1/quotes/{$quote->id}/convert-to-chamado")
+            ->assertStatus(422);
+
+        // Only one ServiceCall should exist
+        $this->assertEquals(1, ServiceCall::where('quote_id', $quote->id)->count());
+    }
+}

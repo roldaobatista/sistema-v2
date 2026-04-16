@@ -1,0 +1,262 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1\Webhooks;
+
+use App\Events\PaymentReceived;
+use App\Events\PaymentWebhookProcessed;
+use App\Http\Controllers\Controller;
+use App\Models\AccountReceivable;
+use App\Models\AccountReceivableInstallment;
+use App\Models\Payment;
+use App\Support\ApiResponse;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+
+/**
+ * Receives payment webhook callbacks from external gateways.
+ *
+ * Validates HMAC signature, updates payment status,
+ * and dispatches PaymentReceived event.
+ */
+class PaymentWebhookController extends Controller
+{
+    /**
+     * Handle incoming webhook from payment gateway.
+     */
+    public function handle(Request $request): JsonResponse
+    {
+        // 1. Validate webhook signature
+        if (! $this->validateSignature($request)) {
+            Log::warning('PaymentWebhook: invalid signature', [
+                'ip' => $request->ip(),
+            ]);
+
+            return ApiResponse::message('Assinatura inválida.', 401);
+        }
+
+        // 2. Parse payload
+        $payload = $request->all();
+        $event = $payload['event'] ?? '';
+        $paymentData = $payload['payment'] ?? $payload;
+        $externalId = $paymentData['id'] ?? null;
+        $externalReference = $paymentData['externalReference'] ?? null;
+
+        if (! $externalId) {
+            return ApiResponse::message('Payload inválido: ID do pagamento não encontrado.', 422);
+        }
+
+        Log::info('PaymentWebhook: received', [
+            'external_id' => $externalId,
+            'event' => $event,
+            'ref' => $externalReference,
+        ]);
+
+        // 3. Find the payment
+        $payment = Payment::where('external_id', $externalId)->first();
+
+        // 4. Map status and handle confirmation
+        $newStatus = $this->mapEventToStatus($event);
+        $isConfirmed = in_array($newStatus, ['confirmed', 'received']);
+
+        // 5. If confirmed and payment record doesn't exist, create it (triggers reconciliation hook)
+        if ($isConfirmed && ! $payment && $externalReference && str_contains($externalReference, ':')) {
+            try {
+                [$type, $id] = explode(':', $externalReference);
+                $payableClass = "App\\Models\\{$type}";
+
+                if (class_exists($payableClass)) {
+                    $payable = $payableClass::find($id);
+                    if ($payable) {
+                        $payment = Payment::create([
+                            'tenant_id' => $payable->tenant_id,
+                            'payable_type' => $payableClass,
+                            'payable_id' => $id,
+                            'amount' => $paymentData['value'] ?? 0,
+                            'payment_method' => strtolower($paymentData['billingType'] ?? 'pix'),
+                            'payment_date' => now(),
+                            'external_id' => $externalId,
+                            'status' => $newStatus,
+                            'paid_at' => now(),
+                            'gateway_provider' => 'asaas',
+                            'gateway_response' => $payload,
+                        ]);
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('PaymentWebhook: failed to auto-create payment', ['error' => $e->getMessage()]);
+            }
+        }
+
+        if (! $payment) {
+            Log::warning('PaymentWebhook: payment record not found and could not be created', ['external_id' => $externalId]);
+
+            return ApiResponse::message('Pagamento não processado (registro não encontrado).', 404);
+        }
+
+        // 6. Idempotency: skip if already processed
+        if ($payment->status === 'confirmed' && $isConfirmed) {
+            Log::info('PaymentWebhook: already processed (idempotent)', ['external_id' => $externalId]);
+
+            return ApiResponse::data(['status' => 'already_processed']);
+        }
+
+        // 7. Update existing payment status
+        $payment->update([
+            'status' => $newStatus,
+            'paid_at' => $isConfirmed ? now() : $payment->paid_at,
+            'gateway_response' => $payload,
+        ]);
+
+        // 8. Reconcile linked installment if confirmed
+        if ($isConfirmed) {
+            $this->reconcileInstallment($payment, $paymentData);
+        }
+
+        // 9. Dispatch standard domain event if confirmed
+        if ($isConfirmed && $payment->payable instanceof AccountReceivable) {
+            event(new PaymentReceived($payment->payable, $payment));
+        }
+
+        // 10. Dispatch generic webhook processed event (used by observers/listeners)
+        event(new PaymentWebhookProcessed($payment, $event));
+
+        Log::info('PaymentWebhook: processed', [
+            'payment_id' => $payment->id,
+            'new_status' => $newStatus,
+        ]);
+
+        return ApiResponse::data([
+            'payment_id' => $payment->id,
+            'status' => $newStatus,
+        ]);
+    }
+
+    /**
+     * Validate webhook signature.
+     *
+     * Supports two styles:
+     *  - Asaas: `payment.asaas.webhook_secret` config + `asaas-access-token` header (simple match).
+     *  - Generic: `services.payment.webhook_secret` config + `X-Webhook-Signature` header (simple match).
+     *
+     * The generic variant is used by non-Asaas gateways and by the controller tests.
+     */
+    private function validateSignature(Request $request): bool
+    {
+        $asaasSecret = config('payment.asaas.webhook_secret');
+        $genericSecret = config('services.payment.webhook_secret');
+
+        // Nenhum secret configurado: permitir em dev/test, bloquear em producao.
+        if (empty($asaasSecret) && empty($genericSecret)) {
+            if (app()->environment('production')) {
+                Log::critical('PaymentWebhook: no webhook secret configured! All webhook requests are being blocked.');
+
+                return false;
+            }
+
+            return true;
+        }
+
+        $asaasHeader = (string) $request->header('asaas-access-token', '');
+        $genericHeader = (string) $request->header('X-Webhook-Signature', '');
+
+        if (! empty($asaasSecret) && $asaasHeader !== '' && hash_equals($asaasSecret, $asaasHeader)) {
+            return true;
+        }
+
+        if (! empty($genericSecret) && $genericHeader !== '' && hash_equals($genericSecret, $genericHeader)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Map webhook event type to internal payment status.
+     */
+    private function mapEventToStatus(string $event): string
+    {
+        return match (strtoupper($event)) {
+            'PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED' => 'confirmed',
+            'PAYMENT_OVERDUE' => 'overdue',
+            'PAYMENT_REFUNDED', 'PAYMENT_REFUND_IN_PROGRESS' => 'refunded',
+            'PAYMENT_DELETED', 'PAYMENT_CANCELLED' => 'cancelled',
+            'PAYMENT_CREATED' => 'pending',
+            'PAYMENT_UPDATED' => 'pending',
+            default => 'pending',
+        };
+    }
+
+    /**
+     * Reconcile the installment linked to a confirmed payment.
+     *
+     * Resolution order:
+     * 1. metadata['installment_id'] (sent by InstallmentPaymentController)
+     * 2. Fallback: next pending installment for the AccountReceivable payable
+     *
+     * @param  array<int|string, mixed>  $paymentData
+     */
+    private function reconcileInstallment(Payment $payment, array $paymentData): void
+    {
+        try {
+            $metadata = $paymentData['metadata'] ?? [];
+            $installmentId = $metadata['installment_id'] ?? null;
+
+            // Fallback: find next pending installment for this receivable
+            if (! $installmentId && $payment->payable_type === 'App\\Models\\AccountReceivable' && $payment->payable_id) {
+                $installmentId = AccountReceivableInstallment::where('account_receivable_id', $payment->payable_id)
+                    ->where('status', '!=', 'paid')
+                    ->orderBy('due_date')
+                    ->value('id');
+            }
+
+            if (! $installmentId) {
+                Log::info('PaymentWebhook: no installment to reconcile', [
+                    'payment_id' => $payment->id,
+                ]);
+
+                return;
+            }
+
+            /** @var AccountReceivableInstallment|null $installment */
+            $installment = AccountReceivableInstallment::find($installmentId);
+
+            if (! $installment) {
+                Log::warning('PaymentWebhook: installment not found for reconciliation', [
+                    'installment_id' => $installmentId,
+                    'payment_id' => $payment->id,
+                ]);
+
+                return;
+            }
+
+            // Idempotency: skip if already paid
+            if ($installment->status === 'paid') {
+                Log::info('PaymentWebhook: installment already paid (idempotent)', [
+                    'installment_id' => $installmentId,
+                ]);
+
+                return;
+            }
+
+            $installment->update([
+                'status' => 'paid',
+                'paid_at' => now(),
+                'paid_amount' => $payment->amount,
+                'psp_status' => 'confirmed',
+            ]);
+
+            Log::info('PaymentWebhook: installment reconciled', [
+                'installment_id' => $installmentId,
+                'payment_id' => $payment->id,
+                'amount' => $payment->amount,
+            ]);
+        } catch (\Exception $e) {
+            // Best-effort: payment is already recorded, don't block webhook response
+            Log::error('PaymentWebhook: failed to reconcile installment', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+}

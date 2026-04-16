@@ -1,0 +1,275 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kalibrium.local/schemas/harness-state.schema.json",
+  "title": "Autonomous Harness State",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "protocol_version",
+    "dependency_matrix_version",
+    "updated_at",
+    "last_updated_by",
+    "active_layer",
+    "active_cycle",
+    "active_run_id",
+    "active_audit_mode",
+    "target_scope",
+    "current_phase",
+    "cycle_state",
+    "escalation_required",
+    "blocking_reason",
+    "reports_root",
+    "lock",
+    "deployment_authorization",
+    "audit_quorum",
+    "git",
+    "history_summary",
+    "layers"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "protocol_version": { "type": "string" },
+    "dependency_matrix_version": { "type": "string" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "last_updated_by": { "type": "string" },
+    "active_layer": { "type": ["integer", "null"], "minimum": 0, "maximum": 7 },
+    "active_cycle": { "type": ["integer", "null"], "minimum": 1 },
+    "active_run_id": { "type": ["string", "null"], "pattern": "^\\d{8}T\\d{6}Z-layer-[0-7]-cycle-\\d+$" },
+    "active_audit_mode": { "type": ["string", "null"], "enum": ["full", "targeted", "verification_only", null] },
+    "target_scope": { "$ref": "#/$defs/target_scope" },
+    "current_phase": { "enum": ["idle", "audit", "fix", "reaudit", "verification", "closed"] },
+    "cycle_state": { "enum": ["idle", "audit", "fix", "reaudit", "verification", "closed", "blocked", "escalated"] },
+    "escalation_required": { "type": "boolean" },
+    "blocking_reason": { "type": ["string", "null"] },
+    "reports_root": { "type": "string" },
+    "lock": { "$ref": "#/$defs/lock" },
+    "deployment_authorization": { "$ref": "#/$defs/deployment_authorization" },
+    "audit_quorum": { "$ref": "#/$defs/audit_quorum" },
+    "git": { "$ref": "#/$defs/git_state" },
+    "history_summary": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/history_item" }
+    },
+    "layers": {
+      "type": "object",
+      "required": ["0", "1", "2", "3", "4", "5", "6", "7"],
+      "additionalProperties": false,
+      "properties": {
+        "0": { "$ref": "#/$defs/layer_state" },
+        "1": { "$ref": "#/$defs/layer_state" },
+        "2": { "$ref": "#/$defs/layer_state" },
+        "3": { "$ref": "#/$defs/layer_state" },
+        "4": { "$ref": "#/$defs/layer_state" },
+        "5": { "$ref": "#/$defs/layer_state" },
+        "6": { "$ref": "#/$defs/layer_state" },
+        "7": { "$ref": "#/$defs/layer_state" }
+      }
+    }
+  },
+  "$defs": {
+    "target_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "paths", "finding_ids", "context"],
+      "properties": {
+        "type": { "enum": ["layer", "module", "finding_set"] },
+        "paths": { "type": "array", "items": { "type": "string" } },
+        "finding_ids": { "type": "array", "items": { "type": "string" } },
+        "context": { "type": ["string", "null"] }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "type": { "const": "module" } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "paths": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "const": "finding_set" } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "finding_ids": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+            }
+          }
+        }
+      ]
+    },
+    "lock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["active", "path", "run_id", "created_at", "owner", "pid"],
+      "properties": {
+        "active": { "type": "boolean" },
+        "path": { "type": ["string", "null"] },
+        "run_id": { "type": ["string", "null"] },
+        "created_at": { "type": ["string", "null"], "format": "date-time" },
+        "owner": { "type": ["string", "null"] },
+        "pid": { "type": ["integer", "null"] }
+      }
+    },
+    "deployment_authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authorized",
+        "run_id",
+        "layer",
+        "cycle",
+        "authorized_by",
+        "authorized_at",
+        "authorized_head_commit",
+        "target_environment",
+        "target_commit",
+        "deploy_command",
+        "allow_migrations",
+        "migration_diff_checked",
+        "requires_backup",
+        "rollback_command",
+        "required_health_checks"
+      ],
+      "properties": {
+        "authorized": { "type": "boolean" },
+        "run_id": { "type": ["string", "null"] },
+        "layer": { "type": ["integer", "null"], "minimum": 0, "maximum": 7 },
+        "cycle": { "type": ["integer", "null"], "minimum": 1 },
+        "authorized_by": { "type": ["string", "null"] },
+        "authorized_at": { "type": ["string", "null"], "format": "date-time" },
+        "authorized_head_commit": { "type": ["string", "null"] },
+        "target_environment": { "type": ["string", "null"] },
+        "target_commit": { "type": ["string", "null"] },
+        "deploy_command": { "type": ["string", "null"] },
+        "allow_migrations": { "type": "boolean" },
+        "migration_diff_checked": { "type": "boolean" },
+        "requires_backup": { "type": "boolean" },
+        "rollback_command": { "type": ["string", "null"] },
+        "required_health_checks": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "audit_quorum": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_id",
+        "executed_auditors",
+        "distinct_agent_ids",
+        "quorum_met",
+        "commands_log_present",
+        "commands_log_hash",
+        "impact_manifest_hash"
+      ],
+      "properties": {
+        "run_id": { "type": ["string", "null"] },
+        "executed_auditors": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/executed_auditor" }
+        },
+        "distinct_agent_ids": { "type": "array", "items": { "type": "string" } },
+        "quorum_met": { "type": "boolean" },
+        "commands_log_present": { "type": "boolean" },
+        "commands_log_hash": { "type": ["string", "null"], "pattern": "^sha256:[0-9a-f]{64}$" },
+        "impact_manifest_hash": { "type": ["string", "null"], "pattern": "^sha256:[0-9a-f]{64}$" }
+      }
+    },
+    "executed_auditor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["auditor", "agent_id", "artifact"],
+      "properties": {
+        "auditor": {
+          "enum": ["architecture-dependencies", "security-tenant", "code-quality", "tests-verification", "ops-provenance"]
+        },
+        "agent_id": { "type": "string", "minLength": 1 },
+        "artifact": { "type": "string", "minLength": 1 }
+      }
+    },
+    "git_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_commit",
+        "head_commit",
+        "approved_commit",
+        "working_tree_clean_at_start",
+        "working_tree_clean_at_close",
+        "dirty_paths_at_start"
+      ],
+      "properties": {
+        "base_commit": { "type": ["string", "null"] },
+        "head_commit": { "type": ["string", "null"] },
+        "approved_commit": { "type": ["string", "null"] },
+        "working_tree_clean_at_start": { "type": ["boolean", "null"] },
+        "working_tree_clean_at_close": { "type": ["boolean", "null"] },
+        "dirty_paths_at_start": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "history_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_id", "layer", "cycle", "decision", "report"],
+      "properties": {
+        "run_id": { "type": "string" },
+        "layer": { "type": "integer", "minimum": 0, "maximum": 7 },
+        "cycle": { "type": "integer", "minimum": 1 },
+        "decision": { "type": "string" },
+        "report": { "type": "string" },
+        "reason": { "type": ["string", "null"] }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "decision": { "enum": ["blocked", "escalated"] } },
+            "required": ["decision"]
+          },
+          "then": {
+            "required": ["reason"],
+            "properties": { "reason": { "type": "string", "minLength": 1 } }
+          }
+        }
+      ]
+    },
+    "layer_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "last_cycle",
+        "last_report",
+        "approved_report_provenance",
+        "depends_on",
+        "layer_dependencies_resolved",
+        "invalidated_by"
+      ],
+      "properties": {
+        "status": { "enum": ["not_started", "in_progress", "approved", "blocked", "escalated"] },
+        "last_cycle": { "type": ["integer", "null"], "minimum": 1 },
+        "last_report": { "type": ["string", "null"] },
+        "approved_report_provenance": { "$ref": "#/$defs/approved_report_provenance" },
+        "depends_on": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 7 } },
+        "layer_dependencies_resolved": { "type": "boolean" },
+        "invalidated_by": { "type": ["string", "null"] }
+      }
+    },
+    "approved_report_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cycle", "report", "base_commit", "head_commit", "approved_commit", "approved_at"],
+      "properties": {
+        "cycle": { "type": ["integer", "null"], "minimum": 1 },
+        "report": { "type": ["string", "null"] },
+        "base_commit": { "type": ["string", "null"] },
+        "head_commit": { "type": ["string", "null"] },
+        "approved_commit": { "type": ["string", "null"] },
+        "approved_at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    }
+  }
+}

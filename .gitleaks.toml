@@ -1,0 +1,24 @@
+# ============================================================
+# Gitleaks Configuration
+# KALIBRIUM ERP — Regras para evitar falsos positivos
+# ============================================================
+
+title = "KALIBRIUM Gitleaks Config"
+
+[allowlist]
+  description = "Allowlist para evitar falsos positivos"
+
+  # Paths que são seguros (test fixtures, exemplos, docs)
+  paths = [
+    '''tests/.*''',
+    '''docs/.*''',
+    '''\.env\.example''',
+    '''phpunit\.xml''',
+  ]
+
+  # Regexes de valores permitidos (chaves de teste óbvias)
+  regexes = [
+    '''password''',
+    '''secret''',
+    '''base64:3Q3jZV4PSsS0RmjP6cWv6dpWWq7eWQf7xN\+BrRXJQ\+Q=''',
+  ]

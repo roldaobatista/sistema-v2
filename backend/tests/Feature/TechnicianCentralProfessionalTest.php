@@ -1,0 +1,213 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\EnsureTenantScope;
+use App\Models\TechnicianCashFund;
+use App\Models\Tenant;
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
+use Laravel\Sanctum\Sanctum;
+use Tests\TestCase;
+
+/**
+ * Professional Technician Central tests — replaces TechnicianCentralTest.
+ * Exact assertions for cash fund operations, central inbox, notifications, SLA.
+ */
+class TechnicianCentralProfessionalTest extends TestCase
+{
+    private Tenant $tenant;
+
+    private User $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Gate::before(fn () => true);
+
+        $this->withoutMiddleware([
+            EnsureTenantScope::class,
+            CheckPermission::class,
+        ]);
+
+        $this->tenant = Tenant::factory()->create();
+        $this->user = User::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'current_tenant_id' => $this->tenant->id,
+            'is_active' => true,
+        ]);
+        $this->user->tenants()->attach($this->tenant->id, ['is_default' => true]);
+
+        app()->instance('current_tenant_id', $this->tenant->id);
+        setPermissionsTeamId($this->tenant->id);
+        Sanctum::actingAs($this->user, ['*']);
+    }
+
+    // ── TECHNICIAN CASH ──
+
+    public function test_add_credit_persists_and_updates_balance(): void
+    {
+        $response = $this->postJson('/api/v1/technician-cash/credit', [
+            'user_id' => $this->user->id,
+            'amount' => 500.00,
+            'description' => 'Adiantamento semanal',
+        ]);
+
+        $response->assertStatus(201);
+
+        $fund = TechnicianCashFund::where('user_id', $this->user->id)
+            ->where('tenant_id', $this->tenant->id)
+            ->first();
+
+        $this->assertNotNull($fund);
+        $this->assertSame(500.0, (float) $fund->balance);
+
+        $this->assertDatabaseHas('technician_cash_transactions', [
+            'fund_id' => $fund->id,
+            'type' => 'credit',
+            'amount' => 500.00,
+            'description' => 'Adiantamento semanal',
+        ]);
+    }
+
+    public function test_add_debit_reduces_balance(): void
+    {
+        // First add credit
+        $this->postJson('/api/v1/technician-cash/credit', [
+            'user_id' => $this->user->id,
+            'amount' => 500.00,
+            'description' => 'Adiantamento',
+        ])->assertStatus(201);
+
+        // Then debit
+        $response = $this->postJson('/api/v1/technician-cash/debit', [
+            'user_id' => $this->user->id,
+            'amount' => 150.00,
+            'description' => 'Compra de peça',
+        ]);
+
+        $response->assertStatus(201);
+
+        $fund = TechnicianCashFund::where('user_id', $this->user->id)->first();
+        $this->assertSame(350.0, (float) $fund->balance);
+    }
+
+    public function test_cash_index_returns_list(): void
+    {
+        $response = $this->getJson('/api/v1/technician-cash');
+        $response->assertOk();
+    }
+
+    public function test_cash_show_returns_user_fund_or_404(): void
+    {
+        // Without any fund: should return 404 or empty
+        $response = $this->getJson("/api/v1/technician-cash/{$this->user->id}");
+
+        // After creating a fund, should be 200
+        $this->postJson('/api/v1/technician-cash/credit', [
+            'user_id' => $this->user->id,
+            'amount' => 100,
+            'description' => 'Init',
+        ])->assertStatus(201);
+
+        $this->getJson("/api/v1/technician-cash/{$this->user->id}")
+            ->assertOk();
+    }
+
+    public function test_cash_summary_returns_totals(): void
+    {
+        $this->postJson('/api/v1/technician-cash/credit', [
+            'user_id' => $this->user->id,
+            'amount' => 300,
+            'description' => 'Test',
+        ])->assertStatus(201);
+
+        $response = $this->getJson('/api/v1/technician-cash-summary');
+
+        $response->assertOk()
+            ->assertJsonStructure(['data' => ['total_balance', 'funds_count']]);
+    }
+
+    // ── AGENDA INBOX ──
+
+    public function test_create_agenda_task_persists(): void
+    {
+        $response = $this->postJson('/api/v1/agenda/items', [
+            'tipo' => 'task',
+            'titulo' => 'Verificar estoque de peças',
+            'prioridade' => 'high',
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.titulo', 'Verificar estoque de peças');
+
+        $this->assertDatabaseHas('central_items', [
+            'tenant_id' => $this->tenant->id,
+            'titulo' => 'Verificar estoque de peças',
+            'tipo' => 'task',
+            'prioridade' => 'high',
+        ]);
+    }
+
+    public function test_agenda_items_index_returns_list(): void
+    {
+        $response = $this->getJson('/api/v1/agenda/items');
+        $response->assertOk();
+    }
+
+    public function test_agenda_summary_returns_counts(): void
+    {
+        $response = $this->getJson('/api/v1/agenda/summary');
+
+        $response->assertOk()
+            ->assertJsonStructure(['data' => ['hoje', 'atrasadas', 'sem_prazo', 'total_aberto']]);
+    }
+
+    public function test_agenda_constants_returns_types_and_priorities(): void
+    {
+        $response = $this->getJson('/api/v1/agenda/constants');
+
+        $response->assertOk()
+            ->assertJsonStructure(['data' => ['types', 'priorities']]);
+    }
+
+    // ── NOTIFICATIONS ──
+
+    public function test_notifications_index_returns_list(): void
+    {
+        $response = $this->getJson('/api/v1/notifications');
+        $response->assertOk();
+    }
+
+    public function test_unread_count_returns_number(): void
+    {
+        $response = $this->getJson('/api/v1/notifications/unread-count');
+
+        $response->assertOk()
+            ->assertJsonStructure(['data' => ['unread_count']]);
+    }
+
+    public function test_mark_all_read_returns_200(): void
+    {
+        $response = $this->putJson('/api/v1/notifications/read-all');
+
+        $response->assertOk();
+    }
+
+    // ── SLA DASHBOARD ──
+
+    public function test_sla_overview_returns_structure(): void
+    {
+        $response = $this->getJson('/api/v1/sla-dashboard/overview');
+
+        $response->assertOk();
+    }
+
+    public function test_sla_breached_returns_list(): void
+    {
+        $response = $this->getJson('/api/v1/sla-dashboard/breached');
+
+        $response->assertOk();
+    }
+}

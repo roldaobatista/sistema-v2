@@ -1,0 +1,70 @@
+# ============================================================
+# OpenTelemetry Collector Configuration
+# KALIBRIUM ERP
+# ============================================================
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 1024
+
+  # Protege o collector contra OOM em picos de tráfego
+  memory_limiter:
+    check_interval: 5s
+    limit_mib: 256
+    spike_limit_mib: 64
+
+  # Filtra spans de health check e assets estáticos
+  filter:
+    error_mode: ignore
+    traces:
+      span:
+        - 'attributes["http.target"] == "/health"'
+        - 'attributes["http.target"] == "/api/health"'
+        - 'IsMatch(attributes["http.target"], "/assets/.*")'
+
+  # Adiciona metadados do serviço
+  resource:
+    attributes:
+      - key: service.environment
+        value: ${OTEL_DEPLOY_ENV}
+        action: upsert
+      - key: service.version
+        value: ${OTEL_DEPLOY_VERSION}
+        action: upsert
+
+exporters:
+  # Exporta para Jaeger via OTLP
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+  # Log no console (debug)
+  debug:
+    verbosity: basic
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, filter, resource, batch]
+      exporters: [otlp/jaeger]
+
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [debug]

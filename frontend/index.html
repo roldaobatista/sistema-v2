@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+
+  <script>
+    // Tema: uma única classe no html (evita mistura claro+escuro). Fonte: ui-store; default 'light'.
+    // Decisão documentada (RELATORIO_ANALISE_CODIGO Fase 3): catch vazio intencional — localStorage
+    // pode falhar em modo privado/iframe; falhar silenciosamente evita FOUC e quebra da página.
+    try {
+      var raw = localStorage.getItem('ui-store');
+      var theme = 'light';
+      if (raw) {
+        try {
+          var o = JSON.parse(raw);
+          theme = (o && o.theme) || 'light';
+        } catch (e) { /* ignore parse */ }
+      }
+      var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      var root = document.documentElement;
+      root.classList.remove('dark', 'light');
+      root.classList.add(isDark ? 'dark' : 'light');
+    } catch (e) { /* ignore localStorage unavailable (e.g. private mode) */ }
+  </script>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#2563EB" />
+  <meta name="description" content="Kalibrium Gestão — Plataforma completa para sua empresa" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <!-- Open Graph / Social -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Kalibrium Gestão" />
+  <meta property="og:description" content="Ordens de serviço, financeiro, estoque, CRM e muito mais em um só lugar." />
+  <meta property="og:image" content="/icons/icon-192.svg" />
+
+  <title>Kalibrium Gestão</title>
+  <style>
+    body { line-height: 1.5; }
+    .prose-container { max-width: 75ch; margin: 0 auto; }
+  </style>
+</head>
+
+<body style="min-height:100vh;background:var(--background,#FAFAFA);margin:0;">
+  <div id="root" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:inherit;">
+    <p style="font-family:system-ui,sans-serif;color:#71717A;">Carregando…</p>
+  </div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

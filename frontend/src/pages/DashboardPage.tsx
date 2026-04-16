@@ -1,0 +1,722 @@
+import { useQuery } from '@tanstack/react-query'
+import { useNavigate, Navigate } from 'react-router-dom'
+import {
+    FileText, DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight,
+    Clock, CheckCircle2, Wallet, Receipt, AlertCircle, Scale, AlertTriangle, Package,
+    Plus, Search, Users, Rocket, Bell, Star,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
+import { useAppMode } from '@/hooks/useAppMode'
+import { Badge } from '@/components/ui/badge'
+import { EmptyState } from '@/components/ui/emptystate'
+import { getStatusEntry, workOrderStatus } from '@/lib/status-config'
+import api, { unwrapData } from '@/lib/api'
+import { hrApi } from '@/lib/hr-api'
+
+const fmtBRL = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+const SKELETON_BAR_HEIGHTS = ['38%', '52%', '64%', '46%', '70%', '58%']
+
+function TrendBadge({ current, previous, invert = false }: {
+    current: number
+    previous: number
+    invert?: boolean
+}) {
+    if (previous === 0 && current === 0) return null
+    const pct = previous === 0 ? 100 : Math.round(((current - previous) / previous) * 100)
+    if (pct === 0) return null
+
+    const isPositive = invert ? pct < 0 : pct > 0
+    const Icon = pct > 0 ? ArrowUpRight : ArrowDownRight
+
+    return (
+        <span className={cn(
+            'inline-flex items-center gap-0.5 rounded-[var(--radius-pill)] px-1.5 py-0.5 text-xs font-semibold tabular-nums',
+            isPositive
+                ? 'bg-success/10 text-success dark:bg-success/20 dark:text-success'
+                : 'bg-danger/10 text-danger dark:bg-danger/20 dark:text-danger'
+        )}>
+            <Icon className="h-3 w-3" />
+            {Math.abs(pct)}%
+        </span>
+    )
+}
+
+function KpiSkeleton() {
+    return (
+        <div className="rounded-[var(--radius-lg)] border border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#111113] p-6 animate-pulse">
+            <div className="flex items-center justify-between mb-4">
+                <div className="h-3 w-20 rounded bg-surface-200 dark:bg-white/[0.06]" />
+                <div className="h-4 w-4 rounded bg-surface-200 dark:bg-white/[0.06]" />
+            </div>
+            <div className="h-7 w-24 rounded bg-surface-200 dark:bg-white/[0.06]" />
+            <div className="h-3 w-16 rounded bg-surface-200 dark:bg-white/[0.06] mt-2" />
+        </div>
+    )
+}
+
+function ChartSkeleton() {
+    return (
+        <div className="rounded-[var(--radius-lg)] border border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#111113] animate-pulse">
+            <div className="px-6 py-4 border-b border-black/[0.04] dark:border-white/[0.06]">
+                <div className="h-4 w-32 rounded bg-surface-200 dark:bg-white/[0.06]" />
+            </div>
+            <div className="p-6 h-40 flex items-end gap-2">
+                {(SKELETON_BAR_HEIGHTS || []).map((height, i) => (
+                    <div key={i} className="flex-1 rounded-sm bg-surface-100 dark:bg-white/[0.04]" style={{ height }} />
+                ))}
+            </div>
+        </div>
+    )
+}
+
+export function DashboardPage() {
+    const { hasPermission, user } = useAuthStore()
+    const { currentMode } = useAppMode()
+    const navigate = useNavigate()
+    const canCreateWorkOrder = hasPermission('os.work_order.create')
+    const canViewWorkOrders = hasPermission('os.work_order.view')
+    const canViewAlerts = hasPermission('alerts.alert.view')
+    const canViewCustomers = hasPermission('cadastros.customer.view')
+    const canViewNps = hasPermission('customer.nps.view')
+    const canViewHrDashboard = hasPermission('hr.dashboard.view')
+
+    const { data: statsRes, isLoading, isError, error } = useQuery({
+        queryKey: ['dashboard-stats'],
+        queryFn: () => api.get('/dashboard-stats'),
+        refetchInterval: 60_000,
+        enabled: currentMode !== 'vendedor',
+    })
+
+    const { data: alertsRes } = useQuery({
+        queryKey: ['dashboard-alerts-summary'],
+        queryFn: () => api.get('/alerts/summary').then((r) => unwrapData(r)).catch(() => null),
+        refetchInterval: 120_000,
+        enabled: currentMode !== 'vendedor',
+    })
+
+    const { data: npsRes } = useQuery({
+        queryKey: ['dashboard-nps'],
+        queryFn: () => api.get('/dashboard-nps').then((r) => unwrapData(r)).catch(() => null),
+        refetchInterval: 300_000,
+        enabled: currentMode !== 'vendedor' && canViewNps,
+    })
+
+    const { data: hrWidgetsRes } = useQuery({
+        queryKey: ['dashboard-hr-widgets'],
+        queryFn: () => hrApi.dashboard.widgets().then((r) => r.data?.data ?? r.data).catch(() => null),
+        refetchInterval: 120_000,
+        enabled: currentMode !== 'vendedor' && canViewHrDashboard,
+    })
+
+    const { data: expiringWeightsRes } = useQuery({
+        queryKey: ['dashboard-expiring-weights'],
+        queryFn: () => api.get('/standard-weights/expiring').then((r) => unwrapData(r)).catch(() => null),
+        refetchInterval: 300_000,
+    })
+    const expiringWeights = Array.isArray(expiringWeightsRes) ? expiringWeightsRes : (expiringWeightsRes as { data?: unknown[] })?.data ?? []
+
+    if (currentMode === 'vendedor') return <Navigate to="/crm" replace />
+
+    const s = statsRes?.data?.data ?? statsRes?.data ?? {}
+    const recentOs = s.recent_os ?? []
+    const topTechs = s.top_technicians ?? []
+    const eqAlerts = s.eq_alerts ?? []
+    const eqOverdue = s.eq_overdue ?? 0
+    const eqDue7 = s.eq_due_7 ?? 0
+    const isEmpty = !isLoading && !isError && (s.open_os ?? 0) === 0 && (s.completed_month ?? 0) === 0 && (s.revenue_month ?? 0) === 0
+
+    const handleRecentOrderNavigation = (orderId: number) => {
+        if (canViewWorkOrders) {
+            navigate(`/os/${orderId}`)
+        }
+    }
+
+    const handleRecentOrderKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, orderId: number) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            handleRecentOrderNavigation(orderId)
+        }
+    }
+
+    if (isError) {
+        return (
+            <div className="py-16 text-center animate-fade-in">
+                <AlertTriangle className="mx-auto h-12 w-12 text-danger/50 dark:text-danger/40" />
+                <h3 className="mt-4 text-sm font-semibold text-foreground">Erro de Carregamento</h3>
+                <p className="mt-2 text-sm text-surface-500 max-w-sm mx-auto">
+                    {(error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Não foi possível carregar os dados do dashboard. Nossa equipe já foi notificada.'}
+                </p>
+                <button
+                    onClick={() => window.location.reload()}
+                    aria-label="Tentar novamente carregar dashboard"
+                    className="mt-6 inline-flex items-center gap-2 rounded-lg border border-default bg-surface-0 px-4 py-2 text-sm font-medium text-surface-700 hover:bg-surface-50 dark:bg-surface-800 dark:hover:bg-surface-700 transition-colors"
+                >
+                    Tentar Novamente
+                </button>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-8">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-heading text-foreground dark:text-white">Dashboard</h1>
+                    <p className="mt-1 text-sm text-surface-500">
+                        Olá, <span className="font-semibold text-surface-700 dark:text-surface-300">{user?.name ?? 'Usuário'}</span>. Aqui está o resumo do dia.
+                    </p>
+                </div>
+                <div className="flex items-center gap-2">
+                    {canCreateWorkOrder && (
+                        <button
+                            onClick={() => navigate('/os/nova')}
+                            aria-label="Criar nova ordem de serviço"
+                            className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] prix-gradient px-3.5 py-2 text-sm font-medium text-white hover:brightness-110 hover:shadow-md transition-all"
+                        >
+                            <Plus className="h-4 w-4" /> Nova OS
+                        </button>
+                    )}
+                    <button
+                        onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
+                        aria-label="Abrir busca rápida (Ctrl+K)"
+                        className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-default bg-surface-0 px-3 py-2 text-sm font-medium text-surface-600 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
+                    >
+                        <Search className="h-4 w-4" />
+                        <span className="hidden sm:inline">Buscar</span>
+                        <kbd className="ml-1 hidden rounded border border-surface-200 bg-surface-100 px-1.5 py-0.5 text-xs font-mono text-surface-400 sm:inline">
+                            Ctrl+K
+                        </kbd>
+                    </button>
+                </div>
+            </div>
+
+            {isEmpty && (
+                <div className="rounded-[var(--radius-md)] border border-border bg-gradient-to-br from-brand-50/80 to-surface-0 dark:from-brand-950/40 dark:to-surface-800 p-10 text-center animate-fade-in shadow-card">
+                    <Rocket className="mx-auto h-10 w-10 text-brand-500 dark:text-brand-400 mb-3" />
+                    <h2 className="text-subtitle text-foreground">Bem-vindo ao Kalibrium!</h2>
+                    <p className="mt-1 text-sm text-surface-600 max-w-md mx-auto">
+                        Comece cadastrando seus clientes e criando sua primeira ordem de serviço.
+                    </p>
+                    <div className="mt-5 flex justify-center gap-3">
+                        {canViewCustomers && (
+                            <button
+                                onClick={() => navigate('/cadastros/clientes')}
+                                aria-label="Ir para cadastro de clientes"
+                                className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-surface-200 bg-surface-0 px-4 py-2.5 text-sm font-medium text-surface-700 hover:bg-surface-50 dark:hover:bg-surface-600 transition-colors shadow-sm"
+                            >
+                                <Users className="h-4 w-4" /> Cadastrar Cliente
+                            </button>
+                        )}
+                        {canCreateWorkOrder && (
+                            <button
+                                onClick={() => navigate('/os/nova')}
+                                aria-label="Criar primeira ordem de serviço"
+                                className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] prix-gradient px-4 py-2.5 text-sm font-medium text-white hover:brightness-110 transition-all shadow-sm"
+                            >
+                                <Plus className="h-4 w-4" /> Criar OS
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {isLoading ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)}
+                </div>
+            ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="sm:col-span-2 rounded-[var(--radius-lg)] border border-brand-200/40 dark:border-brand-500/15 bg-white dark:bg-[#111113] p-6 shadow-card animate-fade-in relative overflow-hidden">
+                        <div className="absolute inset-y-0 left-0 w-1 prix-gradient" />
+                        <div className="flex items-center justify-between mb-1.5 pl-4">
+                            <span className="text-label text-brand-600 dark:text-brand-400">Faturamento do Mês</span>
+                            <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] bg-brand-50 dark:bg-brand-500/10">
+                                <DollarSign className="h-4 w-4 text-brand-500 dark:text-brand-400" />
+                            </div>
+                        </div>
+                        <div className="flex items-end gap-3 pl-4">
+                            <p className="text-display-lg text-surface-900 dark:text-white">
+                                {fmtBRL(s.revenue_month ?? 0)}
+                            </p>
+                            <TrendBadge
+                                current={s.revenue_month ?? 0}
+                                previous={s.prev_revenue_month ?? s.revenue_month ?? 0}
+                            />
+                        </div>
+                        <div className="mt-3 flex items-center gap-4 text-xs text-surface-500 dark:text-surface-400 pl-4">
+                            <span>Receita: <strong className="text-success">{fmtBRL(s.revenue_month ?? 0)}</strong></span>
+                            <span>Despesa: <strong className="text-danger">{fmtBRL(s.expenses_month ?? 0)}</strong></span>
+                        </div>
+                    </div>
+
+                    <div className="rounded-[var(--radius-lg)] border border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#111113] p-6 shadow-card animate-fade-in stagger-1">
+                        <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-label text-surface-500">OS Abertas</span>
+                            <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] bg-surface-50 dark:bg-white/[0.04]">
+                                <FileText className="h-4 w-4 text-surface-400" />
+                            </div>
+                        </div>
+                        <div className="flex items-end gap-2">
+                            <p className="text-display text-foreground">{s.open_os ?? 0}</p>
+                            <TrendBadge current={s.open_os ?? 0} previous={s.prev_open_os ?? s.open_os ?? 0} invert />
+                        </div>
+                        <div className="mt-3 flex gap-0.5">
+                            <div className="h-1 flex-[3] rounded-l-full bg-emerald-400/60" />
+                            <div className="h-1 flex-[1] bg-amber-400/60" />
+                            <div className="h-1 flex-[1] rounded-r-full bg-red-400/60" />
+                        </div>
+                    </div>
+
+                    <div className="rounded-[var(--radius-lg)] border border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#111113] p-6 shadow-card animate-fade-in stagger-2">
+                        <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-label text-surface-500">Concluídas</span>
+                            <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] bg-emerald-50 dark:bg-emerald-500/8">
+                                <CheckCircle2 className="h-4 w-4 text-success" />
+                            </div>
+                        </div>
+                        <div className="flex items-end gap-2">
+                            <p className="text-display text-foreground">{s.completed_month ?? 0}</p>
+                            <TrendBadge current={s.completed_month ?? 0} previous={s.prev_completed_month ?? s.completed_month ?? 0} />
+                        </div>
+                        <p className="mt-2 text-xs text-surface-400">este mês</p>
+                    </div>
+                </div>
+            )}
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                    { label: 'Em Andamento', value: s.in_progress_os ?? 0, icon: Clock, color: 'text-amber-500' },
+                    { label: 'Comissões Pendentes', value: fmtBRL(s.pending_commissions ?? 0), icon: Wallet, color: 'text-sky-500' },
+                    { label: 'Estoque Baixo', value: s.stock_low ?? 0, icon: Package, color: 'text-amber-500' },
+                    { label: 'SLA Estourado', value: (s.sla_response_breached ?? 0) + (s.sla_resolution_breached ?? 0), icon: AlertTriangle, color: 'text-red-500' },
+                ].map((stat, i) => (
+                    <div key={stat.label} className={cn(
+                        'flex items-center gap-3 rounded-[var(--radius-lg)] border border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#111113] px-4 py-3.5 animate-fade-in',
+                        `stagger-${i + 3}`
+                    )}>
+                        <stat.icon className={cn('h-4 w-4 shrink-0', stat.color)} />
+                        <div className="min-w-0 flex-1">
+                            <p className="text-xs text-surface-400 truncate">{stat.label}</p>
+                            <p className="text-sm font-semibold text-foreground tabular-nums">{isLoading ? '—' : stat.value}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* ─── Widgets de Alertas + NPS ─── */}
+            <div className="grid gap-4 lg:grid-cols-2">
+                {/* Alertas Ativos */}
+                {alertsRes && (
+                    <div className="rounded-[var(--radius-lg)] border border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#111113] shadow-card animate-fade-in">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-black/[0.04] dark:border-white/[0.06]">
+                            <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                                <Bell className="h-4 w-4 text-amber-500" /> Alertas do Sistema
+                            </h3>
+                            {canViewAlerts && (
+                                <button onClick={() => navigate('/alertas')} aria-label="Ver todos os alertas" className="text-xs text-brand-600 hover:underline">
+                                    Ver todos
+                                </button>
+                            )}
+                        </div>
+                        <div className="p-4">
+                            <div className="grid grid-cols-3 gap-3 text-center">
+                                <div className="rounded-lg bg-red-50 dark:bg-red-950/40 p-3">
+                                    <div className="text-xl font-bold text-red-600 dark:text-red-400">{alertsRes.critical ?? 0}</div>
+                                    <div className="text-xs text-red-500 dark:text-red-400">Críticos</div>
+                                </div>
+                                <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 p-3">
+                                    <div className="text-xl font-bold text-amber-600 dark:text-amber-400">{alertsRes.high ?? 0}</div>
+                                    <div className="text-xs text-amber-500 dark:text-amber-400">Alta</div>
+                                </div>
+                                <div className="rounded-lg bg-blue-50 dark:bg-blue-950/40 p-3">
+                                    <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{alertsRes.total_active ?? 0}</div>
+                                    <div className="text-xs text-blue-500 dark:text-blue-400">Total Ativos</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* NPS Score */}
+                {npsRes && (
+                    <div className="rounded-[var(--radius-lg)] border border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#111113] shadow-card animate-fade-in">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-black/[0.04] dark:border-white/[0.06]">
+                            <h3 className="flex items-center gap-2 text-sm font-semibold text-surface-900">
+                                <Star className="h-4 w-4 text-amber-400" /> Satisfação do Cliente
+                            </h3>
+                        </div>
+                        <div className="p-4">
+                            <div className="grid grid-cols-3 gap-3 text-center">
+                                <div className="rounded-lg bg-surface-50 dark:bg-white/[0.04] p-3">
+                                    <div className="text-xl font-bold text-foreground">{npsRes.nps_score ?? '—'}</div>
+                                    <div className="text-xs text-surface-500">NPS Score</div>
+                                </div>
+                                <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 p-3">
+                                    <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{npsRes.promoters ?? 0}%</div>
+                                    <div className="text-xs text-emerald-500 dark:text-emerald-400">Promotores</div>
+                                </div>
+                                <div className="rounded-lg bg-surface-50 dark:bg-white/[0.04] p-3">
+                                    <div className="text-xl font-bold text-foreground">{npsRes.total_responses ?? 0}</div>
+                                    <div className="text-xs text-surface-500">Respostas</div>
+                                </div>
+                            </div>
+                            {npsRes.avg_rating && (
+                                <div className="mt-3 flex items-center justify-center gap-1">
+                                    {[1, 2, 3, 4, 5].map(i => (
+                                        <Star key={i} className={cn(
+                                            'h-4 w-4',
+                                            i <= Math.round(npsRes.avg_rating)
+                                                ? 'fill-amber-400 text-amber-400'
+                                                : 'text-surface-200 dark:text-surface-600'
+                                        )} />
+                                    ))}
+                                    <span className="ml-1 text-sm font-semibold text-surface-700 dark:text-surface-300">
+                                        {Number(npsRes.avg_rating).toFixed(1)}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* ─── HR Widgets ─── */}
+            {canViewHrDashboard && hrWidgetsRes && (
+                <div className="space-y-3 animate-fade-in">
+                    <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                        <Users className="h-4 w-4 text-brand-500" /> Recursos Humanos
+                    </h3>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        {[
+                            { label: 'Colaboradores no Ponto', value: hrWidgetsRes.employees_clocked_in ?? 0, icon: Clock, color: 'text-emerald-500' },
+                            { label: 'Ajustes Pendentes', value: hrWidgetsRes.pending_adjustments ?? 0, icon: AlertCircle, color: 'text-amber-500' },
+                            { label: 'Licenças Pendentes', value: hrWidgetsRes.pending_leaves ?? 0, icon: FileText, color: 'text-sky-500' },
+                            { label: 'Documentos Vencendo', value: hrWidgetsRes.expiring_documents_30d ?? 0, icon: AlertTriangle, color: 'text-red-500' },
+                        ].map((stat) => (
+                            <div key={stat.label} className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#111113] px-4 py-3.5">
+                                <stat.icon className={cn('h-4 w-4 shrink-0', stat.color)} />
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-xs text-surface-400 truncate">{stat.label}</p>
+                                    <p className="text-sm font-semibold text-foreground tabular-nums">{stat.value}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {isLoading ? (
+                <div className="grid gap-4 lg:grid-cols-3">
+                    {Array.from({ length: 3 }).map((_, i) => <ChartSkeleton key={i} />)}
+                </div>
+            ) : (
+                <div className="grid gap-4 lg:grid-cols-3">
+                    <div className="rounded-[var(--radius-lg)] border border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#111113] shadow-card animate-fade-in">
+                        <div className="px-6 py-4 border-b border-black/[0.04] dark:border-white/[0.06]">
+                            <h3 className="text-sm font-bold text-foreground dark:text-white">Faturamento Mensal</h3>
+                        </div>
+                        <div className="p-6">
+                            {(() => {
+                                const monthly: { month: string; total: number }[] = s.monthly_revenue ?? []
+                                const max = Math.max(...(monthly || []).map(m => m.total), 1)
+                                return monthly.length > 0 ? (
+                                    <div className="flex items-end gap-2 h-36">
+                                        {(monthly || []).map((m, i) => (
+                                            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                                                <span className="text-xs text-surface-400 font-medium tabular-nums">
+                                                    {fmtBRL(m.total).replace('R$\u00a0', '')}
+                                                </span>
+                                                <div
+                                                    className="w-full rounded-t bg-brand-500/80 transition-all duration-700 ease-out"
+                                                    style={{ height: `${Math.max((m.total / max) * 100, 4)}%`, minHeight: 4 }}
+                                                />
+                                                <span className="text-xs text-surface-400">{m.month}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-center text-sm text-surface-400 py-8">Sem dados</p>
+                                )
+                            })()}
+                        </div>
+                    </div>
+
+                    <div className="rounded-[var(--radius-lg)] border border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#111113] shadow-card animate-fade-in stagger-1">
+                        <div className="px-6 py-4 border-b border-black/[0.04] dark:border-white/[0.06]">
+                            <h3 className="text-sm font-bold text-foreground dark:text-white">OS por Status</h3>
+                        </div>
+                        <div className="p-6">
+                            {(() => {
+                                const data = [
+                                    { key: 'open', label: 'Abertas', value: s.open_os ?? 0, color: 'oklch(0.55 0.18 245)' },
+                                    { key: 'in_progress', label: 'Em Andamento', value: s.in_progress_os ?? 0, color: 'oklch(0.75 0.15 75)' },
+                                    { key: 'completed', label: 'Concluídas', value: s.completed_month ?? 0, color: 'oklch(0.60 0.17 145)' },
+                                ]
+                                const total = data.reduce((a, d) => a + d.value, 0) || 1
+                                let offset = 0
+                                return (
+                                    <div className="flex items-center gap-6">
+                                        <svg viewBox="0 0 36 36" className="h-24 w-24 flex-shrink-0">
+                                            {(data || []).map(d => {
+                                                const pct = (d.value / total) * 100
+                                                const dash = `${pct} ${100 - pct}`
+                                                const el = (
+                                                    <circle key={d.key} cx="18" cy="18" r="15.9155" fill="transparent"
+                                                        stroke={d.color} strokeWidth="3"
+                                                        strokeDasharray={dash} strokeDashoffset={-offset}
+                                                        className="transition-all duration-700" />
+                                                )
+                                                offset += pct
+                                                return el
+                                            })}
+                                            <text x="18" y="19" textAnchor="middle" className="text-[5px] font-bold fill-surface-900 dark:fill-surface-50">{total}</text>
+                                            <text x="18" y="23" textAnchor="middle" className="text-[3px] fill-surface-400 dark:fill-surface-500">total</text>
+                                        </svg>
+                                        <div className="space-y-2">
+                                            {(data || []).map(d => (
+                                                <div key={d.key} className="flex items-center gap-2">
+                                                    <div className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: d.color }} />
+                                                    <span className="text-xs text-surface-500">{d.label}</span>
+                                                    <span className="text-xs font-semibold text-foreground tabular-nums">{d.value}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )
+                            })()}
+                        </div>
+                    </div>
+
+                    <div className="rounded-[var(--radius-lg)] border border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#111113] shadow-card animate-fade-in stagger-2">
+                        <div className="px-6 py-4 border-b border-black/[0.04] dark:border-white/[0.06]">
+                            <h3 className="text-sm font-bold text-foreground dark:text-white">Receita vs Despesa</h3>
+                        </div>
+                        <div className="p-6">
+                            {(() => {
+                                const rev = s.revenue_month ?? 0
+                                const exp = s.expenses_month ?? 0
+                                const max = Math.max(rev, exp, 1)
+                                const profit = rev - exp
+                                return (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-xs text-surface-500 w-16">Receita</span>
+                                            <div className="flex-1 h-5 bg-surface-100 rounded overflow-hidden">
+                                                <div className="h-full bg-emerald-500/80 rounded transition-all duration-700"
+                                                    style={{ width: `${(rev / max) * 100}%` }} />
+                                            </div>
+                                            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 w-24 text-right tabular-nums">{fmtBRL(rev)}</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-xs text-surface-500 w-16">Despesa</span>
+                                            <div className="flex-1 h-5 bg-surface-100 rounded overflow-hidden">
+                                                <div className="h-full bg-red-500/70 rounded transition-all duration-700"
+                                                    style={{ width: `${(exp / max) * 100}%` }} />
+                                            </div>
+                                            <span className="text-xs font-semibold text-red-600 dark:text-red-400 w-24 text-right tabular-nums">{fmtBRL(exp)}</span>
+                                        </div>
+                                        <div className="border-t border-subtle pt-3 flex items-center justify-between">
+                                            <span className="text-xs font-medium text-surface-500">Lucro Líquido</span>
+                                            <span className={cn('text-base font-bold tabular-nums', profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400')}>
+                                                {fmtBRL(profit)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )
+                            })()}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="grid gap-4 sm:grid-cols-3">
+                <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#111113] p-4 shadow-card">
+                    <TrendingUp className="h-4 w-4 shrink-0 text-emerald-400" />
+                    <div className="min-w-0 flex-1">
+                        <p className="text-xs text-surface-400">A Receber (pendente)</p>
+                        <p className="text-sm font-semibold text-foreground tabular-nums">{isLoading ? '—' : fmtBRL(s.receivables_pending ?? 0)}</p>
+                    </div>
+                    {(s.receivables_overdue ?? 0) > 0 && (
+                        <Badge variant="danger" size="xs">{fmtBRL(s.receivables_overdue)} vencido</Badge>
+                    )}
+                </div>
+                <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#111113] p-4 shadow-card">
+                    <Receipt className="h-4 w-4 shrink-0 text-red-400" />
+                    <div className="min-w-0 flex-1">
+                        <p className="text-xs text-surface-400">A Pagar (pendente)</p>
+                        <p className="text-sm font-semibold text-foreground tabular-nums">{isLoading ? '—' : fmtBRL(s.payables_pending ?? 0)}</p>
+                    </div>
+                    {(s.payables_overdue ?? 0) > 0 && (
+                        <Badge variant="danger" size="xs">{fmtBRL(s.payables_overdue)} vencido</Badge>
+                    )}
+                </div>
+                <div className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#111113] p-4 shadow-card">
+                    <Clock className="h-4 w-4 shrink-0 text-brand-400" />
+                    <div className="min-w-0 flex-1">
+                        <p className="text-xs text-surface-400">SLA — Tempo Médio OS</p>
+                        <p className="text-sm font-semibold text-foreground tabular-nums">{isLoading ? '—' : `${s.avg_completion_hours ?? 0}h`}</p>
+                    </div>
+                </div>
+            </div>
+
+            {(eqOverdue > 0 || eqDue7 > 0 || eqAlerts.length > 0) && (
+                <div className="rounded-xl border border-amber-200/50 dark:border-amber-700/40 bg-amber-50/30 dark:bg-amber-950/30 shadow-card animate-fade-in">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-amber-200/30 dark:border-amber-700/30">
+                        <div className="flex items-center gap-2">
+                            <Scale size={14} className="text-amber-600 dark:text-amber-400" />
+                            <h2 className="text-sm font-semibold text-foreground">Alertas de Calibração</h2>
+                        </div>
+                        <div className="flex gap-2">
+                            {eqOverdue > 0 && <Badge variant="danger" dot>{eqOverdue} vencido{eqOverdue > 1 ? 's' : ''}</Badge>}
+                            {eqDue7 > 0 && <Badge variant="warning" dot>{eqDue7} vence em 7d</Badge>}
+                        </div>
+                    </div>
+                    <div className="divide-y divide-amber-200/20 dark:divide-amber-700/30">
+                        {(eqAlerts || []).map((eq: { id: number; code: string; brand: string; model: string; next_calibration_at: string; customer?: { name: string } }) => {
+                            const d = new Date(eq.next_calibration_at)
+                            const now = new Date()
+                            const diff = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+                            const isPast = diff < 0
+                            return (
+                                <div key={eq.id} className="flex items-center justify-between px-5 py-3">
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-mono text-xs font-medium text-brand-600 tabular-nums">{eq.code}</span>
+                                        <span className="text-sm text-surface-700 dark:text-surface-300">{eq.brand} {eq.model}</span>
+                                        {eq.customer && <span className="text-xs text-surface-400">· {eq.customer.name}</span>}
+                                    </div>
+                                    <Badge variant={isPast ? 'danger' : diff <= 7 ? 'warning' : 'info'}>
+                                        {isPast ? `Vencido ${Math.abs(diff)}d` : `${diff}d restantes`}
+                                    </Badge>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {Array.isArray(expiringWeights) && expiringWeights.length > 0 && (
+                <div className="rounded-xl border border-red-200/50 dark:border-red-700/40 bg-red-50/30 dark:bg-red-950/30 shadow-card animate-fade-in">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-red-200/30 dark:border-red-700/30">
+                        <div className="flex items-center gap-2">
+                            <AlertTriangle size={14} className="text-red-600 dark:text-red-400" />
+                            <h2 className="text-sm font-semibold text-foreground">Padrões de Referência com Certificado Vencendo</h2>
+                        </div>
+                        <button onClick={() => navigate('/equipamentos/pesos-padrao')} className="text-xs text-brand-600 hover:underline">
+                            Ver todos
+                        </button>
+                    </div>
+                    <div className="divide-y divide-red-200/20 dark:divide-red-700/30">
+                        {expiringWeights.slice(0, 5).map((w: { id: number; code: string; nominal_value: string; unit: string; precision_class: string; certificate_expiry: string; laboratory: string }) => {
+                            const now = new Date().getTime()
+                            const d = new Date(w.certificate_expiry)
+                            const diff = Math.ceil((d.getTime() - now) / (1000 * 60 * 60 * 24))
+                            const isPast = diff < 0
+                            return (
+                                <div key={w.id} className="flex items-center justify-between px-5 py-3">
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-mono text-xs font-medium text-brand-600 tabular-nums">{w.code}</span>
+                                        <span className="text-sm text-surface-700 dark:text-surface-300">{w.nominal_value} {w.unit} — Classe {w.precision_class}</span>
+                                        {w.laboratory && <span className="text-xs text-surface-400">· {w.laboratory}</span>}
+                                    </div>
+                                    <Badge variant={isPast ? 'danger' : diff <= 30 ? 'warning' : 'info'}>
+                                        {isPast ? `Vencido ${Math.abs(diff)}d` : `${diff}d restantes`}
+                                    </Badge>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+            )}
+
+            <div className="grid gap-4 lg:grid-cols-3">
+                <div className="lg:col-span-2 rounded-[var(--radius-lg)] border border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#111113] shadow-card animate-fade-in">
+                    <div className="flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.06] px-6 py-4">
+                        <h2 className="text-sm font-bold text-foreground dark:text-white">Últimas Ordens de Serviço</h2>
+                    </div>
+                    <div className="divide-y divide-surface-100 dark:divide-white/[0.04]">
+                        {isLoading ? (
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <div key={i} className="flex items-center gap-4 px-6 py-3.5 animate-pulse">
+                                    <div className="h-4 w-16 rounded bg-surface-200 dark:bg-white/[0.06]" />
+                                    <div className="h-4 w-32 rounded bg-surface-100 dark:bg-white/[0.04]" />
+                                    <div className="flex-1" />
+                                    <div className="h-5 w-20 rounded-full bg-surface-100 dark:bg-white/[0.04]" />
+                                </div>
+                            ))
+                        ) : recentOs.length === 0 ? (
+                            <EmptyState icon={AlertCircle} title="Nenhuma OS encontrada" compact />
+                        ) : (recentOs || []).map((os: { id: number; number: string; status: string; total?: string; customer?: { name: string }; assignee?: { name: string } }) => {
+                            const st = getStatusEntry(workOrderStatus, os.status)
+                            const rowContent = (
+                                <>
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <span className="font-mono text-xs font-semibold text-brand-600 dark:text-brand-400 tabular-nums">{os.number}</span>
+                                        <span className="text-sm text-surface-700 dark:text-surface-300 truncate max-w-[200px]">{os.customer?.name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 shrink-0">
+                                        <span className="text-xs text-surface-400 hidden sm:block">{os.assignee?.name}</span>
+                                        <Badge variant={st.variant}>{st.label}</Badge>
+                                        <span className="text-xs font-semibold text-foreground tabular-nums">{fmtBRL(parseFloat(os.total ?? '0'))}</span>
+                                    </div>
+                                </>
+                            )
+
+                            return canViewWorkOrders ? (
+                                <button
+                                    key={os.id}
+                                    type="button"
+                                    aria-label={`Abrir ordem de serviço ${os.number} de ${os.customer?.name ?? 'cliente sem nome'}`}
+                                    className="flex w-full items-center justify-between px-6 py-3.5 text-left transition-colors hover:bg-surface-50 dark:hover:bg-white/[0.02]"
+                                    onClick={() => handleRecentOrderNavigation(os.id)}
+                                    onKeyDown={(event) => handleRecentOrderKeyDown(event, os.id)}
+                                >
+                                    {rowContent}
+                                </button>
+                            ) : (
+                                <div
+                                    key={os.id}
+                                    className="flex items-center justify-between px-6 py-3.5"
+                                >
+                                    {rowContent}
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+
+                <div className="rounded-[var(--radius-lg)] border border-black/[0.04] dark:border-white/[0.06] bg-white dark:bg-[#111113] shadow-card animate-fade-in stagger-1">
+                    <div className="border-b border-black/[0.04] dark:border-white/[0.06] px-6 py-4">
+                        <h2 className="text-sm font-bold text-foreground dark:text-white">Top Técnicos (mês)</h2>
+                    </div>
+                    <div className="divide-y divide-subtle">
+                        {isLoading ? (
+                            Array.from({ length: 3 }).map((_, i) => (
+                                <div key={i} className="flex items-center gap-3 px-5 py-3 animate-pulse">
+                                    <div className="h-5 w-5 rounded bg-surface-200" />
+                                    <div className="h-4 w-24 rounded bg-surface-100" />
+                                </div>
+                            ))
+                        ) : topTechs.length === 0 ? (
+                            <EmptyState title="Sem dados" compact />
+                        ) : (topTechs || []).map((t: { assigned_to?: number; assignee_id?: number; assignee?: { name: string }; assignee_name?: string; count: number; os_count?: number; total_revenue?: number }, i: number) => (
+                            <div key={t.assigned_to ?? t.assignee_id ?? i} className="flex items-center justify-between px-5 py-3">
+                                <div className="flex items-center gap-2.5">
+                                    <span className={cn('flex h-5 w-5 items-center justify-center rounded text-xs font-bold',
+                                        i === 0 ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700' : 'bg-surface-100 text-surface-500')}>
+                                        {i + 1}
+                                    </span>
+                                    <span className="text-sm font-medium text-surface-800 dark:text-surface-200">{t.assignee?.name ?? t.assignee_name}</span>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm font-semibold text-foreground tabular-nums">{t.count ?? t.os_count ?? 0} OS</p>
+                                    <p className="text-xs text-surface-400 tabular-nums">{fmtBRL(t.total_revenue ?? 0)}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}

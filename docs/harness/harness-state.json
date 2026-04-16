@@ -1,0 +1,348 @@
+{
+  "schema_version": 1,
+  "protocol_version": "0.1.0",
+  "dependency_matrix_version": "0.1.0",
+  "updated_at": "2026-04-16T16:39:50.422Z",
+  "last_updated_by": "harness-cycle",
+  "active_layer": null,
+  "active_cycle": null,
+  "active_run_id": null,
+  "active_audit_mode": null,
+  "target_scope": {
+    "type": "layer",
+    "paths": [],
+    "finding_ids": [],
+    "context": null
+  },
+  "current_phase": "idle",
+  "cycle_state": "idle",
+  "escalation_required": false,
+  "blocking_reason": null,
+  "reports_root": "docs/harness/runs",
+  "lock": {
+    "active": false,
+    "path": null,
+    "run_id": null,
+    "created_at": null,
+    "owner": null,
+    "pid": null
+  },
+  "deployment_authorization": {
+    "authorized": false,
+    "run_id": null,
+    "layer": null,
+    "cycle": null,
+    "authorized_by": null,
+    "authorized_at": null,
+    "authorized_head_commit": null,
+    "target_environment": null,
+    "target_commit": null,
+    "deploy_command": null,
+    "allow_migrations": false,
+    "migration_diff_checked": false,
+    "requires_backup": true,
+    "rollback_command": null,
+    "required_health_checks": []
+  },
+  "audit_quorum": {
+    "run_id": "20260416T023339Z-layer-7-cycle-2",
+    "executed_auditors": [
+      {
+        "auditor": "architecture-dependencies",
+        "agent_id": "auditor-architecture-r9-gpt54",
+        "artifact": "docs/harness/runs/20260416T023339Z-layer-7-cycle-2/auditor-architecture-dependencies.json"
+      },
+      {
+        "auditor": "security-tenant",
+        "agent_id": "auditor-security-r9-gpt54",
+        "artifact": "docs/harness/runs/20260416T023339Z-layer-7-cycle-2/auditor-security-tenant.json"
+      },
+      {
+        "auditor": "code-quality",
+        "agent_id": "auditor-code-quality-r9-gpt54",
+        "artifact": "docs/harness/runs/20260416T023339Z-layer-7-cycle-2/auditor-code-quality.json"
+      },
+      {
+        "auditor": "tests-verification",
+        "agent_id": "auditor-tests-r9-gpt54",
+        "artifact": "docs/harness/runs/20260416T023339Z-layer-7-cycle-2/auditor-tests-verification.json"
+      },
+      {
+        "auditor": "ops-provenance",
+        "agent_id": "auditor-ops-r9-gpt54",
+        "artifact": "docs/harness/runs/20260416T023339Z-layer-7-cycle-2/auditor-ops-provenance.json"
+      }
+    ],
+    "distinct_agent_ids": [
+      "auditor-architecture-r9-gpt54",
+      "auditor-code-quality-r9-gpt54",
+      "auditor-ops-r9-gpt54",
+      "auditor-security-r9-gpt54",
+      "auditor-tests-r9-gpt54"
+    ],
+    "quorum_met": true,
+    "commands_log_present": true,
+    "commands_log_hash": "sha256:3b99ba8b8dbd8e72ac459c8c98396a0cef3650f855ee4f57c667dcb0a9af3828",
+    "impact_manifest_hash": "sha256:92b3bd048c3e4eabef861d8405f1bcbcf93ffde2ed95f701b79e4fa98b061e41"
+  },
+  "git": {
+    "base_commit": "58b197502453fd38f3b06a4781cad12d73d4430e",
+    "head_commit": "58b197502453fd38f3b06a4781cad12d73d4430e",
+    "approved_commit": null,
+    "working_tree_clean_at_start": true,
+    "working_tree_clean_at_close": false,
+    "dirty_paths_at_start": []
+  },
+  "history_summary": [
+    {
+      "run_id": "20260414T194451Z-layer-0-cycle-1",
+      "layer": 0,
+      "cycle": 1,
+      "decision": "approved",
+      "report": "docs/harness/runs/20260414T194451Z-layer-0-cycle-1/report.md",
+      "reason": null
+    },
+    {
+      "run_id": "20260414T200319Z-layer-1-cycle-1",
+      "layer": 1,
+      "cycle": 1,
+      "decision": "approved",
+      "report": "docs/harness/runs/20260414T200319Z-layer-1-cycle-1/report.md",
+      "reason": null
+    },
+    {
+      "run_id": "20260414T210929Z-layer-0-cycle-2",
+      "layer": 0,
+      "cycle": 2,
+      "decision": "approved",
+      "report": "docs/harness/runs/20260414T210929Z-layer-0-cycle-2/report.md",
+      "reason": null
+    },
+    {
+      "run_id": "20260414T221547Z-layer-1-cycle-2",
+      "layer": 1,
+      "cycle": 2,
+      "decision": "approved",
+      "report": "docs/harness/runs/20260414T221547Z-layer-1-cycle-2/report.md",
+      "reason": null
+    },
+    {
+      "run_id": "20260414T230458Z-layer-2-cycle-1",
+      "layer": 2,
+      "cycle": 1,
+      "decision": "approved",
+      "report": "docs/harness/runs/20260414T230458Z-layer-2-cycle-1/report.md",
+      "reason": null
+    },
+    {
+      "run_id": "20260415T044626Z-layer-3-cycle-1",
+      "layer": 3,
+      "cycle": 1,
+      "decision": "approved",
+      "report": "docs/harness/runs/20260415T044626Z-layer-3-cycle-1/report.md",
+      "reason": null
+    },
+    {
+      "run_id": "20260415T141409Z-layer-4-cycle-1",
+      "layer": 4,
+      "cycle": 1,
+      "decision": "approved",
+      "report": "docs/harness/runs/20260415T141409Z-layer-4-cycle-1/report.md",
+      "reason": null
+    },
+    {
+      "run_id": "20260415T170552Z-layer-5-cycle-1",
+      "layer": 5,
+      "cycle": 1,
+      "decision": "approved",
+      "report": "docs/harness/runs/20260415T170552Z-layer-5-cycle-1/report.md",
+      "reason": null
+    },
+    {
+      "run_id": "20260415T204337Z-layer-6-cycle-1",
+      "layer": 6,
+      "cycle": 1,
+      "decision": "approved",
+      "report": "docs/harness/runs/20260415T204337Z-layer-6-cycle-1/report.md",
+      "reason": null
+    },
+    {
+      "run_id": "20260416T002323Z-layer-7-cycle-1",
+      "layer": 7,
+      "cycle": 1,
+      "decision": "approved",
+      "report": "docs/harness/runs/20260416T002323Z-layer-7-cycle-1/report.md",
+      "reason": null
+    },
+    {
+      "run_id": "20260416T023339Z-layer-7-cycle-2",
+      "layer": 7,
+      "cycle": 2,
+      "decision": "escalated",
+      "report": "docs/harness/runs/20260416T023339Z-layer-7-cycle-2/report.md",
+      "reason": "R10 escalated: deployment_authorization/waiver ausente, untracked remotos sem decisao formal e commands.log com metadados essenciais incompletos."
+    }
+  ],
+  "layers": {
+    "0": {
+      "status": "approved",
+      "last_cycle": 2,
+      "last_report": "docs/harness/runs/20260414T210929Z-layer-0-cycle-2/report.md",
+      "approved_report_provenance": {
+        "cycle": 2,
+        "report": "docs/harness/runs/20260414T210929Z-layer-0-cycle-2/report.md",
+        "base_commit": "eae0aa5cac55fc98a164721f3687c909c70a325c",
+        "head_commit": "b9e523a0dd6b1920fc9f056917fe5cc007af53f8",
+        "approved_commit": "b9e523a0dd6b1920fc9f056917fe5cc007af53f8",
+        "approved_at": "2026-04-14T21:42:10.852Z"
+      },
+      "depends_on": [],
+      "layer_dependencies_resolved": true,
+      "invalidated_by": null
+    },
+    "1": {
+      "status": "approved",
+      "last_cycle": 2,
+      "last_report": "docs/harness/runs/20260414T221547Z-layer-1-cycle-2/report.md",
+      "approved_report_provenance": {
+        "cycle": 2,
+        "report": "docs/harness/runs/20260414T221547Z-layer-1-cycle-2/report.md",
+        "base_commit": "23d1f5775a8337c08fa7bbe2023f047b37492df8",
+        "head_commit": "efc7c9778e2bc78acdfe3770ebaa2af824256057",
+        "approved_commit": "efc7c9778e2bc78acdfe3770ebaa2af824256057",
+        "approved_at": "2026-04-14T22:53:20.891Z"
+      },
+      "depends_on": [
+        0
+      ],
+      "layer_dependencies_resolved": true,
+      "invalidated_by": null
+    },
+    "2": {
+      "status": "approved",
+      "last_cycle": 1,
+      "last_report": "docs/harness/runs/20260414T230458Z-layer-2-cycle-1/report.md",
+      "approved_report_provenance": {
+        "cycle": 1,
+        "report": "docs/harness/runs/20260414T230458Z-layer-2-cycle-1/report.md",
+        "base_commit": "318fa9fd4e45652247f18c343b7f0711436362d9",
+        "head_commit": "8111f3d2d01a998c287959eeaba721e155a98f77",
+        "approved_commit": "8111f3d2d01a998c287959eeaba721e155a98f77",
+        "approved_at": "2026-04-15T04:28:22.449Z"
+      },
+      "depends_on": [
+        0,
+        1
+      ],
+      "layer_dependencies_resolved": true,
+      "invalidated_by": null
+    },
+    "3": {
+      "status": "approved",
+      "last_cycle": 1,
+      "last_report": "docs/harness/runs/20260415T044626Z-layer-3-cycle-1/report.md",
+      "approved_report_provenance": {
+        "cycle": 1,
+        "report": "docs/harness/runs/20260415T044626Z-layer-3-cycle-1/report.md",
+        "base_commit": "a41aff30e9a4167de344bf1f93ecf6254805dfce",
+        "head_commit": "3efa7620ffcaa808ae4d8590cd03cc8bd378e8a3",
+        "approved_commit": "3efa7620ffcaa808ae4d8590cd03cc8bd378e8a3",
+        "approved_at": "2026-04-15T12:46:39.765Z"
+      },
+      "depends_on": [
+        0,
+        2
+      ],
+      "layer_dependencies_resolved": true,
+      "invalidated_by": null
+    },
+    "4": {
+      "status": "approved",
+      "last_cycle": 1,
+      "last_report": "docs/harness/runs/20260415T141409Z-layer-4-cycle-1/report.md",
+      "approved_report_provenance": {
+        "cycle": 1,
+        "report": "docs/harness/runs/20260415T141409Z-layer-4-cycle-1/report.md",
+        "base_commit": "77800acd183a3439b15997ea206ed714b9005c24",
+        "head_commit": "7ef4a6883aec20beda46fb6e6a0a4cf04a0f30b3",
+        "approved_commit": "7ef4a6883aec20beda46fb6e6a0a4cf04a0f30b3",
+        "approved_at": "2026-04-15T16:54:17.514Z"
+      },
+      "depends_on": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "layer_dependencies_resolved": true,
+      "invalidated_by": null
+    },
+    "5": {
+      "status": "approved",
+      "last_cycle": 1,
+      "last_report": "docs/harness/runs/20260415T170552Z-layer-5-cycle-1/report.md",
+      "approved_report_provenance": {
+        "cycle": 1,
+        "report": "docs/harness/runs/20260415T170552Z-layer-5-cycle-1/report.md",
+        "base_commit": "c9325c5f388b30ee338b056b8a27dd565b26c0bf",
+        "head_commit": "45a087c9c663a62b18867291e56cefe5365d9ca9",
+        "approved_commit": "45a087c9c663a62b18867291e56cefe5365d9ca9",
+        "approved_at": "2026-04-15T18:35:42.706Z"
+      },
+      "depends_on": [
+        0,
+        2,
+        3
+      ],
+      "layer_dependencies_resolved": true,
+      "invalidated_by": null
+    },
+    "6": {
+      "status": "approved",
+      "last_cycle": 1,
+      "last_report": "docs/harness/runs/20260415T204337Z-layer-6-cycle-1/report.md",
+      "approved_report_provenance": {
+        "cycle": 1,
+        "report": "docs/harness/runs/20260415T204337Z-layer-6-cycle-1/report.md",
+        "base_commit": "ecf455eb1a49d1dee62c549316709ad1f3646dc7",
+        "head_commit": "c852fd9c9fbbbacb43892db9b6e701395499ee51",
+        "approved_commit": "c852fd9c9fbbbacb43892db9b6e701395499ee51",
+        "approved_at": "2026-04-16T00:01:45.654Z"
+      },
+      "depends_on": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "layer_dependencies_resolved": true,
+      "invalidated_by": null
+    },
+    "7": {
+      "status": "escalated",
+      "last_cycle": 2,
+      "last_report": "docs/harness/runs/20260416T023339Z-layer-7-cycle-2/report.md",
+      "approved_report_provenance": {
+        "cycle": 1,
+        "report": "docs/harness/runs/20260416T002323Z-layer-7-cycle-1/report.md",
+        "base_commit": "8b10a1b6dd8c7580ba092384ef943df13e42b010",
+        "head_commit": "31b9a1d93661c5f9234b5bfe3d296ce5a998a3ab",
+        "approved_commit": "31b9a1d93661c5f9234b5bfe3d296ce5a998a3ab",
+        "approved_at": "2026-04-16T02:01:08.145Z"
+      },
+      "depends_on": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "layer_dependencies_resolved": true,
+      "invalidated_by": "approved_invalidated: Auditoria consolidada das 7 camadas juntas solicitada pelo usuario em modo full-project"
+    }
+  }
+}

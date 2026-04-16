@@ -1,0 +1,340 @@
+import React, { useState } from 'react'
+import { toast } from 'sonner'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+    Zap, Plus, Trash2, Edit2, ToggleLeft, ToggleRight,
+    UserCheck, Flag, Clock, Bell, Save, X,
+} from 'lucide-react'
+import api from '@/lib/api'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Modal } from '@/components/ui/modal'
+import { Input } from '@/components/ui/input'
+import { useAuthStore } from '@/stores/auth-store'
+
+type LucideIcon = typeof UserCheck
+
+interface Rule {
+    id: number
+    nome: string
+    descricao: string
+    ativo: boolean
+    evento_trigger: string
+    tipo_item: string
+    status_trigger: string
+    prioridade_minima: string
+    acao_tipo: string
+    acao_config: Record<string, string | number> | null
+    responsavelUser_id: number | string | null
+    role_alvo: string
+    responsavel?: { name: string }
+}
+
+interface User {
+    id: number
+    name: string
+}
+
+const acaoLabels: Record<string, { label: string; icon: LucideIcon; color: string }> = {
+    auto_assign: { label: 'Auto-atribuir', icon: UserCheck, color: 'text-blue-600 bg-blue-50' },
+    set_priority: { label: 'Definir Prioridade', icon: Flag, color: 'text-amber-600 bg-amber-50' },
+    set_due: { label: 'Definir Prazo', icon: Clock, color: 'text-emerald-600 bg-emerald-50' },
+    notify: { label: 'Notificar', icon: Bell, color: 'text-emerald-600 bg-emerald-50' },
+}
+
+const emptyForm = {
+    nome: '', descricao: '', ativo: true,
+    evento_trigger: '', tipo_item: '', status_trigger: '', prioridade_minima: '',
+    acao_tipo: 'auto_assign',
+    acao_config: {} as Record<string, string | number>,
+    responsavelUser_id: '' as string | number, role_alvo: '',
+}
+
+export function AgendaRulesPage() {
+    const { hasPermission } = useAuthStore()
+
+    const qc = useQueryClient()
+    const [showForm, setShowForm] = useState(false)
+    const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+    const [editingId, setEditingId] = useState<number | null>(null)
+    const [form, setForm] = useState({ ...emptyForm })
+
+    const { data: rulesRes, isLoading, isError } = useQuery({
+        queryKey: ['central-rules'],
+        queryFn: () => api.get('/agenda/rules'),
+    })
+    const rules: Rule[] = rulesRes?.data?.data ?? []
+
+    const { data: usersRes } = useQuery({
+        queryKey: ['users-central-rules'],
+        queryFn: () => api.get('/users', { params: { per_page: 100 } }),
+    })
+    const users: User[] = usersRes?.data?.data ?? []
+
+    const saveMut = useMutation({
+        mutationFn: () => {
+            const payload = {
+                ...form,
+                responsavelUser_id: form.responsavelUser_id || null,
+                acao_config: Object.keys(form.acao_config).length > 0 ? form.acao_config : null,
+            }
+            return editingId
+                ? api.patch(`/agenda/rules/${editingId}`, payload)
+                : api.post('/agenda/rules', payload)
+        },
+        onSuccess: () => {
+            toast.success('Operação realizada com sucesso')
+            qc.invalidateQueries({ queryKey: ['central-rules'] })
+            resetForm()
+        },
+    })
+
+    const deleteMut = useMutation({
+        mutationFn: (id: number) => api.delete(`/agenda/rules/${id}`),
+        onSuccess: () => {
+            toast.success('Operação realizada com sucesso')
+            qc.invalidateQueries({ queryKey: ['central-rules'] })
+        },
+    })
+
+    const toggleMut = useMutation({
+        mutationFn: ({ id, ativo }: { id: number; ativo: boolean }) =>
+            api.patch(`/agenda/rules/${id}`, { ativo }),
+        onSuccess: () => {
+            toast.success('Operação realizada com sucesso')
+            qc.invalidateQueries({ queryKey: ['central-rules'] })
+        },
+    })
+
+    const resetForm = () => {
+        setForm({ ...emptyForm })
+        setEditingId(null)
+        setShowForm(false)
+    }
+
+    const openEdit = (rule: Rule) => {
+        setForm({
+            nome: rule.nome ?? '',
+            descricao: rule.descricao ?? '',
+            ativo: rule.ativo ?? true,
+            evento_trigger: rule.evento_trigger ?? '',
+            tipo_item: rule.tipo_item ?? '',
+            status_trigger: rule.status_trigger ?? '',
+            prioridade_minima: rule.prioridade_minima ?? '',
+            acao_tipo: rule.acao_tipo ?? 'auto_assign',
+            acao_config: rule.acao_config ?? {},
+            responsavelUser_id: rule.responsavelUser_id ?? '',
+            role_alvo: rule.role_alvo ?? '',
+        })
+        setEditingId(rule.id)
+        setShowForm(true)
+    }
+
+    const setF = (key: string, val: string | boolean | Record<string, string | number>) => setForm(f => ({ ...f, [key]: val }))
+
+    return (
+        <div className="space-y-5">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-lg font-semibold text-surface-900 tracking-tight">Regras de Automação</h1>
+                    <p className="mt-0.5 text-[13px] text-surface-500">Configure ações automáticas para itens da Central</p>
+                </div>
+                <Button icon={<Plus className="h-4 w-4" />} onClick={() => { resetForm(); setShowForm(true) }}>
+                    Nova Regra
+                </Button>
+            </div>
+
+            {/* Rules list */}
+            {isLoading ? (
+                <div className="flex items-center justify-center py-16">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
+                </div>
+            ) : isError ? (
+                <div className="rounded-xl border border-default bg-surface-0 py-16 text-center">
+                    <Zap className="mx-auto h-12 w-12 text-red-300" />
+                    <p className="mt-3 text-[13px] font-medium text-red-600">Erro ao carregar regras</p>
+                    <p className="text-xs text-surface-400 mt-1">Tente novamente mais tarde</p>
+                </div>
+            ) : rules.length === 0 ? (
+                <div className="rounded-xl border border-default bg-surface-0 py-16 text-center">
+                    <Zap className="mx-auto h-12 w-12 text-surface-300" />
+                    <p className="mt-3 text-[13px] text-surface-500">Nenhuma regra de automação criada</p>
+                    <p className="text-xs text-surface-400 mt-1">Clique em "Nova Regra" para começar</p>
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {(rules || []).map((rule: Rule) => {
+                        const acao = acaoLabels[rule.acao_tipo] ?? acaoLabels.auto_assign
+                        const AcaoIcon = acao.icon
+                        return (
+                            <div key={rule.id}
+                                className={`rounded-xl border bg-surface-0 p-4 shadow-card transition-all hover:shadow-md ${rule.ativo ? 'border-surface-200' : 'border-surface-100 opacity-60'}`}>
+                                <div className="flex items-center gap-4">
+                                    {/* Toggle */}
+                                    <button onClick={() => toggleMut.mutate({ id: rule.id, ativo: !rule.ativo })}
+                                        className="text-surface-400 hover:text-brand-600 transition-colors" title={rule.ativo ? 'Desativar' : 'Ativar'}>
+                                        {rule.ativo
+                                            ? <ToggleRight className="h-6 w-6 text-brand-500" />
+                                            : <ToggleLeft className="h-6 w-6" />}
+                                    </button>
+
+                                    {/* Action icon */}
+                                    <div className={`rounded-lg p-2 ${acao.color}`}>
+                                        <AcaoIcon className="h-4 w-4" />
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="text-sm font-semibold text-surface-900">{rule.nome}</h3>
+                                            <Badge variant={rule.ativo ? 'success' : 'default'}>
+                                                {rule.ativo ? 'Ativa' : 'Inativa'}
+                                            </Badge>
+                                        </div>
+                                        <p className="text-xs text-surface-500 mt-0.5">
+                                            {acao.label}
+                                            {rule.tipo_item && <> • Tipo: <span className="font-medium">{rule.tipo_item}</span></>}
+                                            {rule.prioridade_minima && <> • Prioridade mín: <span className="font-medium">{rule.prioridade_minima}</span></>}
+                                            {rule.responsavel?.name && <> → <span className="font-medium">{rule.responsavel.name}</span></>}
+                                            {rule.role_alvo && <> → Role: <span className="font-medium">{rule.role_alvo}</span></>}
+                                        </p>
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div className="flex items-center gap-1">
+                                        <button onClick={() => openEdit(rule)}
+                                            className="rounded p-1.5 text-surface-400 hover:bg-surface-100 hover:text-surface-700 transition-colors">
+                                            <Edit2 className="h-4 w-4" />
+                                        </button>
+                                        <button onClick={() => setConfirmDeleteId(rule.id)}
+                                            className="rounded p-1.5 text-surface-400 hover:bg-red-50 hover:text-red-600 transition-colors">
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            )}
+
+            {/* â”€â”€ Modal Criar/Editar â”€â”€ */}
+            <Modal open={showForm} onOpenChange={(v) => { if (!v) resetForm() }}
+                title={editingId ? 'Editar Regra' : 'Nova Regra de Automação'}>
+                <div className="space-y-4">
+                    <Input label="Nome da Regra" value={form.nome}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setF('nome', e.target.value)} placeholder="Ex: Auto-atribuir OS urgentes" />
+
+                    <Input label="Descrição" value={form.descricao}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setF('descricao', e.target.value)} placeholder="Opcional" />
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-[13px] font-medium text-surface-700">Tipo de Ação</label>
+                            <select value={form.acao_tipo} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setF('acao_tipo', e.target.value)}
+                                className="mt-1 w-full rounded-lg border border-surface-300 px-3 py-2 text-sm">
+                                <option value="auto_assign">Auto-atribuir</option>
+                                <option value="set_priority">Definir Prioridade</option>
+                                <option value="set_due">Definir Prazo</option>
+                                <option value="notify">Notificar</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-[13px] font-medium text-surface-700">Tipo de Item</label>
+                            <select value={form.tipo_item} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setF('tipo_item', e.target.value)}
+                                className="mt-1 w-full rounded-lg border border-surface-300 px-3 py-2 text-sm">
+                                <option value="">Qualquer</option>
+                                <option value="os">OS</option>
+                                <option value="chamado">Chamado</option>
+                                <option value="orçamento">Orçamento</option>
+                                <option value="financeiro">Financeiro</option>
+                                <option value="calibração">Calibração</option>
+                                <option value="tarefa">Tarefa</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-[13px] font-medium text-surface-700">Prioridade Mínima</label>
+                            <select value={form.prioridade_minima} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setF('prioridade_minima', e.target.value)}
+                                className="mt-1 w-full rounded-lg border border-surface-300 px-3 py-2 text-sm">
+                                <option value="">Sem filtro</option>
+                                <option value="baixa">Baixa</option>
+                                <option value="media">Média</option>
+                                <option value="alta">Alta</option>
+                                <option value="urgente">Urgente</option>
+                            </select>
+                        </div>
+                        <Input label="Evento Trigger" value={form.evento_trigger}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setF('evento_trigger', e.target.value)} placeholder="Ex: WorkOrderCreated" />
+                    </div>
+
+                    {/* Ação-specific config */}
+                    {form.acao_tipo === 'auto_assign' && (
+                        <div className="grid grid-cols-2 gap-4 rounded-lg bg-blue-50/50 p-3">
+                            <div>
+                                <label className="text-[13px] font-medium text-surface-700">Atribuir para</label>
+                                <select value={form.responsavelUser_id}
+                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setF('responsavelUser_id', e.target.value || '')}
+                                    className="mt-1 w-full rounded-lg border border-surface-300 px-3 py-2 text-sm">
+                                    <option value="">Por role (balanceado)</option>
+                                    {(users || []).map((u: User) => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                </select>
+                            </div>
+                            <Input label="Role Alvo" value={form.role_alvo}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setF('role_alvo', e.target.value)}
+                                placeholder="Ex: técnico" />
+                        </div>
+                    )}
+
+                    {form.acao_tipo === 'set_priority' && (
+                        <div className="rounded-lg bg-amber-50/30 p-3">
+                            <label className="text-[13px] font-medium text-surface-700">Nova Prioridade</label>
+                            <select value={form.acao_config?.prioridade ?? ''}
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setF('acao_config', { prioridade: e.target.value })}
+                                className="mt-1 w-full rounded-lg border border-surface-300 px-3 py-2 text-sm">
+                                <option value="baixa">Baixa</option>
+                                <option value="media">Média</option>
+                                <option value="alta">Alta</option>
+                                <option value="urgente">Urgente</option>
+                            </select>
+                        </div>
+                    )}
+
+                    {form.acao_tipo === 'set_due' && (
+                        <div className="rounded-lg bg-emerald-50/50 p-3">
+                            <Input label="Prazo em Horas" type="number" value={form.acao_config?.horas ?? ''}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setF('acao_config', { horas: parseInt(e.target.value) || '' })}
+                                placeholder="Ex: 24" />
+                        </div>
+                    )}
+
+                    {/* Save */}
+                    <div className="flex justify-end gap-2 border-t border-subtle pt-4">
+                        <Button variant="outline" onClick={resetForm} icon={<X className="h-4 w-4" />}>Cancelar</Button>
+                        <Button onClick={() => saveMut.mutate()} loading={saveMut.isPending}
+                            icon={<Save className="h-4 w-4" />} disabled={!form.nome.trim()}>
+                            {editingId ? 'Salvar' : 'Criar Regra'}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Confirm Delete Dialog */}
+            {confirmDeleteId !== null && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-surface-0 rounded-xl shadow-xl p-6 max-w-sm mx-4 border border-default">
+                        <h3 className="text-lg font-semibold text-surface-900 mb-2">Confirmar Exclusão</h3>
+                        <p className="text-sm text-surface-600 mb-4">Deseja realmente excluir esta regra?</p>
+                        <div className="flex justify-end gap-2">
+                            <button className="px-4 py-2 rounded-lg border border-default text-sm" onClick={() => setConfirmDeleteId(null)}>Cancelar</button>
+                            <button className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm" onClick={() => { deleteMut.mutate(confirmDeleteId); setConfirmDeleteId(null) }}>Excluir</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}

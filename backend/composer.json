@@ -1,0 +1,160 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "roldaobatista/kalibrium-backend",
+    "type": "project",
+    "description": "Sistema de gestao completo para empresas de calibracao e servicos tecnicos de campo.",
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "barryvdh/laravel-dompdf": "^3.1",
+        "dedoc/scramble": "^0.13.14",
+        "endroid/qr-code": "^6.0",
+        "intervention/image-laravel": "^1.5",
+        "laravel/framework": "^13.0",
+        "laravel/horizon": "^5.45",
+        "laravel/reverb": "^1.7",
+        "laravel/sanctum": "^4.3",
+        "laravel/tinker": "^2.10.1|^3.0",
+        "minishlink/web-push": "^9.0",
+        "open-telemetry/exporter-otlp": "^1.3",
+        "open-telemetry/sdk": "^1.12",
+        "phpoffice/phpspreadsheet": "^5.4",
+        "sentry/sentry-laravel": "^4.20",
+        "spatie/laravel-permission": "^6.24",
+        "webklex/laravel-imap": "^6.2"
+    },
+    "require-dev": {
+        "brianium/paratest": "^7.4",
+        "fakerphp/faker": "^1.23",
+        "larastan/larastan": "^3.9",
+        "laravel/boost": "2.3.0",
+        "laravel/pail": "^1.2.2",
+        "laravel/pint": "^1.24",
+        "laravel/sail": "^1.41",
+        "laravel/telescope": "5.18.0",
+        "lucascudo/laravel-pt-br-localization": "^3.0",
+        "mockery/mockery": "^1.6",
+        "nunomaduro/collision": "^8.6",
+        "pestphp/pest": "^3.8",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^11.5.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "setup": [
+            "composer install",
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "@php artisan key:generate",
+            "@php artisan migrate --force",
+            "npm install",
+            "npm run build"
+        ],
+        "dev": [
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1 --timeout=0\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,vite --kill-others"
+        ],
+        "test": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear --ansi",
+            "@php vendor/bin/pest --parallel"
+        ],
+        "test-fast": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear --ansi",
+            "@php vendor/bin/pest --parallel --processes=16 --no-coverage"
+        ],
+        "test-coverage": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear --ansi",
+            "@php vendor/bin/pest --parallel --coverage --min=80"
+        ],
+        "test-dirty": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear --ansi",
+            "@php vendor/bin/pest --dirty --parallel --no-coverage"
+        ],
+        "test-profile": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear --ansi",
+            "@php vendor/bin/pest --parallel --profile --no-coverage"
+        ],
+        "analyse": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear --ansi",
+            "@php vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=2G --no-progress"
+        ],
+        "analyse:baseline": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear --ansi",
+            "@php vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=2G --no-progress --generate-baseline=phpstan-baseline.neon"
+        ],
+        "docs:openapi": [
+            "@php -d memory_limit=1G artisan scramble:export --path=../docs/api/openapi.json"
+        ],
+        "test-critical-blocks": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear --ansi",
+            "@php vendor/bin/pest tests/Critical --parallel"
+        ],
+        "test-arch": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan config:clear --ansi",
+            "@php vendor/bin/pest tests/Arch"
+        ],
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi",
+            "@php bootstrap/patch_vendor_autoload.php"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi",
+            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
+            "@php artisan migrate --graceful --ansi"
+        ],
+        "pre-package-uninstall": [
+            "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true,
+            "tbachert/spi": true
+        },
+        "platform": {
+            "php": "8.4.19"
+        },
+        "platform-check": false
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

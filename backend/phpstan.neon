@@ -1,0 +1,26 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    reportUnmatchedIgnoredErrors: false
+
+    paths:
+        - app
+        - routes
+        - database
+
+    level: 7
+    tmpDir: storage/phpstan
+
+    excludePaths:
+        - bootstrap/cache/*
+
+    ignoreErrors:
+        -
+            message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder#'
+            reportUnmatched: false
+
+rules:
+    - App\PHPStan\Rules\PaginateInsteadOfGetInControllersRule
+    - App\PHPStan\Rules\TenantIdInQueriesRule

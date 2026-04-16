@@ -1,0 +1,21 @@
+# Dependencies are installed fresh in Docker build
+node_modules
+
+# Build output (will be generated during build)
+dist
+
+# Environment files — build args are used instead
+.env
+.env.*
+!.env.example
+
+# Development and VCS
+.git
+.gitignore
+.vscode
+.idea
+
+# Test artifacts
+coverage
+test-results
+playwright-report

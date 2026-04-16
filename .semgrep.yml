@@ -1,0 +1,20 @@
+# ============================================================
+# Semgrep Configuration — KALIBRIUM ERP
+# Usado pelo security.yml CI workflow
+# ============================================================
+rules:
+  # Rulesets automáticas (Semgrep mantem atualizados)
+  # 'auto' inclui: p/php, p/javascript, p/typescript, p/security-audit
+  # Personalizado abaixo para reduzir falsos positivos
+
+  # Ignorar paths de vendor, node_modules, tests
+  # (Semgrep ignora por padrão, mas explicitamos)
+
+options:
+  exclude:
+    - "backend/vendor"
+    - "frontend/node_modules"
+    - "backend/storage"
+    - "backend/bootstrap/cache"
+    - "*.min.js"
+    - "*.map"

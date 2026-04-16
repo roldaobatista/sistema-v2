@@ -1,0 +1,236 @@
+import { useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { FileText, Loader2, Mail, MessageCircle, Send, X } from 'lucide-react'
+import { toast } from 'sonner'
+
+import { getApiErrorMessage } from '@/lib/api'
+import { crmApi, type CrmMessageTemplate } from '@/lib/crm-api'
+import { queryKeys } from '@/lib/query-keys'
+import { cn } from '@/lib/utils'
+
+interface Props {
+    customerId: number
+    customerName: string
+    customerPhone?: string
+    customerEmail?: string
+    dealId?: number
+    open: boolean
+    onClose: () => void
+}
+
+type Channel = 'whatsapp' | 'email'
+
+export function SendMessageModal({
+    customerId,
+    customerName,
+    customerPhone,
+    customerEmail,
+    dealId,
+    open,
+    onClose,
+}: Props) {
+    const qc = useQueryClient()
+    const [channel, setChannel] = useState<Channel>(customerPhone ? 'whatsapp' : 'email')
+    const [subject, setSubject] = useState('')
+    const [body, setBody] = useState('')
+    const [selectedTemplate, setSelectedTemplate] = useState<CrmMessageTemplate | null>(null)
+    const hasDestination = channel === 'whatsapp' ? Boolean(customerPhone) : Boolean(customerEmail)
+
+    useEffect(() => {
+        if (!open) return
+
+        setSelectedTemplate(null)
+        setBody('')
+        setSubject('')
+    }, [channel, open])
+
+    const { data: templates } = useQuery({
+        queryKey: ['crm', 'message-templates', channel],
+        queryFn: () => crmApi.getMessageTemplates(channel),
+        enabled: open,
+    })
+
+    const sendMutation = useMutation({
+        mutationFn: () =>
+            crmApi.sendMessage({
+                customer_id: customerId,
+                channel,
+                body,
+                subject: channel === 'email' && (subject.trim().length > 0 || !selectedTemplate) ? subject : undefined,
+                deal_id: dealId,
+                template_id: selectedTemplate?.id,
+            }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['crm'] })
+            qc.invalidateQueries({ queryKey: ['crm', 'messages'] })
+            qc.invalidateQueries({ queryKey: queryKeys.customers.customer360(customerId) })
+            if (dealId) {
+                qc.invalidateQueries({ queryKey: ['crm-deal', dealId] })
+            }
+            toast.success(channel === 'whatsapp' ? 'WhatsApp enviado' : 'E-mail enviado')
+            onClose()
+            setBody('')
+            setSubject('')
+            setSelectedTemplate(null)
+        },
+        onError: (error: unknown) => {
+            toast.error(getApiErrorMessage(error, 'Erro ao enviar mensagem'))
+        },
+    })
+
+    const applyTemplate = (template: CrmMessageTemplate) => {
+        setSelectedTemplate(template)
+        setBody(template.body)
+        if (template.subject) {
+            setSubject(template.subject)
+        }
+    }
+
+    if (!open) return null
+
+    const requiresManualSubject = channel === 'email' && !selectedTemplate
+    const canSend = hasDestination && body.trim().length > 0 && (!requiresManualSubject || subject.trim().length > 0)
+
+    return (
+        <>
+            <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="w-full max-w-lg rounded-2xl border border-default bg-surface-0 shadow-modal animate-in fade-in zoom-in-95 duration-200">
+                    <div className="flex items-center justify-between border-b border-subtle px-5 py-4">
+                        <div>
+                            <h2 className="text-lg font-semibold text-surface-900">Enviar Mensagem</h2>
+                            <p className="mt-0.5 text-xs text-surface-500">Para: {customerName}</p>
+                        </div>
+                        <button onClick={onClose} className="rounded-lg p-1.5 text-surface-400 hover:bg-surface-100" aria-label="Fechar">
+                            <X className="h-5 w-5" />
+                        </button>
+                    </div>
+
+                    <div className="space-y-4 p-5">
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setChannel('whatsapp')}
+                                disabled={!customerPhone}
+                                className={cn(
+                                    'flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all',
+                                    channel === 'whatsapp'
+                                        ? 'bg-green-50 text-green-700 ring-1 ring-green-200'
+                                        : 'bg-surface-50 text-surface-600 hover:bg-surface-100',
+                                    !customerPhone && 'cursor-not-allowed opacity-40'
+                                )}
+                            >
+                                <MessageCircle className="h-4 w-4" />
+                                WhatsApp
+                            </button>
+                            <button
+                                onClick={() => setChannel('email')}
+                                disabled={!customerEmail}
+                                className={cn(
+                                    'flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all',
+                                    channel === 'email'
+                                        ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200'
+                                        : 'bg-surface-50 text-surface-600 hover:bg-surface-100',
+                                    !customerEmail && 'cursor-not-allowed opacity-40'
+                                )}
+                            >
+                                <Mail className="h-4 w-4" />
+                                E-mail
+                            </button>
+                        </div>
+
+                        <div className="rounded-lg bg-surface-50 px-3 py-2 text-sm text-surface-600">
+                            {channel === 'whatsapp'
+                                ? `Telefone: ${customerPhone || 'Sem telefone'}`
+                                : `E-mail: ${customerEmail || 'Sem e-mail'}`}
+                        </div>
+
+                        {templates && templates.length > 0 && (
+                            <div>
+                                <label className="mb-1.5 block text-xs font-medium text-surface-500">Template</label>
+                                <div className="flex flex-wrap gap-1.5">
+                                    <button
+                                        onClick={() => {
+                                            setSelectedTemplate(null)
+                                            setBody('')
+                                            setSubject('')
+                                        }}
+                                        className={cn(
+                                            'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+                                            !selectedTemplate
+                                                ? 'bg-brand-100 text-brand-700'
+                                                : 'bg-surface-100 text-surface-600 hover:bg-surface-200'
+                                        )}
+                                    >
+                                        Livre
+                                    </button>
+                                    {templates.map((template) => (
+                                        <button
+                                            key={template.id}
+                                            onClick={() => applyTemplate(template)}
+                                            className={cn(
+                                                'flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+                                                selectedTemplate?.id === template.id
+                                                    ? 'bg-brand-100 text-brand-700'
+                                                    : 'bg-surface-100 text-surface-600 hover:bg-surface-200'
+                                            )}
+                                        >
+                                            <FileText className="h-3 w-3" />
+                                            {template.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {channel === 'email' && (
+                            <div>
+                                <label className="mb-1.5 block text-xs font-medium text-surface-500">Assunto</label>
+                                <input
+                                    type="text"
+                                    value={subject}
+                                    onChange={(e) => setSubject(e.target.value)}
+                                    placeholder="Assunto do e-mail..."
+                                    className="w-full rounded-lg border border-default bg-surface-0 px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                                />
+                            </div>
+                        )}
+
+                        <div>
+                            <label className="mb-1.5 block text-xs font-medium text-surface-500">Mensagem</label>
+                            <textarea
+                                value={body}
+                                onChange={(e) => setBody(e.target.value)}
+                                placeholder={channel === 'whatsapp' ? 'Digite sua mensagem...' : 'Conteudo do e-mail...'}
+                                rows={5}
+                                className="w-full resize-none rounded-lg border border-default bg-surface-0 px-3 py-2.5 text-sm text-surface-900 placeholder:text-surface-400 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                            />
+                            <p className="mt-1 text-xs text-surface-400">{body.length} caracteres</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 border-t border-subtle px-5 py-3">
+                        <button
+                            onClick={onClose}
+                            className="rounded-lg px-4 py-2 text-sm font-medium text-surface-600 transition-colors hover:bg-surface-100"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={() => sendMutation.mutate()}
+                            disabled={!canSend || sendMutation.isPending}
+                            className={cn(
+                                'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all',
+                                channel === 'whatsapp'
+                                    ? 'bg-green-600 hover:bg-green-700 disabled:bg-green-300'
+                                    : 'bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300'
+                            )}
+                        >
+                            {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                            Enviar {channel === 'whatsapp' ? 'WhatsApp' : 'E-mail'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </>
+    )
+}

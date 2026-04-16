@@ -1,0 +1,74 @@
+---
+trigger: always_on
+description: Politica obrigatoria de testes do KALIBRIUM. Carregada em toda conversa.
+---
+
+# Politica de Testes (OBRIGATORIA - NUNCA IGNORAR)
+
+> Esta regra tem prioridade MAXIMA. Nenhuma outra regra pode sobrescreve-la.
+
+## Regra de Ouro (GRAVADA NA MEMORIA MAXIMA EM TODA CONVERSA)
+
+**QUALQUER TESTE QUE FALHAR DEVE SER CORRIGIDO SEMPRE O PROBLEMA, NUNCA MASCARAR O TESTE, O TESTE DEVE SER SEMPRE PROFISSIONAL, COMPLETO E PROFUNDO.**
+
+**SE UM TESTE FALHAR DEVE CORRIGIR O SISTEMA; ADICIONAR FUNCIONALIDADES FALTANTES, ADICIONAR FUNÇÕES; GARANTIR FLUXO COMPLETO; E SÓ ALTERAR O TESTE SE REALMENTE O TESTE ESTIVER ERRADO.**
+
+**TODA FUNCIONALIDADE E FUNÇÃO QUE FIZER ALTERAÇÃO DEVE TER UM TESTE ESPECÍFICO, PROFUNDO E PROFISSIONAL PARA ELA; SE NÃO TIVER DEVE CRIAR E ETC.**
+
+## Regras Inviolaveis Principais
+
+### 1. NUNCA mascarar teste que falha
+- Se um teste falha: **corrigir o codigo do sistema**, nao o teste.
+- PROIBIDO: comentar teste, pular com `skip`/`todo`, relaxar assertion, remover caso de teste.
+- PROIBIDO: trocar `toBe(expected)` por `toBe(actualWrongValue)` para "passar".
+- **SÓ ALTERAR O TESTE SE REALMENTE O TESTE ESTIVER ERRADO.**
+
+### 2. Teste falhou = DEVE corrigir o sistema
+Quando um teste falha, a IA DEVE agir no sistema:
+1. Adicionar funcionalidades faltantes.
+2. Adicionar funcoes/metodos faltantes.
+3. Garantir fluxo completo.
+4. **SÓ alterar o teste se comprovadamente errado**, e justificar.
+
+### 3. Toda alteracao DEVE ter teste especifico
+- Qualquer funcionalidade e função que fizer alteração **DEVE ter um teste específico, profundo e profissional para ela**.
+- Se não tiver, **DEVE CRIAR**. Nao exite excecao a essa regra.
+
+### 4. Qualidade dos testes
+
+- Testes devem ser **profissionais**: nomes descritivos, cenarios reais, edge cases.
+- Testes devem ser **profundos**: cobrir happy path, error path, edge cases, limites.
+- Testes devem ser **completos**: nao testar so o basico, testar o fluxo inteiro.
+- Seguir padrao AAA (Arrange-Act-Assert).
+- Sem `console.log` em testes (usar assertions).
+- Sem dados mockados que nao refletem a realidade.
+
+### 5. Onde estao os testes (referencia rapida)
+
+Consultar `docs/operacional/mapa-testes.md` para mapa completo. Resumo:
+
+| Camada | Local | Framework | Testes |
+|--------|-------|-----------|--------|
+| Backend PHP | `backend/tests/` (Arch, Critical, E2E, Feature, Performance, Smoke, Unit) | PHPUnit + Pest | ~4.815 |
+| Frontend React | `frontend/src/__tests__/` + `frontend/src/lib/*.test.ts` | Vitest | ~1.751 |
+| E2E | `frontend/e2e/` + `frontend/tests/e2e/` | Playwright | ~234 |
+
+### 6. Como executar
+
+```bash
+# Backend
+cd backend && php artisan test
+
+# Frontend unit
+cd frontend && npm run test
+
+# E2E
+cd frontend && npx playwright test
+```
+
+### 7. Checklist antes de finalizar qualquer tarefa
+
+- [ ] Todos os testes existentes passam? Se nao, corrigir o SISTEMA.
+- [ ] Codigo novo tem testes? Se nao, CRIAR.
+- [ ] Testes cobrem happy path + error path + edge cases?
+- [ ] Nenhum teste foi mascarado, pulado ou relaxado?

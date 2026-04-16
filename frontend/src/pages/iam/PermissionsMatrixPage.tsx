@@ -1,0 +1,279 @@
+import { Fragment, useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Check, X, Shield, RefreshCw, ShieldOff, Search, Loader2 } from 'lucide-react'
+import api from '@/lib/api'
+import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/ui/pageheader'
+import { EmptyState } from '@/components/ui/emptystate'
+import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth-store'
+
+
+interface RoleMatrixEntry {
+    name: string
+    display_name: string
+}
+
+export function PermissionsMatrixPage() {
+    const queryClient = useQueryClient()
+    const { hasPermission } = useAuthStore()
+    const canEditRoles = hasPermission('iam.permission.manage')
+    const [searchFilter, setSearchFilter] = useState('')
+    const [togglingCell, setTogglingCell] = useState<string | null>(null)
+
+    const { data: matrixData, isLoading, isError, error, refetch } = useQuery({
+        queryKey: ['permissions-matrix'],
+        queryFn: () => api.get('/permissions/matrix'),
+    })
+
+    const rawMatrix = matrixData?.data?.matrix ?? []
+    const rawRoles = matrixData?.data?.roles ?? []
+    // Suporta tanto formato antigo (string[]) quanto novo ({id, name, display_name}[])
+    const roleEntries: (RoleMatrixEntry & { id?: number })[] = (rawRoles || []).map((r: string | { id?: number; name: string; display_name?: string }) =>
+        typeof r === 'string' ? { name: r, display_name: r } : { id: r.id, name: r.name, display_name: r.display_name || r.name }
+    )
+    const roleNames: string[] = (roleEntries || []).map((r) => r.name)
+
+    // Build role name -> role id map directly from matrix response
+    const roleIdMap: Record<string, number> = {};
+    (roleEntries || []).forEach(r => { if (r.id) roleIdMap[r.name] = r.id })
+
+    const toggleMutation = useMutation({
+        mutationFn: (data: { role_id: number; permission_id: number }) =>
+            api.post('/permissions/toggle', data),
+        onSuccess: (res) => {
+            queryClient.invalidateQueries({ queryKey: ['permissions-matrix'] })
+            queryClient.invalidateQueries({ queryKey: ['roles'] })
+            toast.success(res.data?.message ?? 'Permissão atualizada!')
+        },
+        onError: (err: unknown) => {
+            const axiosErr = err as { response?: { data?: { message?: string } } }
+            toast.error(axiosErr?.response?.data?.message ?? 'Erro ao alterar permissão.')
+        },
+        onSettled: () => {
+            setTogglingCell(null)
+        },
+    })
+
+    const handleToggle = (roleName: string, permissionId: number) => {
+        const roleId = roleIdMap[roleName]
+        if (!roleId) return
+        const cellKey = `${roleName}-${permissionId}`
+        setTogglingCell(cellKey)
+        toggleMutation.mutate({ role_id: roleId, permission_id: permissionId })
+    }
+
+    interface PermissionEntry {
+        id: number
+        name: string
+        criticality?: string
+        roles: Record<string, boolean>
+    }
+    interface PermissionGroup {
+        group: string
+        permissions: PermissionEntry[]
+    }
+
+    const matrix: PermissionGroup[] = searchFilter
+        ? rawMatrix
+            .map((group: PermissionGroup) => ({
+                ...group,
+                permissions: (group.permissions || []).filter((p: PermissionEntry) =>
+                    p.name.toLowerCase().includes(searchFilter.toLowerCase())
+                ),
+            }))
+            .filter((g: PermissionGroup) => g.permissions.length > 0)
+        : rawMatrix
+
+    if (isLoading) {
+        return (
+            <div className="space-y-5">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="space-y-1.5">
+                        <div className="h-5 w-52 rounded bg-surface-200 animate-pulse" />
+                        <div className="h-3.5 w-80 rounded bg-surface-200 animate-pulse" />
+                    </div>
+                    <div className="h-10 w-64 rounded-lg bg-surface-200 animate-pulse" />
+                </div>
+                <div className="overflow-hidden rounded-xl border border-default bg-surface-0 shadow-card animate-pulse">
+                    <div className="border-b border-subtle bg-surface-50 px-4 py-3 flex gap-6">
+                        <div className="h-4 w-40 rounded bg-surface-200" />
+                        {[...Array(4)].map((_, i) => (
+                            <div key={i} className="h-4 w-20 rounded bg-surface-200" />
+                        ))}
+                    </div>
+                    {[...Array(8)].map((_, i) => (
+                        <div key={i} className="flex items-center gap-6 border-t border-surface-100 px-4 py-2.5">
+                            <div className="h-3.5 w-36 rounded bg-surface-200" />
+                            {[...Array(4)].map((_, j) => (
+                                <div key={j} className="h-6 w-6 rounded-md bg-surface-200 mx-auto" />
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )
+    }
+
+    if (isError) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+                <p className="text-sm text-red-500">{(error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Erro ao carregar a matriz de permissões.'}</p>
+                <Button variant="outline" size="sm" onClick={() => refetch()} icon={<RefreshCw className="h-3.5 w-3.5" />}>
+                    Tentar novamente
+                </Button>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-5">
+            <PageHeader
+                title="Matriz de Permissões"
+                subtitle={canEditRoles ? 'Clique nas células para ativar/desativar permissões' : 'Visualização de todas as permissões atribuídas a cada role'}
+                count={rawMatrix.reduce((acc: number, g: { permissions: unknown[] }) => acc + g.permissions.length, 0)}
+            />
+
+            <div className="flex items-center justify-end">
+                <div className="relative max-w-xs w-full">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-surface-400" />
+                    <input
+                        type="text"
+                        value={searchFilter}
+                        onChange={(e) => setSearchFilter(e.target.value)}
+                        placeholder="Filtrar permissões..."
+                        className="w-full rounded-lg border border-default bg-surface-50 py-2.5 pl-10 pr-4 text-sm focus:border-brand-400 focus:bg-surface-0 focus:outline-none focus:ring-2 focus:ring-brand-500/15"
+                    />
+                </div>
+            </div>
+
+            <div className="flex items-center gap-4 text-xs text-surface-500">
+                <span className="flex items-center gap-1.5">
+                    <span className="h-4 w-4 rounded bg-emerald-100 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-emerald-600" />
+                    </span>
+                    Concedida
+                </span>
+                <span className="flex items-center gap-1.5">
+                    <span className="h-4 w-4 rounded bg-surface-100 flex items-center justify-center">
+                        <X className="h-3 w-3 text-surface-400" />
+                    </span>
+                    Negada
+                </span>
+                <span className="flex items-center gap-1.5">
+                    <Badge variant="danger">HIGH</Badge> Criticidade alta
+                </span>
+                <span className="flex items-center gap-1.5">
+                    <Badge variant="warning">MED</Badge> Média
+                </span>
+                <span className="flex items-center gap-1.5">
+                    <Badge variant="default">LOW</Badge> Baixa
+                </span>
+                {canEditRoles && (
+                    <span className="ml-auto text-xs text-brand-600 font-medium">
+                        ✏️ Edição inline ativa
+                    </span>
+                )}
+            </div>
+
+            {matrix.length === 0 ? (
+                <EmptyState
+                    icon={<ShieldOff className="h-5 w-5 text-surface-300" />}
+                    message={searchFilter ? 'Nenhuma permissão encontrada. Tente buscar por outro termo.' : 'Não há permissões cadastradas no sistema.'}
+                />
+            ) : (
+                <div className="overflow-x-auto rounded-xl border border-default bg-surface-0 shadow-card">
+                    <table className="w-full min-w-[800px]">
+                        <thead>
+                            <tr className="border-b border-subtle bg-surface-50">
+                                <th className="sticky left-0 z-10 bg-surface-50 px-3.5 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-surface-500 min-w-[240px]">
+                                    Permissão
+                                </th>
+                                {(roleEntries || []).map(role => (
+                                    <th key={role.name} className="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-surface-500 min-w-[100px]">
+                                        <div className="flex items-center justify-center gap-1.5">
+                                            <Shield className="h-3 w-3" />
+                                            {role.display_name}
+                                        </div>
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {(matrix || []).map((group: PermissionGroup, gi: number) => (
+                                <Fragment key={`group-${gi}`}>
+                                    <tr key={`g-${gi}`} className="bg-surface-50/50">
+                                        <td
+                                            colSpan={roleNames.length + 1}
+                                            className="sticky left-0 z-10 bg-surface-50/50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-brand-700"
+                                        >
+                                            {group.group}
+                                        </td>
+                                    </tr>
+                                    {(group.permissions || []).map((perm: PermissionEntry) => (
+                                        <tr key={perm.id} className="border-t border-surface-100 hover:bg-surface-50/50 transition-colors">
+                                            <td className="sticky left-0 z-10 bg-surface-0 px-4 py-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm text-surface-700">
+                                                        {perm.name.split('.').slice(1).join('.')}
+                                                    </span>
+                                                    {perm.criticality === 'HIGH' && (
+                                                        <Badge variant="danger" className="text-xs">HIGH</Badge>
+                                                    )}
+                                                    {perm.criticality === 'MED' && (
+                                                        <Badge variant="warning" className="text-xs">MED</Badge>
+                                                    )}
+                                                    {perm.criticality === 'LOW' && (
+                                                        <Badge variant="default" className="text-xs">LOW</Badge>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            {(roleNames || []).map((role) => {
+                                                const cellKey = `${role}-${perm.id}`
+                                                const isToggling = togglingCell === cellKey
+                                                const isGranted = perm.roles[role]
+                                                const isSuperAdmin = role === 'super_admin'
+                                                const isClickable = canEditRoles && !isSuperAdmin
+
+                                                return (
+                                                    <td key={role} className="px-3 py-2 text-center">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => isClickable && handleToggle(role, perm.id)}
+                                                            disabled={!isClickable || isToggling}
+                                                            className={cn(
+                                                                'inline-flex h-6 w-6 items-center justify-center rounded-md transition-all',
+                                                                isClickable && 'cursor-pointer hover:ring-2 hover:ring-brand-300',
+                                                                isGranted ? 'bg-emerald-100' : 'bg-surface-100',
+                                                            )}
+                                                            title={
+                                                                isSuperAdmin ? 'Super admin não pode ser editado'
+                                                                    : isClickable ? (isGranted ? 'Clique para revogar' : 'Clique para conceder')
+                                                                        : undefined
+                                                            }
+                                                            aria-label={`${isGranted ? 'Revogar' : 'Conceder'} permissão ${perm.name} para a role ${role}`}
+                                                        >
+                                                            {isToggling ? (
+                                                                <Loader2 className="h-3.5 w-3.5 text-brand-500 animate-spin" />
+                                                            ) : isGranted ? (
+                                                                <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                                            ) : (
+                                                                <X className="h-3.5 w-3.5 text-surface-400" />
+                                                            )}
+                                                        </button>
+                                                    </td>
+                                                )
+                                            })}
+                                        </tr>
+                                    ))}
+                                </Fragment>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    )
+}

@@ -1,0 +1,617 @@
+[
+    {
+        "File":  "src/pages/financeiro\\AccountPayableCategoriesPage.tsx",
+        "Method":  "GET",
+        "Path":  "/account-payable-categories"
+    },
+    {
+        "File":  "src/pages/financeiro\\AccountsPayablePage.tsx",
+        "Method":  "GET",
+        "Path":  "/account-payable-categories"
+    },
+    {
+        "File":  "src/pages/financeiro\\AccountPayableCategoriesPage.tsx",
+        "Method":  "POST",
+        "Path":  "/account-payable-categories"
+    },
+    {
+        "File":  "src/pages/financeiro\\AccountsPayablePage.tsx",
+        "Method":  "GET",
+        "Path":  "/accounts-payable"
+    },
+    {
+        "File":  "src/pages/financeiro\\AccountsPayablePage.tsx",
+        "Method":  "POST",
+        "Path":  "/accounts-payable"
+    },
+    {
+        "File":  "src/pages/financeiro\\AccountsPayablePage.tsx",
+        "Method":  "GET",
+        "Path":  "/accounts-payable-summary"
+    },
+    {
+        "File":  "src/pages/financeiro\\AccountsReceivablePage.tsx",
+        "Method":  "GET",
+        "Path":  "/accounts-receivable"
+    },
+    {
+        "File":  "src/pages/financeiro\\AccountsReceivablePage.tsx",
+        "Method":  "POST",
+        "Path":  "/accounts-receivable"
+    },
+    {
+        "File":  "src/pages/financeiro\\AccountsReceivablePage.tsx",
+        "Method":  "POST",
+        "Path":  "/accounts-receivable/generate-from-os"
+    },
+    {
+        "File":  "src/pages/financeiro\\AccountsReceivablePage.tsx",
+        "Method":  "GET",
+        "Path":  "/accounts-receivable-summary"
+    },
+    {
+        "File":  "src/pages/admin\\AuditLogPage.tsx",
+        "Method":  "GET",
+        "Path":  "/audit-logs"
+    },
+    {
+        "File":  "src/pages/configuracoes\\AuditLogsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/audit-logs"
+    },
+    {
+        "File":  "src/pages/configuracoes\\SettingsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/audit-logs"
+    },
+    {
+        "File":  "src/pages/admin\\AuditLogPage.tsx",
+        "Method":  "GET",
+        "Path":  "/audit-logs/actions"
+    },
+    {
+        "File":  "src/pages/admin\\AuditLogPage.tsx",
+        "Method":  "GET",
+        "Path":  "/audit-logs/entity-types"
+    },
+    {
+        "File":  "src/pages/admin\\AuditLogPage.tsx",
+        "Method":  "POST",
+        "Path":  "/audit-logs/export"
+    },
+    {
+        "File":  "src/pages/financeiro\\BankReconciliationPage.tsx",
+        "Method":  "POST",
+        "Path":  "/bank-reconciliation/import"
+    },
+    {
+        "File":  "src/pages/financeiro\\BankReconciliationPage.tsx",
+        "Method":  "GET",
+        "Path":  "/bank-reconciliation/statements"
+    },
+    {
+        "File":  "src/pages/configuracoes\\BranchesPage.tsx",
+        "Method":  "GET",
+        "Path":  "/branches"
+    },
+    {
+        "File":  "src/pages/configuracoes\\BranchesPage.tsx",
+        "Method":  "POST",
+        "Path":  "/branches"
+    },
+    {
+        "File":  "src/pages/financeiro\\CashFlowPage.tsx",
+        "Method":  "GET",
+        "Path":  "/cash-flow"
+    },
+    {
+        "File":  "src/pages/financeiro\\CashFlowPage.tsx",
+        "Method":  "GET",
+        "Path":  "/cash-flow/dre-comparativo"
+    },
+    {
+        "File":  "src/pages/financeiro\\ChartOfAccountsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/chart-of-accounts"
+    },
+    {
+        "File":  "src/pages/financeiro\\ChartOfAccountsPage.tsx",
+        "Method":  "POST",
+        "Path":  "/chart-of-accounts"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/commission-campaigns"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionsPage.tsx",
+        "Method":  "POST",
+        "Path":  "/commission-campaigns"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionDashboardPage.tsx",
+        "Method":  "GET",
+        "Path":  "/commission-dashboard/by-role"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionDashboardPage.tsx",
+        "Method":  "GET",
+        "Path":  "/commission-dashboard/by-rule"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionDashboardPage.tsx",
+        "Method":  "GET",
+        "Path":  "/commission-dashboard/evolution"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionDashboardPage.tsx",
+        "Method":  "GET",
+        "Path":  "/commission-dashboard/overview"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionDashboardPage.tsx",
+        "Method":  "GET",
+        "Path":  "/commission-dashboard/ranking"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/commission-disputes"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionsPage.tsx",
+        "Method":  "POST",
+        "Path":  "/commission-disputes"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/commission-events"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionsPage.tsx",
+        "Method":  "POST",
+        "Path":  "/commission-events/batch-status"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionsPage.tsx",
+        "Method":  "POST",
+        "Path":  "/commission-events/generate"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/commission-goals"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionsPage.tsx",
+        "Method":  "POST",
+        "Path":  "/commission-goals"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/commission-rules"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionsPage.tsx",
+        "Method":  "POST",
+        "Path":  "/commission-rules"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/commission-settlements"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionsPage.tsx",
+        "Method":  "POST",
+        "Path":  "/commission-settlements/close"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/commission-summary"
+    },
+    {
+        "File":  "src/pages/os\\RecurringContractsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/customers"
+    },
+    {
+        "File":  "src/pages/os\\WorkOrderCreatePage.tsx",
+        "Method":  "GET",
+        "Path":  "/customers"
+    },
+    {
+        "File":  "src/pages/orcamentos\\QuoteCreatePage.tsx",
+        "Method":  "GET",
+        "Path":  "/customers"
+    },
+    {
+        "File":  "src/pages/financeiro\\AccountsReceivablePage.tsx",
+        "Method":  "GET",
+        "Path":  "/customers"
+    },
+    {
+        "File":  "src/pages/chamados\\ServiceCallsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/customers"
+    },
+    {
+        "File":  "src/pages/financeiro\\CashFlowPage.tsx",
+        "Method":  "GET",
+        "Path":  "/dre"
+    },
+    {
+        "File":  "src/pages/financeiro\\ExpensesPage.tsx",
+        "Method":  "GET",
+        "Path":  "/expense-categories"
+    },
+    {
+        "File":  "src/pages/financeiro\\ExpensesPage.tsx",
+        "Method":  "POST",
+        "Path":  "/expense-categories"
+    },
+    {
+        "File":  "src/pages/financeiro\\ExpensesPage.tsx",
+        "Method":  "GET",
+        "Path":  "/expenses"
+    },
+    {
+        "File":  "src/pages/financeiro\\ExpensesPage.tsx",
+        "Method":  "POST",
+        "Path":  "/expenses"
+    },
+    {
+        "File":  "src/pages/financeiro\\ExpensesPage.tsx",
+        "Method":  "GET",
+        "Path":  "/expense-summary"
+    },
+    {
+        "File":  "src/pages/financeiro\\InvoicesPage.tsx",
+        "Method":  "GET",
+        "Path":  "/invoices"
+    },
+    {
+        "File":  "src/pages/financeiro\\InvoicesPage.tsx",
+        "Method":  "POST",
+        "Path":  "/invoices"
+    },
+    {
+        "File":  "src/pages/financeiro\\PaymentMethodsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/payment-methods"
+    },
+    {
+        "File":  "src/pages/financeiro\\PaymentsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/payment-methods"
+    },
+    {
+        "File":  "src/pages/financeiro\\PaymentMethodsPage.tsx",
+        "Method":  "POST",
+        "Path":  "/payment-methods"
+    },
+    {
+        "File":  "src/pages/financeiro\\PaymentsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/payments"
+    },
+    {
+        "File":  "src/pages/financeiro\\PaymentsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/payments-summary"
+    },
+    {
+        "File":  "src/pages/portal\\PortalDashboardPage.tsx",
+        "Method":  "GET",
+        "Path":  "/portal/financials"
+    },
+    {
+        "File":  "src/pages/portal\\PortalFinancialsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/portal/financials"
+    },
+    {
+        "File":  "src/pages/portal\\PortalQuotesPage.tsx",
+        "Method":  "GET",
+        "Path":  "/portal/quotes"
+    },
+    {
+        "File":  "src/pages/portal\\PortalDashboardPage.tsx",
+        "Method":  "GET",
+        "Path":  "/portal/quotes"
+    },
+    {
+        "File":  "src/pages/portal\\PortalServiceCallPage.tsx",
+        "Method":  "POST",
+        "Path":  "/portal/service-calls"
+    },
+    {
+        "File":  "src/pages/portal\\PortalDashboardPage.tsx",
+        "Method":  "GET",
+        "Path":  "/portal/work-orders"
+    },
+    {
+        "File":  "src/pages/portal\\PortalWorkOrdersPage.tsx",
+        "Method":  "GET",
+        "Path":  "/portal/work-orders"
+    },
+    {
+        "File":  "src/pages/os\\WorkOrderDetailPage.tsx",
+        "Method":  "GET",
+        "Path":  "/products"
+    },
+    {
+        "File":  "src/pages/os\\WorkOrderCreatePage.tsx",
+        "Method":  "GET",
+        "Path":  "/products"
+    },
+    {
+        "File":  "src/pages/orcamentos\\QuoteCreatePage.tsx",
+        "Method":  "GET",
+        "Path":  "/products"
+    },
+    {
+        "File":  "src/pages/configuracoes\\ProfilePage.tsx",
+        "Method":  "GET",
+        "Path":  "/profile"
+    },
+    {
+        "File":  "src/pages/configuracoes\\ProfilePage.tsx",
+        "Method":  "PUT",
+        "Path":  "/profile"
+    },
+    {
+        "File":  "src/pages/configuracoes\\ProfilePage.tsx",
+        "Method":  "POST",
+        "Path":  "/profile/change-password"
+    },
+    {
+        "File":  "src/pages/orcamentos\\QuotesListPage.tsx",
+        "Method":  "GET",
+        "Path":  "/quotes"
+    },
+    {
+        "File":  "src/pages/orcamentos\\QuoteCreatePage.tsx",
+        "Method":  "POST",
+        "Path":  "/quotes"
+    },
+    {
+        "File":  "src/pages/orcamentos\\QuotesListPage.tsx",
+        "Method":  "GET",
+        "Path":  "/quotes-summary"
+    },
+    {
+        "File":  "src/pages/os\\RecurringContractsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/recurring-contracts"
+    },
+    {
+        "File":  "src/pages/os\\RecurringContractsPage.tsx",
+        "Method":  "POST",
+        "Path":  "/recurring-contracts"
+    },
+    {
+        "File":  "src/pages/tecnicos\\SchedulesPage.tsx",
+        "Method":  "GET",
+        "Path":  "/schedules"
+    },
+    {
+        "File":  "src/pages/tecnicos\\SchedulesPage.tsx",
+        "Method":  "POST",
+        "Path":  "/schedules"
+    },
+    {
+        "File":  "src/pages/chamados\\ServiceCallsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/service-calls"
+    },
+    {
+        "File":  "src/pages/chamados\\ServiceCallsPage.tsx",
+        "Method":  "POST",
+        "Path":  "/service-calls"
+    },
+    {
+        "File":  "src/pages/chamados\\TechnicianAgendaPage.tsx",
+        "Method":  "GET",
+        "Path":  "/service-calls-agenda"
+    },
+    {
+        "File":  "src/pages/chamados\\ServiceCallMapPage.tsx",
+        "Method":  "GET",
+        "Path":  "/service-calls-map"
+    },
+    {
+        "File":  "src/pages/chamados\\ServiceCallsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/service-calls-summary"
+    },
+    {
+        "File":  "src/pages/os\\ServiceChecklistsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/service-checklists"
+    },
+    {
+        "File":  "src/pages/os\\ServiceChecklistsPage.tsx",
+        "Method":  "POST",
+        "Path":  "/service-checklists"
+    },
+    {
+        "File":  "src/pages/os\\WorkOrderCreatePage.tsx",
+        "Method":  "GET",
+        "Path":  "/services"
+    },
+    {
+        "File":  "src/pages/orcamentos\\QuoteCreatePage.tsx",
+        "Method":  "GET",
+        "Path":  "/services"
+    },
+    {
+        "File":  "src/pages/os\\WorkOrderDetailPage.tsx",
+        "Method":  "GET",
+        "Path":  "/services"
+    },
+    {
+        "File":  "src/pages/configuracoes\\SettingsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/settings"
+    },
+    {
+        "File":  "src/pages/configuracoes\\SettingsPage.tsx",
+        "Method":  "PUT",
+        "Path":  "/settings"
+    },
+    {
+        "File":  "src/pages/os\\SlaDashboardPage.tsx",
+        "Method":  "GET",
+        "Path":  "/sla-dashboard/breached"
+    },
+    {
+        "File":  "src/pages/os\\SlaDashboardPage.tsx",
+        "Method":  "GET",
+        "Path":  "/sla-dashboard/by-policy"
+    },
+    {
+        "File":  "src/pages/os\\SlaDashboardPage.tsx",
+        "Method":  "GET",
+        "Path":  "/sla-dashboard/overview"
+    },
+    {
+        "File":  "src/pages/os\\SlaPoliciesPage.tsx",
+        "Method":  "GET",
+        "Path":  "/sla-policies"
+    },
+    {
+        "File":  "src/pages/os\\SlaPoliciesPage.tsx",
+        "Method":  "POST",
+        "Path":  "/sla-policies"
+    },
+    {
+        "File":  "src/pages/tecnicos\\TechnicianCashPage.tsx",
+        "Method":  "GET",
+        "Path":  "/technician-cash"
+    },
+    {
+        "File":  "src/pages/tecnicos\\TechnicianCashPage.tsx",
+        "Method":  "POST",
+        "Path":  "/technician-cash/credit"
+    },
+    {
+        "File":  "src/pages/tecnicos\\TechnicianCashPage.tsx",
+        "Method":  "POST",
+        "Path":  "/technician-cash/debit"
+    },
+    {
+        "File":  "src/pages/tecnicos\\TechnicianCashPage.tsx",
+        "Method":  "GET",
+        "Path":  "/technician-cash-summary"
+    },
+    {
+        "File":  "src/pages/configuracoes\\TenantManagementPage.tsx",
+        "Method":  "GET",
+        "Path":  "/tenants"
+    },
+    {
+        "File":  "src/pages/configuracoes\\TenantManagementPage.tsx",
+        "Method":  "POST",
+        "Path":  "/tenants"
+    },
+    {
+        "File":  "src/pages/configuracoes\\TenantManagementPage.tsx",
+        "Method":  "GET",
+        "Path":  "/tenants-stats"
+    },
+    {
+        "File":  "src/pages/tecnicos\\TimeEntriesPage.tsx",
+        "Method":  "GET",
+        "Path":  "/time-entries"
+    },
+    {
+        "File":  "src/pages/tecnicos\\TimeEntriesPage.tsx",
+        "Method":  "POST",
+        "Path":  "/time-entries"
+    },
+    {
+        "File":  "src/pages/tecnicos\\TimeEntriesPage.tsx",
+        "Method":  "POST",
+        "Path":  "/time-entries/start"
+    },
+    {
+        "File":  "src/pages/tecnicos\\TimeEntriesPage.tsx",
+        "Method":  "GET",
+        "Path":  "/time-entries-summary"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/users"
+    },
+    {
+        "File":  "src/pages/chamados\\TechnicianAgendaPage.tsx",
+        "Method":  "GET",
+        "Path":  "/users"
+    },
+    {
+        "File":  "src/pages/chamados\\ServiceCallsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/users"
+    },
+    {
+        "File":  "src/pages/tecnicos\\TimeEntriesPage.tsx",
+        "Method":  "GET",
+        "Path":  "/users"
+    },
+    {
+        "File":  "src/pages/os\\WorkOrderCreatePage.tsx",
+        "Method":  "GET",
+        "Path":  "/users"
+    },
+    {
+        "File":  "src/pages/tecnicos\\SchedulesPage.tsx",
+        "Method":  "GET",
+        "Path":  "/users"
+    },
+    {
+        "File":  "src/pages/os\\WorkOrdersListPage.tsx",
+        "Method":  "GET",
+        "Path":  "/work-orders"
+    },
+    {
+        "File":  "src/pages/financeiro\\ExpensesPage.tsx",
+        "Method":  "GET",
+        "Path":  "/work-orders"
+    },
+    {
+        "File":  "src/pages/financeiro\\CommissionsPage.tsx",
+        "Method":  "GET",
+        "Path":  "/work-orders"
+    },
+    {
+        "File":  "src/pages/os\\WorkOrderKanbanPage.tsx",
+        "Method":  "GET",
+        "Path":  "/work-orders"
+    },
+    {
+        "File":  "src/pages/tecnicos\\SchedulesPage.tsx",
+        "Method":  "GET",
+        "Path":  "/work-orders"
+    },
+    {
+        "File":  "src/pages/tecnicos\\TimeEntriesPage.tsx",
+        "Method":  "GET",
+        "Path":  "/work-orders"
+    },
+    {
+        "File":  "src/pages/financeiro\\AccountsReceivablePage.tsx",
+        "Method":  "GET",
+        "Path":  "/work-orders"
+    },
+    {
+        "File":  "src/pages/os\\WorkOrderCreatePage.tsx",
+        "Method":  "POST",
+        "Path":  "/work-orders"
+    }
+]

@@ -1,0 +1,255 @@
+---
+description: "REGRA RÍGIDA de completude obrigatória — KALIBRIUM ERP. Toda implementação DEVE ser ponta a ponta, funcional, e com testes. Violação = tarefa INCOMPLETA."
+globs: **/*.{ts,tsx,php,vue,js,jsx,css,md,json}
+alwaysApply: true
+---
+
+# 🔒 COMPLETUDE OBRIGATÓRIA — REGRA RÍGIDA INVIOLÁVEL
+
+> [!CAUTION]
+> **ESTA REGRA É CARREGADA EM TODA CONVERSA, TODA AÇÃO, TODO MOMENTO.**
+> Não existe "fora do escopo", "depois eu faço", "é só um placeholder". Se tocou, COMPLETA.
+> **Violação = tarefa INCOMPLETA e resultado INACEITÁVEL.**
+
+---
+
+## 1. 🎯 PRINCÍPIO FUNDAMENTAL: FLUXO PONTA A PONTA
+
+**OBRIGATÓRIO:** Toda implementação DEVE ser completa de ponta a ponta. Significa:
+
+- **Frontend → API → Controller → Service → Model → Migration → Seed (se aplicável)**
+- O fluxo INTEIRO deve funcionar. Não basta fazer "só o frontend" ou "só o backend".
+- Se uma peça do fluxo não existe, **DEVE SER CRIADA**.
+- Se uma peça do fluxo está quebrada, **DEVE SER CORRIGIDA**.
+
+### O que "ponta a ponta" significa no KALIBRIUM
+
+| Camada | DEVE existir e funcionar |
+|--------|--------------------------|
+| **Frontend** | Componente/page → hook → chamada API → tratamento de erro → feedback visual |
+| **API Client** | Função em `@/lib/api` → tipagem correta → interceptors funcionando |
+| **Rotas Backend** | Rota em `routes/api.php` → middleware correto → array syntax |
+| **Controller** | Controller → Form Request → validação → resposta tipada |
+| **Service/Logic** | Lógica de negócio isolada → tratamento de exceções |
+| **Model** | Eloquent Model → relationships → casts → fillable |
+| **Migration** | Tabela/coluna existe no banco → com guards `hasTable`/`hasColumn` |
+| **Testes** | Unit + Feature/Integration → happy path + error path + edge cases |
+
+> [!CAUTION]
+> **VIOLAÇÃO GRAVE:** Criar um componente frontend que chama uma API que não existe no backend.
+> **VIOLAÇÃO GRAVE:** Criar uma rota no backend sem o Controller correspondente.
+> **VIOLAÇÃO GRAVE:** Criar um Controller que referencia um Model sem migration.
+> **VIOLAÇÃO GRAVE:** Entregar qualquer funcionalidade sem testes.
+
+---
+
+## 2. 🔗 CHECKLIST DE INTEGRIDADE DO SISTEMA (OBRIGATÓRIO)
+
+Antes de considerar QUALQUER tarefa como concluída, verificar:
+
+### 2.1 Arquitetura e Blueprint (OBRIGATÓRIO)
+
+- [ ] A implementação respeita a metodologia descrita em `docs/BLUEPRINT-AIDD.md`?
+- [ ] O codigo gerado reflete exatamente o que esta nas migrations (`backend/database/migrations/`) e Models (`backend/app/Models/`)?
+- [ ] O fluxo obedece às regras de transição de estado definidas no diagrama Mermaid do Bounded Context correspondente (`docs/modules/`)?
+
+### 2.2 Rotas e Conexões
+
+- [ ] Toda rota no frontend (`React Router`) tem correspondência no backend (`routes/api.php`)
+- [ ] Toda chamada `api.get/post/put/delete` no frontend aponta para endpoint existente
+- [ ] Toda rota no backend tem Controller com método implementado (não vazio)
+- [ ] Middleware de autenticação/autorização está aplicado corretamente
+- [ ] Rotas literais vêm ANTES de rotas com `{id}` (ordem correta)
+
+### 2.2 Banco de Dados
+
+- [ ] Toda coluna referenciada no código tem migration correspondente
+- [ ] Migrations novas usam guards `hasTable`/`hasColumn` para idempotência
+- [ ] Relationships no Model (`hasMany`, `belongsTo`, etc.) estão corretas
+- [ ] Foreign keys existem e apontam para tabelas corretas
+- [ ] `$fillable`, `$casts`, `$hidden` estão atualizados no Model
+
+### 2.3 Validação e Segurança
+
+- [ ] Controllers usam Form Requests (nunca `$request->validate()` inline)
+- [ ] Validação do frontend espelha validação do backend
+- [ ] Permissões (`can`, `authorize`, Spatie) estão aplicadas
+- [ ] CSRF/Sanctum configurado corretamente
+- [ ] **FormRequest authorize() tem lógica REAL** — `return true;` sem verificação é PROIBIDO (ver Lei 3b do Iron Protocol)
+- [ ] **tenant_id e created_by são atribuídos no controller** — NUNCA expostos como campos do FormRequest
+- [ ] **Relacionamentos validam pertencimento ao tenant** — `exists:table,id` deve incluir where tenant_id
+
+### 2.3b Performance e Listagens
+
+- [ ] **Endpoints de listagem usam paginação** — `->paginate()` ou `->simplePaginate()` (PROIBIDO: `::all()` ou `->get()` sem limite)
+- [ ] **Controllers usam eager loading** — `->with([...])` para toda relationship referenciada no response
+- [ ] **N+1 queries prevenidas** — se o response inclui dados de relationship, `with()` DEVE estar presente
+- [ ] **Select otimizado** — usar `->select()` quando possível para limitar colunas
+
+### 2.4 Frontend Completo
+
+- [ ] Estados de loading, erro, e vazio tratados no componente
+- [ ] Feedback visual para ações do usuário (toast, alert, etc.)
+- [ ] Formulários com validação client-side (React Hook Form + Zod)
+- [ ] Tipos TypeScript corretos (zero `any`)
+- [ ] `aria-label` em elementos interativos
+
+### 2.5 Testes (OBRIGATÓRIO — SEM EXCEÇÃO)
+
+- [ ] Toda funcionalidade nova tem testes
+- [ ] Testes cobrem: happy path + error path + edge cases + limites
+- [ ] Testes são profissionais: nomes descritivos, cenários realistas
+- [ ] Testes seguem padrão AAA (Arrange-Act-Assert)
+- [ ] Nenhum teste foi mascarado, pulado, comentado ou relaxado
+- [ ] Testes existentes continuam passando após a mudança
+- [ ] **5 cenários MÍNIMOS por controller:** sucesso CRUD, validação 422, cross-tenant 404, permissão 403, edge cases
+- [ ] **Testes validam estrutura do JSON** — assertJsonStructure() ou assertJsonPath(), NÃO apenas status code
+- [ ] **Teste cross-tenant obrigatório** — criar recurso de outro tenant e verificar que retorna 404
+- [ ] **Mínimo 8 testes por controller** — se tem menos, provavelmente está incompleto
+
+---
+
+## 3. 🚫 PROIBIÇÕES ABSOLUTAS DE INCOMPLETUDE
+
+| PROIBIDO | Consequência |
+|----------|-------------|
+| Deixar stub/placeholder sem implementação real | Tarefa INCOMPLETA |
+| Criar frontend sem backend correspondente | Tarefa INCOMPLETA |
+| Criar backend sem frontend correspondente (quando aplicável) | Tarefa INCOMPLETA |
+| Criar rota sem Controller/método implementado | Tarefa INCOMPLETA |
+| Criar Controller sem Form Request | Código REJEITADO |
+| Criar Model sem migration | Tarefa INCOMPLETA |
+| Referenciar coluna inexistente no banco | Tarefa INCOMPLETA |
+| Criar hook/service que chama endpoint inexistente | Tarefa INCOMPLETA |
+| Entregar funcionalidade sem testes | Tarefa INCOMPLETA |
+| Deixar TODO/FIXME sem resolver | Tarefa INCOMPLETA |
+| Dizer "isso pode ser feito depois" | **PROIBIDO** — fazer AGORA |
+| Entregar código que não compila/builda | **VIOLAÇÃO GRAVE** |
+| Mascarar teste que falha | **VIOLAÇÃO GRAVÍSSIMA** |
+| FormRequest authorize() com `return true` sem lógica | **Código REJEITADO** — implementar autorização real |
+| Endpoint index() retornando Model::all() sem paginação | **Código REJEITADO** — usar paginate() |
+| Controller sem eager loading em relationships | **Código REJEITADO** — usar ->with([...]) |
+| tenant_id ou created_by exposto no FormRequest | **Código REJEITADO** — atribuir no controller |
+| Testes de controller sem cenário cross-tenant | **Tarefa INCOMPLETA** — adicionar teste de isolamento |
+| Testes de controller sem cenário de validação 422 | **Tarefa INCOMPLETA** — adicionar teste de validação |
+| Controller com menos de 8 testes | **Tarefa INCOMPLETA** — revisar contra cenários mínimos |
+
+---
+
+## 4. 🔄 PROTOCOLO DE IMPLEMENTAÇÃO PROATIVA
+
+Quando a IA estiver trabalhando em qualquer tarefa:
+
+### 4.1 Detecção Automática de Lacunas
+
+A IA DEVE automaticamente detectar e implementar:
+
+1. **Rotas faltantes**: se frontend chama `/api/xyz`, a rota DEVE existir no backend
+2. **Controllers faltantes**: se rota referencia `XyzController@method`, o controller DEVE existir
+3. **Form Requests faltantes**: se controller recebe dados, o Form Request DEVE existir
+4. **Models faltantes**: se lógica referencia `Xyz::find()`, o Model DEVE existir
+5. **Migrations faltantes**: se Model referencia tabela, a migration DEVE existir
+6. **Hooks/Services faltantes**: se componente usa `useXyz()`, o hook DEVE existir
+7. **Tipos faltantes**: se interface TypeScript é referenciada, DEVE estar exportada
+8. **Conexões faltantes**: se dois módulos se comunicam, a ponte DEVE funcionar
+
+### 4.2 Regra de Cascata
+
+Ao implementar uma funcionalidade, seguir a **cascata completa**:
+
+```
+1. Migration (banco) → 2. Model (Eloquent) → 3. Form Request (validação)
+→ 4. Controller (lógica) → 5. Rota (api.php) → 6. API Client (frontend)
+→ 7. Hook/Service → 8. Componente/Page → 9. TESTES (todos os níveis)
+```
+
+**NUNCA** parar no meio da cascata. Se começou, termina.
+
+### 4.3 Correção de Funcionalidades Existentes
+
+- Se encontrar funcionalidade existente quebrada: **CORRIGIR IMEDIATAMENTE**
+- Se encontrar funcionalidade existente incompleta: **COMPLETAR**
+- Se encontrar funcionalidade existente sem testes: **CRIAR TESTES**
+- **NÃO perguntar** se deve corrigir. **CORRIGIR.**
+
+---
+
+## 5. 🧪 TESTES — POLÍTICA RÍGIDA REFORÇADA
+
+> [!CAUTION]
+> **Esta seção REFORÇA e COMPLEMENTA a `test-policy.mdc`.** Ambas se aplicam simultaneamente.
+
+### 5.1 Quando criar testes (SEMPRE)
+
+| Situação | Ação |
+|----------|------|
+| Funcionalidade nova | **CRIAR** testes completos |
+| Função/método novo | **CRIAR** teste específico |
+| Bug fix | **CRIAR** teste que reproduz o bug + verifica a correção |
+| Alteração de fluxo | **CRIAR/ATUALIZAR** testes do fluxo |
+| Migration nova | **CRIAR** teste que verifica a estrutura |
+| Endpoint novo | **CRIAR** teste Feature/Integration |
+| Componente novo | **CRIAR** teste de renderização + interação |
+
+### 5.2 Profundidade obrigatória dos testes
+
+Cada teste DEVE cobrir no MÍNIMO:
+
+```
+✅ Happy path (fluxo normal, dados válidos)
+✅ Error path (dados inválidos, erros esperados)
+✅ Edge cases (limites, valores vazios, nulos, extremos)
+✅ Autorização (usuário sem permissão)
+✅ Validação (campos obrigatórios, formatos, limites)
+```
+
+### 5.3 Se o teste falhar
+
+```
+1. ANALISAR a causa raiz
+2. Se o SISTEMA está errado → CORRIGIR O SISTEMA
+3. Se o TESTE está errado → CORRIGIR O TESTE (documentar motivo)
+4. NUNCA: comentar, skip, relaxar assertion, trocar valor esperado
+```
+
+---
+
+## 6. 📋 GATE FINAL DE COMPLETUDE (OBRIGATÓRIO)
+
+Antes de reportar QUALQUER trabalho como "concluído":
+
+### ✅ Checklist Final Obrigatório
+
+```
+□ O fluxo ponta a ponta funciona? (Frontend → Backend → Banco → Resposta → UI)
+□ Todas as rotas necessárias existem e funcionam?
+□ Todas as migrations foram criadas/atualizadas?
+□ Todos os Models estão corretos?
+□ Todos os Controllers têm Form Requests?
+□ O frontend compila sem erros? (npm run build)
+□ Testes foram criados para TODA funcionalidade nova?
+□ Testes existentes continuam passando?
+□ Nenhum teste foi mascarado?
+□ Zero console.log, zero any, zero dd()?
+□ aria-label em elementos interativos?
+□ Todos os TODOs/FIXMEs foram resolvidos?
+```
+
+> [!CAUTION]
+> **Se ALGUM item acima não foi cumprido, a tarefa NÃO está concluída.**
+> **Voltar e completar ANTES de reportar.**
+
+---
+
+## 7. 🔁 REGRA DE CARREGAMENTO OBRIGATÓRIO
+
+Esta regra DEVE ser carregada e aplicada:
+
+- ✅ Em TODA nova conversa
+- ✅ Em TODA nova ação do agente
+- ✅ Em TODA implementação (nova ou alteração)
+- ✅ Em TODA correção de bug
+- ✅ Em TODA revisão de código
+- ✅ Em TODA resposta que envolva código
+
+**NÃO existe exceção. NÃO existe "fora do escopo". NÃO existe "depois".**

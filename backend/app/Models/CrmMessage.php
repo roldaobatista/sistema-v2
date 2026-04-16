@@ -1,0 +1,189 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\CrmMessageStatus;
+use App\Models\Concerns\BelongsToTenant;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
+
+/**
+ * @property array<int|string, mixed>|null $attachments
+ * @property array<int|string, mixed>|null $metadata
+ * @property Carbon|null $sent_at
+ * @property Carbon|null $delivered_at
+ * @property Carbon|null $read_at
+ * @property Carbon|null $failed_at
+ */
+class CrmMessage extends Model
+{
+    use BelongsToTenant, HasFactory;
+
+    protected $fillable = [
+        'tenant_id', 'customer_id', 'deal_id', 'user_id',
+        'channel', 'direction', 'status',
+        'subject', 'body', 'from_address', 'to_address',
+        'external_id', 'provider',
+        'attachments', 'metadata',
+        'sent_at', 'delivered_at', 'read_at', 'failed_at', 'error_message',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'attachments' => 'array',
+            'metadata' => 'array',
+            'sent_at' => 'datetime',
+            'delivered_at' => 'datetime',
+            'read_at' => 'datetime',
+            'failed_at' => 'datetime',
+        ];
+    }
+
+    public const CHANNEL_WHATSAPP = 'whatsapp';
+
+    public const CHANNEL_EMAIL = 'email';
+
+    public const CHANNEL_SMS = 'sms';
+
+    const CHANNELS = [
+        self::CHANNEL_WHATSAPP => 'WhatsApp',
+        self::CHANNEL_EMAIL => 'E-mail',
+        self::CHANNEL_SMS => 'SMS',
+    ];
+
+    public const DIRECTION_INBOUND = 'inbound';
+
+    public const DIRECTION_OUTBOUND = 'outbound';
+
+    const DIRECTIONS = [
+        self::DIRECTION_INBOUND => 'Recebida',
+        self::DIRECTION_OUTBOUND => 'Enviada',
+    ];
+
+    // ── Status (via Enum — constantes mantidas para backward compat) ──
+    /** @deprecated Use CrmMessageStatus::PENDING */
+    public const STATUS_PENDING = 'pending';
+
+    /** @deprecated Use CrmMessageStatus::SENT */
+    public const STATUS_SENT = 'sent';
+
+    /** @deprecated Use CrmMessageStatus::DELIVERED */
+    public const STATUS_DELIVERED = 'delivered';
+
+    /** @deprecated Use CrmMessageStatus::READ */
+    public const STATUS_READ = 'read';
+
+    /** @deprecated Use CrmMessageStatus::FAILED */
+    public const STATUS_FAILED = 'failed';
+
+    /** @deprecated Use CrmMessageStatus::cases() */
+    const STATUSES = [
+        self::STATUS_PENDING => 'Pendente',
+        self::STATUS_SENT => 'Enviada',
+        self::STATUS_DELIVERED => 'Entregue',
+        self::STATUS_READ => 'Lida',
+        self::STATUS_FAILED => 'Falhou',
+    ];
+
+    // ─── Scopes ─────────────────────────────────────────
+
+    public function scopeByChannel($q, string $channel)
+    {
+        return $q->where('channel', $channel);
+    }
+
+    public function scopeInbound($q)
+    {
+        return $q->where('direction', 'inbound');
+    }
+
+    public function scopeOutbound($q)
+    {
+        return $q->where('direction', 'outbound');
+    }
+
+    public function scopeFailed($q)
+    {
+        return $q->where('status', self::STATUS_FAILED);
+    }
+
+    // ─── Methods ────────────────────────────────────────
+
+    public function markSent(?string $externalId = null): void
+    {
+        $data = ['status' => self::STATUS_SENT, 'sent_at' => now()];
+        if ($externalId) {
+            $data['external_id'] = $externalId;
+        }
+        $this->update($data);
+    }
+
+    public function markDelivered(): void
+    {
+        $this->update(['status' => self::STATUS_DELIVERED, 'delivered_at' => now()]);
+    }
+
+    public function markRead(): void
+    {
+        $this->update(['status' => self::STATUS_READ, 'read_at' => now()]);
+    }
+
+    public function markFailed(string $error): void
+    {
+        $this->update(['status' => self::STATUS_FAILED, 'failed_at' => now(), 'error_message' => $error]);
+    }
+
+    public function logToTimeline(): CrmActivity
+    {
+        $icon = match ($this->channel) {
+            'whatsapp' => '📱',
+            'email' => '📧',
+            'sms' => '💬',
+            default => '💬',
+        };
+
+        $dir = $this->direction === 'inbound' ? 'recebida' : 'enviada';
+        $title = "{$icon} ".ucfirst($this->channel)." {$dir}";
+        if ($this->subject) {
+            $title .= ": {$this->subject}";
+        }
+
+        return CrmActivity::create([
+            'tenant_id' => $this->tenant_id,
+            'type' => $this->channel,
+            'customer_id' => $this->customer_id,
+            'deal_id' => $this->deal_id,
+            'user_id' => $this->user_id,
+            'title' => $title,
+            'description' => mb_substr($this->body, 0, 500),
+            'is_automated' => true,
+            'completed_at' => now(),
+            'channel' => $this->channel,
+            'metadata' => [
+                'message_id' => $this->id,
+                'external_id' => $this->external_id,
+                'direction' => $this->direction,
+            ],
+        ]);
+    }
+
+    // ─── Relationships ──────────────────────────────────
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    public function deal(): BelongsTo
+    {
+        return $this->belongsTo(CrmDeal::class, 'deal_id');
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+}

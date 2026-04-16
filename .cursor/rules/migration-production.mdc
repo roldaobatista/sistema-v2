@@ -1,0 +1,138 @@
+---
+description: Regras obrigatorias para migrations seguras em producao (MySQL 8 strict mode)
+globs:
+alwaysApply: true
+---
+
+# Migrations Seguras para Producao (REGRA OBRIGATORIA)
+
+## Contexto
+
+Este sistema roda em producao com MySQL 8 em modo strict e dados reais.
+Migration que falha interrompe deploy e pode causar indisponibilidade.
+
+## Regra de Autonomia com Seguranca
+
+- A IA deve corrigir automaticamente problemas de migration relacionados.
+- Se a correcao envolver risco de perda de dados ou operacao irreversivel, deve pedir confirmacao antes de executar.
+
+## Regras OBRIGATORIAS para migrations NOVAS
+
+### 1) NUNCA usar `->after()`
+
+```php
+// ERRADO
+$table->string('priority')->nullable()->after('status');
+
+// CORRETO
+$table->string('priority')->nullable();
+```
+
+Motivo: coluna de referencia pode nao existir em producao.
+
+### 2) NUNCA usar `->default()` em coluna JSON
+
+```php
+// ERRADO
+$table->json('channels')->default('["system"]');
+
+// CORRETO
+$table->json('channels')->nullable();
+// Default no Model, nao no schema JSON
+```
+
+### 3) Indices compostos: nome curto quando houver risco
+
+Preferir nome explicito em indice composto.
+Obrigatorio nome explicito quando houver risco de exceder 64 chars.
+
+```php
+// CORRETO
+$table->index(['equipment_calibration_id', 'reading_order'], 'cal_readings_cal_order_idx');
+```
+
+### 4) Usar guards `hasColumn` / `hasTable` em alteracoes incrementais
+
+```php
+if (Schema::hasTable('work_orders') && !Schema::hasColumn('work_orders', 'priority')) {
+    Schema::table('work_orders', function (Blueprint $table) {
+        $table->string('priority')->nullable();
+    });
+}
+```
+
+### 5) Novas colunas em tabela com dados: `nullable` ou `default`
+
+```php
+// CORRETO
+$table->string('priority')->nullable();
+// ou
+$table->string('priority')->default('normal');
+```
+
+### 6) Foreign key: validar tabela/coluna alvo antes
+
+```php
+if (Schema::hasTable('cost_centers') && !Schema::hasColumn('work_orders', 'cost_center_id')) {
+    Schema::table('work_orders', function (Blueprint $table) {
+        $table->foreignId('cost_center_id')->nullable()
+            ->constrained('cost_centers')->nullOnDelete();
+    });
+}
+```
+
+### 7) `composer.lock` obrigatorio ao adicionar pacote
+
+Se `composer.json` mudar com pacote novo, commitar tambem `composer.lock`.
+
+### 8) O Método `down()` é OBRIGATÓRIO e Reverso Perfeito
+
+Todas as Migrations de alteração (`Schema::table`) DEVEM possuir o método `down()`. O método `down()` deve reverter perfeitamente a ação do `up()`.
+
+- Se o `up()` cria uma coluna, o `down()` deve usar `$table->dropColumn()`.
+- Se o `up()` altera um tipo, o `down()` deve restaurar o tipo original.
+- **Por quê:** Evita migrations destrutivas ou irreversíveis que quebram a pipeline de deploy e impedem o rollback emergencial do sistema.
+
+### 9) Timestamp de migration DEVE ser unico
+
+Antes de criar uma migration, verificar se o timestamp (primeiros 17 caracteres do nome) ja existe em outra migration.
+
+```bash
+# Verificar duplicatas
+ls backend/database/migrations/ | cut -c1-17 | sort | uniq -d
+```
+
+Se o timestamp ja existir, incrementar o segundo final (ex: `100000` -> `100001`).
+
+Motivo: timestamps duplicados causam ordem de execucao nao-deterministica, quebrando setup de ambientes novos e podendo falhar em producao.
+
+## Regra OBRIGATORIA para MIGRATION LEGADO
+
+### Caso A: Ja executou em producao
+
+- Nao editar migration antiga.
+- Criar migration corretiva nova.
+- Corretiva deve ser idempotente, com guards e rollback.
+
+### Caso B: Ainda nao executou em producao
+
+- Pode corrigir o arquivo diretamente.
+- Mesmo assim, seguir todas as regras de seguranca acima.
+
+## Regras proibidas em producao
+
+- NUNCA executar `php artisan migrate:fresh`
+- NUNCA executar `php artisan migrate:reset`
+
+## Checklist pre-commit de migration
+
+- [ ] Sem `->after()` (buscar no projeto: `->after(` em migrations)
+- [ ] Sem `->default()` em JSON
+- [ ] Indice composto com nome curto quando necessario
+- [ ] Guards `hasColumn`/`hasTable` onde aplicavel
+- [ ] Novas colunas seguras (`nullable` ou `default`)
+- [ ] FK com validacao da referencia
+- [ ] `composer.lock` atualizado se pacote novo
+- [ ] Timestamp unico (sem duplicata com outra migration)
+- [ ] `down()` implementado
+- [ ] Sem comandos destrutivos de migrate

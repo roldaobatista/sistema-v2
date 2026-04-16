@@ -1,0 +1,112 @@
+# ── IDE and agent config ──
+.claude/
+.superpowers/
+.worktrees/
+_bmad-output/*
+!_bmad-output/planning-artifacts/
+
+# ── Dependencies ──
+node_modules/
+vendor/
+dist/
+
+# ── Security: never commit .env files ──
+**/.env
+**/.env.*
+!**/.env.example
+!**/deploy/env-examples/.env.*.example
+
+# ── SSL certificates (generated on server) ──
+certbot/
+
+# ── Build artifacts and binaries ──
+artifacts/
+*.exe
+*.tar.gz
+*.xlsm
+*.xlsx
+composer.phar
+
+# ── Logs ──
+*.log
+debug-*.log
+backend/storage/logs/*.log
+
+# ── Backups (local only, never commit) ──
+backups/
+*.sql.gz
+*.sql
+*.bak
+
+# ── Test output ──
+test_output*.txt
+test_output*.log
+frontend/test-results/
+frontend/playwright-report/
+frontend/build*.txt
+frontend/build*.log
+frontend/lint-output.txt
+frontend/frontend_lint.txt
+frontend/e2e/*.txt
+frontend/e2e/.auth/
+frontend/e2e/ranking*.json
+frontend/e2e/resultado*.json
+frontend/.playwright-seed.lock
+backend/.phpunit.result.cache
+backend/storage/phpstan/
+backend/*deprecation*.txt
+backend/risk-*.txt
+backend/risky*.txt
+backend/*junit*.xml
+backend/pest*
+backend/test-*
+backend/test_*
+backend/tests_*
+backend/tests-*
+backend/report*.xml
+backend/failed*
+backend/all-failures*
+backend/*errors*.txt
+backend/debug*.txt
+backend/result*.txt
+backend/route-list.txt
+backend/routes.txt
+backend/phpstan_crm_errors.txt
+backend/phpstan_crm_errors2.txt
+backend/retry_output.txt
+backend/failed_tests.txt
+backend/tests_output.txt
+backend/move_methods.php
+backend/refactor_crm.php
+backend/scripts/
+
+# ── E2E temp artifacts (may contain credentials) ──
+tests/e2e/tmp/
+
+# ── Misc ──
+Nova pasta/
+deploy/patches/*.patch
+
+# Public-sanitization guardrails
+.codex/
+.env
+.env.*
+!.env.example
+!*.env.example
+frontend/e2e/.auth/
+frontend/test-results/
+frontend/playwright-report/
+tests/e2e/tmp/
+testsprite_tests/tmp/
+docs/harness/runs/
+docs/.archive/screenshots/
+reports/
+_bmad-output/
+*.sqlite
+*.db
+*.bak
+*_output*.txt
+*output*.txt
+*-report.json
+*-report.xml
+!backend/.env.testing

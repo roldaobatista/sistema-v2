@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kalibrium.local/schemas/consolidated-findings.schema.json",
+  "title": "Autonomous Harness Consolidated Findings",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "layer",
+    "cycle",
+    "audit_mode",
+    "status",
+    "decision",
+    "target_scope",
+    "base_commit",
+    "head_commit",
+    "review_round",
+    "max_review_rounds",
+    "auditor_quorum_size",
+    "audit_coverage",
+    "fixer_agent_id",
+    "findings",
+    "harness_errors",
+    "next_action"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "run_id": { "type": "string" },
+    "layer": { "type": "integer", "minimum": 0, "maximum": 7 },
+    "cycle": { "type": "integer", "minimum": 1 },
+    "audit_mode": { "enum": ["full", "targeted", "verification_only"] },
+    "status": { "enum": ["approved", "issues_found", "blocked"] },
+    "decision": { "enum": ["approve", "fix", "reaudit", "blocked", "escalated"] },
+    "target_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "paths", "finding_ids", "context"],
+      "properties": {
+        "type": { "enum": ["layer", "module", "finding_set"] },
+        "paths": { "type": "array", "items": { "type": "string" } },
+        "finding_ids": { "type": "array", "items": { "type": "string" } },
+        "context": { "type": ["string", "null"] }
+      }
+    },
+    "base_commit": { "type": ["string", "null"] },
+    "head_commit": { "type": ["string", "null"] },
+    "review_round": { "type": "integer", "minimum": 1, "maximum": 10 },
+    "max_review_rounds": { "type": "integer", "minimum": 10, "maximum": 10 },
+    "auditor_quorum_size": { "type": "integer", "minimum": 5, "maximum": 5 },
+    "audit_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "executed_auditors",
+        "distinct_agent_ids",
+        "quorum_met",
+        "coverage_gaps",
+        "unresolved_required_verifications",
+        "commands_log_present",
+        "impact_manifest_present"
+      ],
+      "properties": {
+        "executed_auditors": {
+          "type": "array",
+          "minItems": 5,
+          "items": { "$ref": "#/$defs/executed_auditor" }
+        },
+        "distinct_agent_ids": { "type": "array", "minItems": 5, "items": { "type": "string" } },
+        "quorum_met": { "type": "boolean" },
+        "coverage_gaps": { "type": "array", "items": { "type": "string" } },
+        "unresolved_required_verifications": { "type": "array", "items": { "type": "string" } },
+        "commands_log_present": { "type": "boolean" },
+        "impact_manifest_present": { "type": "boolean" }
+      }
+    },
+    "fixer_agent_id": { "type": ["string", "null"] },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/consolidated_finding" } },
+    "harness_errors": { "type": "array", "items": { "$ref": "#/$defs/harness_error" } },
+    "next_action": { "enum": ["none", "spawn_fixer", "reaudit", "verify", "escalate"] }
+  },
+  "$defs": {
+    "executed_auditor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["auditor", "agent_id", "artifact"],
+      "properties": {
+        "auditor": {
+          "enum": ["architecture-dependencies", "security-tenant", "code-quality", "tests-verification", "ops-provenance"]
+        },
+        "agent_id": { "type": "string", "minLength": 1 },
+        "artifact": { "type": "string", "minLength": 1 }
+      }
+    },
+    "consolidated_finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "root_cause_key",
+        "source_finding_ids",
+        "title",
+        "severity",
+        "blocking",
+        "block_type",
+        "owning_layer",
+        "ownership_type",
+        "allowed_write_paths",
+        "affected_layers",
+        "risk_verifications",
+        "evidence_summary",
+        "conflicts",
+        "required_verifications"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "root_cause_key": { "type": "string" },
+        "source_finding_ids": { "type": "array", "items": { "type": "string" } },
+        "title": { "type": "string" },
+        "severity": { "enum": ["critical", "high", "medium", "low"] },
+        "blocking": { "type": "boolean" },
+        "block_type": {
+          "enum": [
+            "blocked_environment",
+            "blocked_missing_context",
+            "blocked_policy",
+            "blocked_code",
+            "blocked_conflict"
+          ]
+        },
+        "owning_layer": { "type": "integer", "minimum": 0, "maximum": 7 },
+        "ownership_type": { "enum": ["primary", "shared", "cross_layer_support"] },
+        "allowed_write_paths": { "type": "array", "items": { "type": "string" } },
+        "affected_layers": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 7 } },
+        "risk_verifications": { "type": "array", "items": { "type": "string" } },
+        "evidence_summary": { "type": "string" },
+        "conflicts": { "type": "array", "items": { "type": "string" } },
+        "required_verifications": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "harness_error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "message"],
+      "properties": {
+        "type": {
+          "enum": [
+            "harness_state_corruption",
+            "harness_output_invalid",
+            "harness_incomplete_run",
+            "harness_provenance_mismatch",
+            "harness_command_log_mismatch"
+          ]
+        },
+        "message": { "type": "string" }
+      }
+    }
+  }
+}

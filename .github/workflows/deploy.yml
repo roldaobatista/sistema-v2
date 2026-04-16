@@ -1,0 +1,97 @@
+name: Deploy to Production
+
+on:
+    workflow_run:
+        workflows: ["CI"]
+        types: [completed]
+        branches: [main]
+
+# Ensure only one deploy runs at a time
+concurrency:
+    group: production-deploy
+    cancel-in-progress: false
+
+permissions:
+    contents: read
+
+jobs:
+    # Wait for CI to pass before deploying
+    deploy:
+        name: Deploy (Zero-Downtime)
+        runs-on: ubuntu-latest
+        if: github.event.workflow_run.conclusion == 'success'
+        environment: production
+
+        steps:
+            - name: Prepare SSH Key
+              env:
+                  SSH_KEY: ${{ secrets.SSH_KEY }}
+              run: |
+                  set -euo pipefail
+                  install -m 700 -d ~/.ssh
+                  printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+                  chmod 600 ~/.ssh/deploy_key
+
+            - name: Deploy via SSH
+              env:
+                  DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+                  DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+                  DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+              run: |
+                  set -euo pipefail
+
+                  DEPLOY_USER="${DEPLOY_USER:-root}"
+                  DEPLOY_PORT="${DEPLOY_PORT:-22}"
+
+                  ssh -i ~/.ssh/deploy_key \
+                    -o ServerAliveInterval=15 \
+                    -o ServerAliveCountMax=20 \
+                    -o StrictHostKeyChecking=no \
+                    -p "$DEPLOY_PORT" \
+                    "${DEPLOY_USER}@${DEPLOY_HOST}" \
+                    'cd /srv/kalibrium && bash deploy/deploy.sh'
+
+            - name: Health Check
+              env:
+                  DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+                  DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+                  DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+              run: |
+                  set -euo pipefail
+
+                  DEPLOY_USER="${DEPLOY_USER:-root}"
+                  DEPLOY_PORT="${DEPLOY_PORT:-22}"
+
+                  ssh -i ~/.ssh/deploy_key \
+                    -o ServerAliveInterval=15 \
+                    -o ServerAliveCountMax=20 \
+                    -o StrictHostKeyChecking=no \
+                    -p "$DEPLOY_PORT" \
+                    "${DEPLOY_USER}@${DEPLOY_HOST}" \
+                    'cd /srv/kalibrium && bash deploy/deploy.sh --status'
+
+            - name: Rollback Guidance
+              if: failure()
+              run: |
+                  {
+                    echo "## Rollback"
+                    echo ""
+                    echo "Automated rollback is intentionally not executed by this workflow because deploys without migrations must not restore an older database backup implicitly."
+                    echo ""
+                    echo "Manual rollback command:"
+                    echo "\`\`\`bash"
+                    echo "cd /srv/kalibrium && bash deploy/deploy.sh --rollback"
+                    echo "\`\`\`"
+                  } >> "$GITHUB_STEP_SUMMARY"
+
+            - name: Deploy Summary
+              if: always()
+              run: |
+                  echo "## 🚀 Deploy Summary" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
+                  echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+                  echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+                  echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+                  echo "| Triggered by | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+                  echo "| Result | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY

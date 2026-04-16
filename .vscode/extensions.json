@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "bmewburn.vscode-intelephense-client",
+    "amirmarmosh.vscode-laravel-extra-intellisense",
+    "onecentlin.laravel-blade",
+    "bradlc.vscode-tailwindcss",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-azuretools.vscode-docker",
+    "cweijan.vscode-database-client2",
+    "editorconfig.editorconfig"
+  ]
+}

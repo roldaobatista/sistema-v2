@@ -1,0 +1,97 @@
+# =====================================================================
+# DOCKER COMPOSE — SOMENTE DESENVOLVIMENTO LOCAL
+# NAO usar em producao, staging ou ambientes compartilhados.
+# Servicos expostos em localhost: MySQL (3307), Redis (6379), phpMyAdmin (8081).
+# Para producao, usar deploy/docker-compose.prod.yml ou configuracao do servidor.
+# =====================================================================
+# Uso: docker compose up -d
+# Para: docker compose down
+# Reset DB: docker compose down -v && docker compose up -d
+
+services:
+  mysql:
+    image: mysql:8.0.40
+    container_name: sistema_mysql
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_DATABASE:-sistema_local}
+      MYSQL_USER: ${DB_USERNAME:-sistema}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-sistema}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./infra/docker/mysql/init:/docker-entrypoint-initdb.d
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${DB_ROOT_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - kalibrium-dev
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: sistema_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kalibrium-dev
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    container_name: sistema_pma
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - kalibrium-dev
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  kalibrium-dev:
+    driver: bridge

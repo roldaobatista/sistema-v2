@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kalibrium.local/schemas/impact-manifest.schema.json",
+  "title": "Autonomous Harness Impact Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "layer",
+    "cycle",
+    "audit_mode",
+    "generated_at",
+    "base_commit",
+    "head_commit",
+    "target_scope",
+    "changed_files",
+    "dirty_paths",
+    "surfaces",
+    "risk_surfaces",
+    "assumptions"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "run_id": { "type": "string" },
+    "layer": { "type": "integer", "minimum": 0, "maximum": 7 },
+    "cycle": { "type": "integer", "minimum": 1 },
+    "audit_mode": { "enum": ["full", "targeted", "verification_only"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "base_commit": { "type": ["string", "null"] },
+    "head_commit": { "type": ["string", "null"] },
+    "target_scope": { "$ref": "#/$defs/target_scope" },
+    "changed_files": { "type": "array", "items": { "type": "string" } },
+    "dirty_paths": { "type": "array", "items": { "type": "string" } },
+    "surfaces": { "$ref": "#/$defs/surfaces" },
+    "risk_surfaces": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "api-contract",
+          "auth-tenant",
+          "data-schema",
+          "e2e-runtime",
+          "frontend-contract",
+          "ops-provenance",
+          "production-ops"
+        ]
+      }
+    },
+    "assumptions": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "target_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "paths", "finding_ids", "context"],
+      "properties": {
+        "type": { "enum": ["layer", "module", "finding_set"] },
+        "paths": { "type": "array", "items": { "type": "string" } },
+        "finding_ids": { "type": "array", "items": { "type": "string" } },
+        "context": { "type": ["string", "null"] }
+      }
+    },
+    "surfaces": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "routes",
+        "controllers",
+        "form_requests",
+        "resources",
+        "policies_or_middleware",
+        "models",
+        "migrations_or_schema",
+        "frontend",
+        "tests",
+        "e2e",
+        "infra",
+        "harness",
+        "docs",
+        "other"
+      ],
+      "properties": {
+        "routes": { "type": "array", "items": { "type": "string" } },
+        "controllers": { "type": "array", "items": { "type": "string" } },
+        "form_requests": { "type": "array", "items": { "type": "string" } },
+        "resources": { "type": "array", "items": { "type": "string" } },
+        "policies_or_middleware": { "type": "array", "items": { "type": "string" } },
+        "models": { "type": "array", "items": { "type": "string" } },
+        "migrations_or_schema": { "type": "array", "items": { "type": "string" } },
+        "frontend": { "type": "array", "items": { "type": "string" } },
+        "tests": { "type": "array", "items": { "type": "string" } },
+        "e2e": { "type": "array", "items": { "type": "string" } },
+        "infra": { "type": "array", "items": { "type": "string" } },
+        "harness": { "type": "array", "items": { "type": "string" } },
+        "docs": { "type": "array", "items": { "type": "string" } },
+        "other": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

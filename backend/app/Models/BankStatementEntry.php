@@ -1,0 +1,64 @@
+<?php
+
+namespace App\Models;
+
+use App\Models\Concerns\BelongsToTenant;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
+
+/**
+ * @property Carbon|null $date
+ * @property numeric-string|null $amount
+ * @property bool|null $possible_duplicate
+ * @property Carbon|null $reconciled_at
+ */
+class BankStatementEntry extends Model
+{
+    use BelongsToTenant, \Illuminate\Database\Eloquent\Factories\HasFactory;
+
+    protected $fillable = [
+        'bank_statement_id', 'tenant_id', 'date', 'description',
+        'amount', 'type', 'matched_type', 'matched_id', 'status',
+        'possible_duplicate', 'category', 'reconciled_by',
+        'reconciled_at', 'reconciled_by_user_id', 'rule_id',
+        'transaction_id',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'date' => 'date',
+            'amount' => 'decimal:2',
+            'possible_duplicate' => 'boolean',
+            'reconciled_at' => 'datetime',
+        ];
+    }
+
+    public const STATUS_PENDING = 'pending';
+
+    public const STATUS_MATCHED = 'matched';
+
+    public const STATUS_IGNORED = 'ignored';
+
+    public function statement(): BelongsTo
+    {
+        return $this->belongsTo(BankStatement::class, 'bank_statement_id');
+    }
+
+    public function matched(): MorphTo
+    {
+        return $this->morphTo('matched', 'matched_type', 'matched_id');
+    }
+
+    public function rule(): BelongsTo
+    {
+        return $this->belongsTo(ReconciliationRule::class, 'rule_id');
+    }
+
+    public function reconciledByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reconciled_by_user_id');
+    }
+}

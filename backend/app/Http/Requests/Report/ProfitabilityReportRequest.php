@@ -1,0 +1,8 @@
+<?php
+
+namespace App\Http\Requests\Report;
+
+class ProfitabilityReportRequest extends BaseReportRequest
+{
+    // Inherits from, to, branch_id validation from BaseReportRequest
+}

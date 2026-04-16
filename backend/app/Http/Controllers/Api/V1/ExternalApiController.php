@@ -1,0 +1,179 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
+use App\Services\BrasilApiService;
+use App\Services\IbgeService;
+use App\Services\ViaCepService;
+use App\Support\ApiResponse;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
+
+class ExternalApiController extends Controller
+{
+    public function __construct(
+        private readonly ViaCepService $viaCep,
+        private readonly BrasilApiService $brasilApi,
+        private readonly IbgeService $ibge,
+    ) {}
+
+    public function cep(string $cep): JsonResponse
+    {
+        try {
+            $data = $this->viaCep->lookup($cep);
+
+            if (! $data) {
+                return ApiResponse::message('CEP não encontrado', 404);
+            }
+
+            return ApiResponse::data($data);
+        } catch (\Exception $e) {
+            Log::error('ExternalApi cep failed', ['error' => $e->getMessage(), 'cep' => $cep]);
+
+            return ApiResponse::message('Erro ao consultar CEP', 500);
+        }
+    }
+
+    /**
+     * Consulta enriquecida de CNPJ — retorna dados completos da empresa
+     * incluindo sócios, CNAE, Simples Nacional, capital social, etc.
+     */
+    public function cnpj(string $cnpj): JsonResponse
+    {
+        try {
+            $data = $this->brasilApi->cnpj($cnpj);
+
+            if (! $data) {
+                return ApiResponse::message('CNPJ não encontrado', 404);
+            }
+
+            return ApiResponse::data($data);
+        } catch (\Exception $e) {
+            Log::error('ExternalApi cnpj failed', ['error' => $e->getMessage(), 'cnpj' => $cnpj]);
+
+            return ApiResponse::message('Erro ao consultar CNPJ', 500);
+        }
+    }
+
+    /**
+     * Endpoint unificado: auto-detecta CPF ou CNPJ pelo tamanho do documento.
+     */
+    public function document(string $document): JsonResponse
+    {
+        $digits = preg_replace('/\D/', '', $document);
+
+        if (strlen($digits) === 14) {
+            return $this->cnpj($digits);
+        }
+
+        if (strlen($digits) === 11) {
+            return $this->cpfLookup($digits);
+        }
+
+        return ApiResponse::message('Documento inválido. Informe um CPF (11 dígitos) ou CNPJ (14 dígitos).', 422);
+    }
+
+    private function cpfLookup(string $cpf): JsonResponse
+    {
+        if (! $this->validateCpf($cpf)) {
+            return ApiResponse::message('CPF inválido', 422);
+        }
+
+        return ApiResponse::data([
+            'source' => 'cpf_validation',
+            'cpf' => $cpf,
+            'document_valid' => true,
+            'formatted' => substr($cpf, 0, 3).'.'.substr($cpf, 3, 3).'.'.substr($cpf, 6, 3).'-'.substr($cpf, 9, 2),
+        ]);
+    }
+
+    private function validateCpf(string $cpf): bool
+    {
+        if (strlen($cpf) !== 11 || preg_match('/^(\d)\1{10}$/', $cpf)) {
+            return false;
+        }
+
+        for ($t = 9; $t < 11; $t++) {
+            $d = 0;
+            for ($c = 0; $c < $t; $c++) {
+                $d += (int) $cpf[$c] * (($t + 1) - $c);
+            }
+            $d = ((10 * $d) % 11) % 10;
+            if ((int) $cpf[$c] !== $d) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public function holidays(int $year): JsonResponse
+    {
+        try {
+            $data = $this->brasilApi->holidays($year);
+
+            return ApiResponse::data($data);
+        } catch (\Exception $e) {
+            Log::error('ExternalApi holidays failed', ['error' => $e->getMessage(), 'year' => $year]);
+
+            return ApiResponse::message('Erro ao consultar feriados', 500);
+        }
+    }
+
+    public function banks(): JsonResponse
+    {
+        try {
+            $data = $this->brasilApi->banks();
+
+            return ApiResponse::data($data);
+        } catch (\Exception $e) {
+            Log::error('ExternalApi banks failed', ['error' => $e->getMessage()]);
+
+            return ApiResponse::message('Erro ao consultar bancos', 500);
+        }
+    }
+
+    public function ddd(string $ddd): JsonResponse
+    {
+        try {
+            $data = $this->brasilApi->ddd($ddd);
+
+            if (! $data) {
+                return ApiResponse::message('DDD não encontrado', 404);
+            }
+
+            return ApiResponse::data($data);
+        } catch (\Exception $e) {
+            Log::error('ExternalApi ddd failed', ['error' => $e->getMessage(), 'ddd' => $ddd]);
+
+            return ApiResponse::message('Erro ao consultar DDD', 500);
+        }
+    }
+
+    public function states(): JsonResponse
+    {
+        try {
+            $data = $this->ibge->states();
+
+            return ApiResponse::data($data);
+        } catch (\Exception $e) {
+            Log::error('ExternalApi states failed', ['error' => $e->getMessage()]);
+
+            return ApiResponse::message('Erro ao consultar estados', 500);
+        }
+    }
+
+    public function cities(string $uf): JsonResponse
+    {
+        try {
+            $data = $this->ibge->cities($uf);
+
+            return ApiResponse::data($data);
+        } catch (\Exception $e) {
+            Log::error('ExternalApi cities failed', ['error' => $e->getMessage(), 'uf' => $uf]);
+
+            return ApiResponse::message('Erro ao consultar cidades', 500);
+        }
+    }
+}

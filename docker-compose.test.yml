@@ -1,0 +1,83 @@
+name: kalibrium-tests
+
+# ============================================================
+# Testes Backend com PARALELISMO via Docker (pcntl disponível)
+#
+# Uso:
+#   docker compose -f docker-compose.test.yml run --rm backend-tests              # Todos, paralelo
+#   docker compose -f docker-compose.test.yml run --rm backend-tests-smoke        # Smoke (~2s)
+#   docker compose -f docker-compose.test.yml run --rm backend-tests-unit         # Unit (~30s)
+#   docker compose -f docker-compose.test.yml run --rm backend-tests-dirty        # Apenas alterados
+#   docker compose -f docker-compose.test.yml run --rm backend-tests-profile      # Top 10 lentos
+#
+# Build inicial (necessário apenas 1x ou quando Dockerfile mudar):
+#   docker compose -f docker-compose.test.yml build
+# ============================================================
+
+x-test-env: &test-env
+  APP_ENV: testing
+  APP_URL: http://localhost
+  FRONTEND_URL: http://localhost
+  DB_CONNECTION: sqlite
+  DB_DATABASE: ":memory:"
+  CACHE_STORE: array
+  QUEUE_CONNECTION: sync
+  SESSION_DRIVER: array
+  MAIL_MAILER: array
+  BROADCAST_CONNECTION: null
+  BCRYPT_ROUNDS: "4"
+  PULSE_ENABLED: "false"
+  TELESCOPE_ENABLED: "false"
+  NIGHTWATCH_ENABLED: "false"
+  BOOST_ENABLED: "false"
+  OTEL_SDK_DISABLED: "true"
+  OTEL_PHP_AUTOLOAD_ENABLED: "false"
+  OTEL_PHP_DISABLED_INSTRUMENTATIONS: laravel
+  SENTRY_LARAVEL_DSN: ""
+
+x-test-base: &test-base
+  build:
+    context: ./backend
+    dockerfile: Dockerfile
+    args:
+      INSTALL_DEV_DEPENDENCIES: "true"
+  working_dir: /var/www
+  environment:
+    <<: *test-env
+  restart: "no"
+  deploy:
+    resources:
+      limits:
+        cpus: '4.0'
+        memory: 2048M
+
+services:
+  # ── Todos os testes em paralelo ──
+  backend-tests:
+    <<: *test-base
+    entrypoint: ["./vendor/bin/pest", "--parallel", "--processes=8", "--no-coverage"]
+
+  # ── Smoke: validação rápida (~2s) ──
+  backend-tests-smoke:
+    <<: *test-base
+    entrypoint: ["./vendor/bin/pest", "--testsuite=Smoke", "--no-coverage"]
+
+  # ── Unit: testes unitários (~30s) ──
+  backend-tests-unit:
+    <<: *test-base
+    entrypoint: ["./vendor/bin/pest", "--testsuite=Unit", "--parallel", "--processes=8", "--no-coverage"]
+
+  # ── Feature: testes de feature (~2min) ──
+  backend-tests-feature:
+    <<: *test-base
+    entrypoint: ["./vendor/bin/pest", "--testsuite=Feature", "--parallel", "--processes=8", "--no-coverage"]
+
+  # ── Dirty: apenas testes afetados por mudanças ──
+  backend-tests-dirty:
+    <<: *test-base
+    entrypoint: ["./vendor/bin/pest", "--dirty", "--parallel", "--processes=8", "--no-coverage"]
+
+  # ── Profile: identifica os 10 testes mais lentos ──
+  backend-tests-profile:
+    <<: *test-base
+    entrypoint: ["./vendor/bin/pest", "--profile", "--no-coverage"]

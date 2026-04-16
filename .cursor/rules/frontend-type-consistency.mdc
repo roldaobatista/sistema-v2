@@ -1,0 +1,270 @@
+---
+description: Consistência de tipos e contratos no frontend (TypeScript/React) para evitar erros de build e runtime
+globs: frontend/src/**/*.{ts,tsx}
+---
+
+# Frontend – Tipos e contratos (REGRA OBRIGATÓRIA — NÃO-NEGOCIÁVEL)
+
+> [!CAUTION]
+> **Violação de QUALQUER regra abaixo torna o código REJEITADO.** A IA DEVE aplicar TODAS estas regras em qualquer código TypeScript/React que criar ou editar, sem exceção.
+
+## Contexto
+
+Erros de build (TS2322, TS2719, etc.) e bugs em runtime costumam vir de tipos não exportados, entidades com dois tipos incompatíveis e uso de variantes/tamanhos não declarados nos componentes.
+
+## Regras
+
+### 1. Exportar tipos usados fora do arquivo
+
+Se um componente ou hook usa uma interface/type em outro arquivo, ela deve ser **exportada**.
+
+```ts
+// components/ui/input.tsx – CORRETO
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  label?: string
+  error?: string
+}
+```
+
+### 2. Uma entidade, um tipo
+
+**PROIBIDO** ter dois tipos com o mesmo nome (ex.: `FiscalNote`) em arquivos diferentes com campos incompatíveis. Usar:
+
+- Um único tipo exportado (ex.: em `@/types/fiscal.ts` ou no componente principal) e o painel/detalhe recebe esse tipo; ou
+- Tipos compatíveis: o tipo do painel aceita campos opcionais (`cfop?: string | null`) quando a API pode omitir.
+
+### 3. Variantes e tamanhos nos componentes
+
+Ao usar `variant="neutral"` ou `size="xs"` em `Button`/`Badge`, o componente deve declarar essa opção em seus tipos (cva/variantProps). Caso contrário:
+
+- Adicionar a variante/tamanho no componente (`button.tsx`, `badge.tsx`), ou
+- Usar uma variante/tamanho já existente (ex.: `outline` em vez de `neutral`, `sm` em vez de `xs`).
+
+### 4. Tratamento de erros da API
+
+Em callbacks de erro (ex.: `onError` de mutation), `err.response` pode ser `undefined` (erro de rede). Usar optional chaining e **preferir a mensagem do servidor** quando existir:
+
+```ts
+// CORRETO — tipo ApiError ao invés de any + optional chaining
+interface ApiError { response?: { data?: { message?: string } } }
+onError: (err: ApiError) => {
+  toast.error(err?.response?.data?.message ?? 'Erro ao salvar.')
+}
+
+// TAMBÉM CORRETO — helper centralizado para extrair mensagem
+function getApiErrorMessage(err: unknown, fallback: string): string {
+  const e = err as ApiError;
+  return e?.response?.data?.message ?? fallback;
+}
+onError: (err) => toast.error(getApiErrorMessage(err, 'Erro ao salvar.'))
+
+// ❌ PROIBIDO — mensagem genérica fixa quando a API pode retornar message
+onError: () => toast.error('Erro ao salvar.')
+```
+
+- **Regra:** Em `onError` de `useMutation` (ou callbacks de erro de chamadas API), usar `err?.response?.data?.message ?? 'Mensagem genérica'` para exibir a mensagem retornada pelo backend quando disponível (ex.: validação 422).
+- **Regra:** Nunca acessar `err.response.data` sem optional chaining (`err.response?.data`), pois em erro de rede `response` é `undefined`.
+- **Regra:** Tipar o parâmetro `err` como `ApiError` (interface local) ou `unknown` com cast — NUNCA como `any`. Preferir um helper `getApiErrorMessage(err, fallback)` para centralizar a lógica.
+- **React Query v5:** `useQuery` **não** aceita `onError`. Para exibir toast/feedback quando a query falhar, usar o retorno `isError` e um `useEffect` que reage a `isError` (ex.: `if (isError) toast.error('Erro ao carregar...')`).
+
+### 5. IDs da API como número
+
+Rotas e APIs que esperam `id: number` podem receber `string` do JSON. Garantir número ao chamar:
+
+```ts
+api.updateEvent(Number(event.id), data)
+deleteMut.mutate(Number(ev.id))
+```
+
+### 6. Sem `console.log` em produção
+
+Código de produção não deve conter `console.log`. Usar apenas `console.warn` ou `console.error` para situações reais de alerta/erro, nunca para debug.
+
+```ts
+// ERRADO — log de debug deixado no código
+console.log('[PWA] Service Worker registrado:', reg.scope)
+console.log('dados:', response.data)
+
+// CORRETO — só warn/error quando necessário
+console.warn('[Dashboard] Falha ao carregar alertas', err)
+console.error('[Auth] Token expirado, forçando logout')
+```
+
+- **Regra:** Remover todos os `console.log` antes de commitar. Se precisar de logging condicional, usar `import.meta.env.DEV && console.log(...)`.
+- **Exceção:** Arquivos de teste (`*.test.ts`, `*.spec.ts`) podem usar `console.log`.
+
+### 7. PROIBIDO uso de `any` em código novo
+
+O tipo `any` desabilita a verificação do TypeScript e esconde bugs. É **PROIBIDO** em código novo. Usar tipos específicos ou `unknown`.
+
+```ts
+// ❌ PROIBIDO — any esconde problemas
+const handleData = (data: any) => { ... }
+onError: (err: any) => toast.error(err?.response?.data?.message)
+
+// PREFERIR — tipos explícitos
+interface ApiError { response?: { data?: { message?: string } } }
+onError: (err: ApiError) => toast.error(err?.response?.data?.message ?? 'Erro')
+```
+
+- **Regra:** Em codigo novo, NUNCA usar `any`. Usar tipos especificos, `unknown`, ou pelo menos `Record<string, unknown>`.
+- **Excecao:** Callbacks de bibliotecas externas onde o tipo nao e controlavel (ex.: `onError` do React Query que ja vem tipado como `Error`).
+- **Refatoracao gradual:** Ao editar um arquivo existente que usa `any`, tipar pelo menos os `any` que voce tocar. Meta: reduzir gradualmente as ~1000 ocorrencias existentes.
+- **Regra para a IA:** Ao criar codigo novo, NUNCA introduzir `any`. Ao editar codigo existente, substituir `any` por tipo correto quando possivel sem esforco desproporcional.
+
+### 8. Lazy loading padronizado em App.tsx
+
+Todas as chamadas `lazy()` em `App.tsx` devem seguir o padrao com `.then()` para garantir export default:
+
+```ts
+// CORRETO — com .then()
+const MyPage = lazy(() => import('./pages/MyPage').then(m => ({ default: m.MyPage })))
+
+// CORRETO — se o modulo ja exporta default
+const MyPage = lazy(() => import('./pages/MyPage'))
+```
+
+- **Regra:** Ao adicionar novas paginas, seguir o padrao `.then()` ja usado pela maioria dos lazy loads existentes.
+- **Nao misturar:** Se o arquivo exporta `export default`, usar import direto. Se exporta named export, usar `.then()`.
+
+### 9. Acessibilidade (formulários e botões)
+
+- **Controles de formulário:** Todo `input`, `select` e `textarea` deve ter label acessível: uso de `<label htmlFor="id">` com `id` no controle, ou `aria-label` no elemento (ex.: `aria-label="Filtrar por status"` em selects sem label visível associada).
+- **Botões só com ícone:** Botões que contêm apenas ícone (ex.: `<button><X /></button>`) devem ter `aria-label` (ex.: `aria-label="Fechar"`) para leitores de tela. `title` é complementar, mas não substitui `aria-label` para acessibilidade.
+
+### 10. Encoding de arquivos JSON (UTF-8)
+
+Arquivos JSON do projeto (ex.: `frontend-endpoints.json`, configs) devem estar em **UTF-8** (sem BOM). UTF-16 LE ou BE quebra ferramentas, scripts e CI.
+
+### 11. Unwrap seguro de responses da API (CRÍTICO)
+
+O backend Laravel retorna respostas envelopadas via `ApiResponse::data()` no formato `{ data: [...] }`. O Axios adiciona mais uma camada `.data`. Portanto:
+
+```ts
+// ❌ ERRADO — captura o objeto {data: [...]} do Axios, NÃO o array
+const { data: res } = useQuery({ queryFn: () => api.get('/endpoint') })
+const items = res?.data ?? []  // items = { data: [...] } → .map() CRASHA
+
+// ✅ CORRETO — duplo unwrap (Axios .data → API .data)
+const items = res?.data?.data ?? []
+
+// ✅ TAMBÉM CORRETO — fallback duplo para endpoints inconsistentes
+const items = res?.data?.data ?? res?.data ?? []
+
+// ✅ IDEAL — usar helper centralizado
+import { unwrapData } from '@/lib/api'
+const items = unwrapData(res) ?? []
+```
+
+- **Regra:** SEMPRE usar `?.data?.data ?? []` (ou `unwrapData()`) ao extrair arrays de responses do `useQuery`. NUNCA usar `?.data ?? []` direto.
+- **Por quê:** `?.data` do Axios retorna o body HTTP (um objeto `{data: [...]}`), que é truthy — o fallback `?? []` nunca executa, e `.map()` crasha com `TypeError: X.map is not a function`.
+- **Exceção:** Quando o `queryFn` já faz `.then(r => r.data)` internamente (ex.: via service layer), o response já vem desembrulhado e `?.data ?? []` é suficiente.
+
+### 12. Sincronia Estrita de Tipagem (Zod vs Laravel FormRequests)
+
+Nenhum formulário frontend pode ser desenvolvido ou alterado sem antes ler o `FormRequest` equivalente no backend.
+
+- Os esquemas do Zod (`ZodObject`) no React DEVEM espelhar milimetricamente as regras de validação do Laravel.
+- Isso inclui: campos obrigatórios, tipos numéricos, regex, e limites de caracteres (min/max).
+- **Por quê:** Elimina erros 422 onde o botão "Salvar" no frontend permite o envio, mas a API do Laravel recusa por divergência de validação.
+
+### 13. Gerenciamento de Estado Estrito (Query vs Local)
+
+NUNCA utilize `useState` e `useEffect` para buscar dados de API ou gerenciar estados globais.
+
+- **Requisições e Cache API:** USE EXCLUSIVAMENTE hooks customizados baseados no `TanStack Query` (ex: `useQuery`, `useMutation`).
+- **Estado Global:** USE EXCLUSIVAMENTE o `Zustand`.
+- **Por quê:** Impede a criação de "Waterfalls" (cascatas de requisições iterativas), memory leaks ou componentes que perdem sincronia com o servidor durante a navegação na SPA (Vite).
+
+### 14. Bloqueio de Dupla Ação (UX de Aço)
+
+Qualquer formulário, botão de deleção ou ação de mutação no React DEVE utilizar o estado `isPending` do TanStack Query para desabilitar o botão de ação.
+
+- **Implementação Obrigatória:** Adicionar `disabled={isPending}` no elemento e exibir feedback visual (spinner/loading) durante requisições.
+- **Por quê:** O envio de dados duplicados por falha de UX é inaceitável. Usuários impacientes não devem conseguir disparar a mesma mutation financeira ou de cadastro duas vezes no KALIBRIUM ERP.
+
+### 15. TypeScript Strict Configuration
+
+O projeto usa TypeScript em modo strict. As seguintes flags estao ATIVAS no `tsconfig.json`:
+
+- `"strict": true` — habilita todas as flags strict (noImplicitAny, strictNullChecks, etc.)
+- `"noImplicitAny": true` — PROIBIDO any implicito
+- `"strictNullChecks": true` — todo valor pode ser null/undefined deve ser verificado
+- `"noUnusedLocals": true` — variaveis nao usadas geram erro
+- `"noUnusedParameters": true` — parametros nao usados geram erro
+
+**Regra:** Ao criar arquivos TypeScript novos, NUNCA usar `// @ts-ignore` ou `// @ts-nocheck`. Resolver o erro de tipo corretamente.
+
+### 16. Naming Conventions
+
+| Item | Convencao | Exemplo |
+|------|-----------|---------|
+| Interfaces | PascalCase, sem prefixo `I` | `UserProfile`, NAO `IUserProfile` |
+| Types | PascalCase | `ApiResponse<T>` |
+| Hooks | camelCase com prefixo `use` | `useWorkOrders`, `useCreateInvoice` |
+| Componentes | PascalCase | `WorkOrderList.tsx` |
+| Paginas | PascalCase | `WorkOrdersPage.tsx` |
+| Utils/Helpers | camelCase | `formatCurrency.ts` |
+| Constantes | UPPER_SNAKE_CASE | `MAX_FILE_SIZE` |
+| Enums | PascalCase + PascalCase values | `enum Status { Active, Inactive }` |
+
+### 17. Imports — Absolute Paths
+
+Usar SEMPRE imports absolutos via alias `@/` configurado no Vite:
+
+```ts
+// ✅ CORRETO — import absoluto
+import { Button } from '@/components/ui/button'
+import { useWorkOrders } from '@/hooks/useWorkOrders'
+import type { WorkOrder } from '@/types/work-order'
+
+// ❌ ERRADO — import relativo profundo
+import { Button } from '../../../components/ui/button'
+```
+
+### 18. React Query — Padroes de Query Key e Cache
+
+```ts
+// Query keys devem ser arrays descritivos e hierarquicos
+const QUERY_KEYS = {
+  workOrders: ['work-orders'] as const,
+  workOrder: (id: number) => ['work-orders', id] as const,
+  workOrderItems: (id: number) => ['work-orders', id, 'items'] as const,
+}
+
+// Invalidacao apos mutation
+const createMutation = useMutation({
+  mutationFn: (data: CreateWorkOrderDTO) => api.post('/work-orders', data),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.workOrders })
+    toast.success('Ordem criada com sucesso')
+  },
+  onError: (err: ApiError) => {
+    toast.error(err?.response?.data?.message ?? 'Erro ao criar')
+  },
+})
+```
+
+- **Query keys:** Sempre arrays, hierarquicos, constantes exportadas
+- **Invalidacao:** `queryClient.invalidateQueries()` apos toda mutation de escrita
+- **Cache:** NAO usar `staleTime: Infinity` em dados que mudam (usar 30s-5min conforme criticidade)
+- **Polling:** Usar `refetchInterval` para dados em tempo real quando WebSocket nao disponivel
+
+## Checklist rápido antes de commitar (frontend)
+
+- [ ] `npm run build` passa sem erros TS
+- [ ] Novos tipos usados em outros arquivos estão exportados
+- [ ] Não há dois tipos com o mesmo nome incompatíveis para a mesma entidade
+- [ ] variant/size usados existem no componente
+- [ ] onError usa optional chaining e preferencialmente `err?.response?.data?.message ?? 'fallback'`; em useQuery (React Query v5) usar isError + useEffect para feedback de erro
+- [ ] Sem `console.log` (usar `console.warn`/`console.error` quando necessário)
+- [ ] Código novo não usa `any` sem justificativa
+- [ ] Selects/inputs sem label visível têm `aria-label`; botões só com ícone têm `aria-label`
+- [ ] Arquivos JSON em UTF-8 (não UTF-16)
+- [ ] Dados de API usam `?.data?.data ?? []` (nunca `?.data ?? []` direto)
+- [ ] Imports usam `@/` (absoluto), nunca `../../../` profundos
+- [ ] Interfaces/Types em PascalCase sem prefixo `I`
+- [ ] Hooks com prefixo `use` em camelCase
+- [ ] Query keys como constantes em arrays hierarquicos
+- [ ] Mutations invalidam queries afetadas via `queryClient.invalidateQueries()`
+- [ ] Schema Zod espelha FormRequest do backend (campos, tipos, limites)

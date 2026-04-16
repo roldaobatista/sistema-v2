@@ -1,0 +1,564 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\EnsureTenantScope;
+use App\Models\AccountPayable;
+use App\Models\AccountReceivable;
+use App\Models\Customer;
+use App\Models\Expense;
+use App\Models\Payment;
+use App\Models\Tenant;
+use App\Models\User;
+use App\Models\WorkOrder;
+use Illuminate\Support\Facades\Gate;
+use Laravel\Sanctum\Sanctum;
+use Tests\TestCase;
+
+class CashFlowTest extends TestCase
+{
+    private Tenant $tenant;
+
+    private User $user;
+
+    private Customer $customer;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Gate::before(fn () => true);
+
+        $this->withoutMiddleware([
+            EnsureTenantScope::class,
+            CheckPermission::class,
+        ]);
+
+        $this->tenant = Tenant::factory()->create();
+        $this->user = User::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'current_tenant_id' => $this->tenant->id,
+            'is_active' => true,
+        ]);
+        $this->customer = Customer::factory()->create([
+            'tenant_id' => $this->tenant->id,
+        ]);
+
+        app()->instance('current_tenant_id', $this->tenant->id);
+        Sanctum::actingAs($this->user, ['*']);
+    }
+
+    public function test_cash_flow_is_tenant_scoped_and_includes_expenses(): void
+    {
+        AccountReceivable::create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'created_by' => $this->user->id,
+            'description' => 'Receita local',
+            'amount' => 100,
+            'amount_paid' => 100,
+            'due_date' => now()->toDateString(),
+            'status' => 'paid',
+        ]);
+
+        AccountPayable::create([
+            'tenant_id' => $this->tenant->id,
+            'created_by' => $this->user->id,
+            'description' => 'Custo local',
+            'amount' => 20,
+            'amount_paid' => 20,
+            'due_date' => now()->toDateString(),
+            'status' => 'paid',
+        ]);
+
+        Expense::create([
+            'tenant_id' => $this->tenant->id,
+            'created_by' => $this->user->id,
+            'description' => 'Despesa local',
+            'amount' => 10,
+            'expense_date' => now()->toDateString(),
+            'status' => 'approved',
+        ]);
+
+        $otherTenant = Tenant::factory()->create();
+        $otherCustomer = Customer::factory()->create(['tenant_id' => $otherTenant->id]);
+        $otherUser = User::factory()->create([
+            'tenant_id' => $otherTenant->id,
+            'current_tenant_id' => $otherTenant->id,
+            'is_active' => true,
+        ]);
+
+        AccountReceivable::withoutGlobalScopes()->create([
+            'tenant_id' => $otherTenant->id,
+            'customer_id' => $otherCustomer->id,
+            'created_by' => $otherUser->id,
+            'description' => 'Receita externa',
+            'amount' => 999,
+            'amount_paid' => 999,
+            'due_date' => now()->toDateString(),
+            'status' => 'paid',
+        ]);
+
+        $response = $this->getJson('/api/v1/cash-flow?months=1');
+        $response->assertOk()
+            ->assertJsonCount(1, 'data');
+
+        $this->assertSame(100.0, (float) $response->json('0.receivables_total'));
+        $this->assertSame(20.0, (float) $response->json('0.payables_total'));
+        $this->assertSame(10.0, (float) $response->json('0.expenses_total'));
+        $this->assertSame(70.0, (float) $response->json('0.balance'));
+    }
+
+    public function test_cash_flow_accepts_os_number_filter(): void
+    {
+        $osCode1 = 'BL-CF-'.uniqid();
+        $osCode2 = 'BL-CF-'.uniqid();
+
+        $woA = WorkOrder::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'created_by' => $this->user->id,
+            'os_number' => $osCode1,
+            'number' => 'OS-'.rand(1000, 9999),
+        ]);
+        $woB = WorkOrder::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'created_by' => $this->user->id,
+            'os_number' => $osCode2,
+            'number' => 'OS-'.rand(1000, 9999),
+        ]);
+
+        AccountReceivable::create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'work_order_id' => $woA->id,
+            'created_by' => $this->user->id,
+            'description' => 'Receita OS A',
+            'amount' => 500,
+            'amount_paid' => 500,
+            'due_date' => now()->toDateString(),
+            'status' => 'paid',
+        ]);
+        AccountReceivable::create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'work_order_id' => $woB->id,
+            'created_by' => $this->user->id,
+            'description' => 'Receita OS B',
+            'amount' => 900,
+            'amount_paid' => 900,
+            'due_date' => now()->toDateString(),
+            'status' => 'paid',
+        ]);
+
+        AccountPayable::create([
+            'tenant_id' => $this->tenant->id,
+            'created_by' => $this->user->id,
+            'description' => 'Compra para '.$osCode1,
+            'amount' => 100,
+            'amount_paid' => 100,
+            'due_date' => now()->toDateString(),
+            'status' => 'paid',
+        ]);
+        AccountPayable::create([
+            'tenant_id' => $this->tenant->id,
+            'created_by' => $this->user->id,
+            'description' => 'Compra para '.$osCode2,
+            'amount' => 200,
+            'amount_paid' => 200,
+            'due_date' => now()->toDateString(),
+            'status' => 'paid',
+        ]);
+
+        Expense::create([
+            'tenant_id' => $this->tenant->id,
+            'work_order_id' => $woA->id,
+            'created_by' => $this->user->id,
+            'description' => 'Despesa OS A',
+            'amount' => 50,
+            'expense_date' => now()->toDateString(),
+            'status' => 'approved',
+        ]);
+        Expense::create([
+            'tenant_id' => $this->tenant->id,
+            'work_order_id' => $woB->id,
+            'created_by' => $this->user->id,
+            'description' => 'Despesa OS B',
+            'amount' => 70,
+            'expense_date' => now()->toDateString(),
+            'status' => 'approved',
+        ]);
+
+        $response = $this->getJson('/api/v1/cash-flow?months=1&os_number='.$osCode1);
+        $response->assertOk()->assertJsonCount(1, 'data');
+
+        $this->assertSame(500.0, (float) $response->json('0.receivables_total'));
+        $this->assertSame(100.0, (float) $response->json('0.payables_total'));
+        $this->assertSame(50.0, (float) $response->json('0.expenses_total'));
+        $this->assertSame(350.0, (float) $response->json('0.balance'));
+    }
+
+    public function test_cash_flow_honors_date_range_filters(): void
+    {
+        AccountReceivable::create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'created_by' => $this->user->id,
+            'description' => 'Receita 2025',
+            'amount' => 500,
+            'amount_paid' => 500,
+            'due_date' => '2025-02-10',
+            'status' => 'paid',
+        ]);
+
+        AccountReceivable::create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'created_by' => $this->user->id,
+            'description' => 'Receita 2026',
+            'amount' => 900,
+            'amount_paid' => 900,
+            'due_date' => '2026-02-10',
+            'status' => 'paid',
+        ]);
+
+        Expense::create([
+            'tenant_id' => $this->tenant->id,
+            'created_by' => $this->user->id,
+            'description' => 'Despesa 2025',
+            'amount' => 80,
+            'expense_date' => '2025-02-18',
+            'status' => 'approved',
+        ]);
+
+        $response = $this->getJson('/api/v1/cash-flow?date_from=2025-01-01&date_to=2025-12-31');
+
+        $response->assertOk()
+            ->assertJsonCount(12, 'data');
+
+        $this->assertSame(500.0, (float) $response->json('1.receivables_total'));
+        $this->assertSame(80.0, (float) $response->json('1.expenses_total'));
+        $this->assertSame(0.0, (float) $response->json('0.receivables_total'));
+        $this->assertSame(0.0, (float) $response->json('11.receivables_total'));
+    }
+
+    public function test_dre_accepts_os_number_filter(): void
+    {
+        $osCode1 = 'BL-DRE-'.uniqid();
+        $osCode2 = 'BL-DRE-'.uniqid();
+
+        $woA = WorkOrder::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'created_by' => $this->user->id,
+            'os_number' => $osCode1,
+            'number' => 'OS-'.rand(1000, 9999),
+        ]);
+        $woB = WorkOrder::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'created_by' => $this->user->id,
+            'os_number' => $osCode2,
+            'number' => 'OS-'.rand(1000, 9999),
+        ]);
+
+        AccountReceivable::create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'work_order_id' => $woA->id,
+            'created_by' => $this->user->id,
+            'description' => 'Receita A',
+            'amount' => 700,
+            'amount_paid' => 700,
+            'due_date' => now()->toDateString(),
+            'paid_at' => now()->toDateString(),
+            'status' => 'paid',
+        ]);
+        AccountReceivable::create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'work_order_id' => $woB->id,
+            'created_by' => $this->user->id,
+            'description' => 'Receita B',
+            'amount' => 900,
+            'amount_paid' => 900,
+            'due_date' => now()->toDateString(),
+            'paid_at' => now()->toDateString(),
+            'status' => 'paid',
+        ]);
+
+        AccountPayable::create([
+            'tenant_id' => $this->tenant->id,
+            'created_by' => $this->user->id,
+            'description' => 'Custo '.$osCode1,
+            'amount' => 100,
+            'amount_paid' => 100,
+            'due_date' => now()->toDateString(),
+            'paid_at' => now()->toDateString(),
+            'status' => 'paid',
+        ]);
+        AccountPayable::create([
+            'tenant_id' => $this->tenant->id,
+            'created_by' => $this->user->id,
+            'description' => 'Custo '.$osCode2,
+            'amount' => 150,
+            'amount_paid' => 150,
+            'due_date' => now()->toDateString(),
+            'paid_at' => now()->toDateString(),
+            'status' => 'paid',
+        ]);
+
+        Expense::create([
+            'tenant_id' => $this->tenant->id,
+            'work_order_id' => $woA->id,
+            'created_by' => $this->user->id,
+            'description' => 'Despesa A',
+            'amount' => 80,
+            'expense_date' => now()->toDateString(),
+            'status' => 'approved',
+        ]);
+        Expense::create([
+            'tenant_id' => $this->tenant->id,
+            'work_order_id' => $woB->id,
+            'created_by' => $this->user->id,
+            'description' => 'Despesa B',
+            'amount' => 40,
+            'expense_date' => now()->toDateString(),
+            'status' => 'approved',
+        ]);
+
+        $response = $this->getJson('/api/v1/dre?date_from=2000-01-01&date_to=2100-01-01&os_number='.$osCode1);
+
+        $response->assertOk()
+            ->assertJsonPath('data.period.os_number', $osCode1);
+
+        $this->assertSame(700.0, (float) ($response->json('data.revenue') ?? 0));
+        $this->assertSame(100.0, (float) ($response->json('data.costs') ?? 0));
+        $this->assertSame(80.0, (float) ($response->json('data.expenses') ?? 0));
+        $this->assertSame(180.0, (float) ($response->json('data.total_costs') ?? 0));
+        $this->assertSame(520.0, (float) ($response->json('data.gross_profit') ?? 0));
+    }
+
+    public function test_cash_flow_paid_columns_use_payment_records_for_partial_titles(): void
+    {
+        $receivable = AccountReceivable::create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'created_by' => $this->user->id,
+            'description' => 'Receber parcial',
+            'amount' => 1000,
+            'amount_paid' => 300,
+            'due_date' => now()->toDateString(),
+            'status' => 'partial',
+        ]);
+
+        $payable = AccountPayable::create([
+            'tenant_id' => $this->tenant->id,
+            'created_by' => $this->user->id,
+            'description' => 'Pagar parcial',
+            'amount' => 500,
+            'amount_paid' => 200,
+            'due_date' => now()->toDateString(),
+            'status' => 'partial',
+        ]);
+
+        Payment::create([
+            'tenant_id' => $this->tenant->id,
+            'payable_type' => AccountReceivable::class,
+            'payable_id' => $receivable->id,
+            'received_by' => $this->user->id,
+            'amount' => 300,
+            'payment_method' => 'pix',
+            'payment_date' => now()->toDateString(),
+        ]);
+
+        Payment::create([
+            'tenant_id' => $this->tenant->id,
+            'payable_type' => AccountPayable::class,
+            'payable_id' => $payable->id,
+            'received_by' => $this->user->id,
+            'amount' => 200,
+            'payment_method' => 'pix',
+            'payment_date' => now()->toDateString(),
+        ]);
+
+        $response = $this->getJson('/api/v1/cash-flow?months=1');
+        $response->assertOk()->assertJsonCount(1, 'data');
+
+        $this->assertSame(1000.0, (float) $response->json('0.receivables_total'));
+        $this->assertSame(300.0, (float) $response->json('0.receivables_paid'));
+        $this->assertSame(500.0, (float) $response->json('0.payables_total'));
+        $this->assertSame(200.0, (float) $response->json('0.payables_paid'));
+        $this->assertSame(100.0, (float) $response->json('0.cash_balance'));
+    }
+
+    public function test_dre_uses_payment_records_for_partial_titles(): void
+    {
+        $receivable = AccountReceivable::create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'created_by' => $this->user->id,
+            'description' => 'Receita parcial',
+            'amount' => 1000,
+            'amount_paid' => 400,
+            'due_date' => now()->toDateString(),
+            'status' => 'partial',
+        ]);
+
+        $payable = AccountPayable::create([
+            'tenant_id' => $this->tenant->id,
+            'created_by' => $this->user->id,
+            'description' => 'Custo parcial',
+            'amount' => 700,
+            'amount_paid' => 150,
+            'due_date' => now()->toDateString(),
+            'status' => 'partial',
+        ]);
+
+        Payment::create([
+            'tenant_id' => $this->tenant->id,
+            'payable_type' => AccountReceivable::class,
+            'payable_id' => $receivable->id,
+            'received_by' => $this->user->id,
+            'amount' => 400,
+            'payment_method' => 'pix',
+            'payment_date' => now()->toDateString(),
+        ]);
+
+        Payment::create([
+            'tenant_id' => $this->tenant->id,
+            'payable_type' => AccountPayable::class,
+            'payable_id' => $payable->id,
+            'received_by' => $this->user->id,
+            'amount' => 150,
+            'payment_method' => 'pix',
+            'payment_date' => now()->toDateString(),
+        ]);
+
+        $response = $this->getJson('/api/v1/dre?date_from=2000-01-01&date_to=2100-01-01');
+
+        $response->assertOk();
+        $this->assertSame(400.0, (float) $response->json('data.revenue'));
+        $this->assertSame(150.0, (float) $response->json('data.costs'));
+        $this->assertSame(250.0, (float) $response->json('data.gross_profit'));
+    }
+
+    public function test_cash_flow_and_dre_reject_invalid_parameters(): void
+    {
+        $this->getJson('/api/v1/cash-flow?months=abc')
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Parâmetros inválidos para fluxo de caixa.');
+
+        $this->getJson('/api/v1/dre?date_from=2026-02-10&date_to=2026-02-01')
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Parâmetros inválidos para DRE.');
+    }
+
+    public function test_dre_pending_totals_use_open_balance_and_payment_date_range_includes_same_day(): void
+    {
+        $receivablePending = AccountReceivable::create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'created_by' => $this->user->id,
+            'description' => 'Receita pendente parcial',
+            'amount' => 1000,
+            'amount_paid' => 400,
+            'due_date' => now()->toDateString(),
+            'status' => 'partial',
+        ]);
+
+        $payablePending = AccountPayable::create([
+            'tenant_id' => $this->tenant->id,
+            'created_by' => $this->user->id,
+            'description' => 'Custo pendente parcial',
+            'amount' => 800,
+            'amount_paid' => 300,
+            'due_date' => now()->toDateString(),
+            'status' => 'partial',
+        ]);
+
+        $receivablePaidToday = AccountReceivable::create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'created_by' => $this->user->id,
+            'description' => 'Receita paga hoje',
+            'amount' => 200,
+            'amount_paid' => 0,
+            'due_date' => now()->subDays(5)->toDateString(),
+            'status' => 'pending',
+        ]);
+
+        $payablePaidToday = AccountPayable::create([
+            'tenant_id' => $this->tenant->id,
+            'created_by' => $this->user->id,
+            'description' => 'Custo pago hoje',
+            'amount' => 150,
+            'amount_paid' => 0,
+            'due_date' => now()->subDays(5)->toDateString(),
+            'status' => 'pending',
+        ]);
+
+        Payment::create([
+            'tenant_id' => $this->tenant->id,
+            'payable_type' => AccountReceivable::class,
+            'payable_id' => $receivablePaidToday->id,
+            'received_by' => $this->user->id,
+            'amount' => 200,
+            'payment_method' => 'pix',
+            'payment_date' => now()->toDateTimeString(),
+        ]);
+
+        Payment::create([
+            'tenant_id' => $this->tenant->id,
+            'payable_type' => AccountPayable::class,
+            'payable_id' => $payablePaidToday->id,
+            'received_by' => $this->user->id,
+            'amount' => 150,
+            'payment_method' => 'pix',
+            'payment_date' => now()->toDateTimeString(),
+        ]);
+
+        $response = $this->getJson('/api/v1/dre?date_from='.now()->toDateString().'&date_to='.now()->toDateString());
+        $response->assertOk();
+
+        $this->assertSame(600.0, (float) $response->json('data.revenue'));
+        $this->assertSame(450.0, (float) $response->json('data.costs'));
+        $this->assertSame(600.0, (float) $response->json('data.receivables_pending'));
+        $this->assertSame(500.0, (float) $response->json('data.payables_pending'));
+    }
+
+    public function test_cash_flow_and_dre_include_legacy_partial_amount_paid_without_payment_records(): void
+    {
+        AccountReceivable::create([
+            'tenant_id' => $this->tenant->id,
+            'customer_id' => $this->customer->id,
+            'created_by' => $this->user->id,
+            'description' => 'Receita parcial legada',
+            'amount' => 1000,
+            'amount_paid' => 350,
+            'due_date' => now()->subDays(10)->toDateString(),
+            'paid_at' => now()->toDateString(),
+            'status' => 'partial',
+        ]);
+
+        AccountPayable::create([
+            'tenant_id' => $this->tenant->id,
+            'created_by' => $this->user->id,
+            'description' => 'Custo parcial legado',
+            'amount' => 800,
+            'amount_paid' => 125,
+            'due_date' => now()->subDays(7)->toDateString(),
+            'paid_at' => now()->toDateString(),
+            'status' => 'partial',
+        ]);
+
+        $cashFlow = $this->getJson('/api/v1/cash-flow?months=1')->assertOk();
+        $dre = $this->getJson('/api/v1/dre?date_from='.now()->toDateString().'&date_to='.now()->toDateString())->assertOk();
+
+        $this->assertSame(350.0, (float) $cashFlow->json('0.receivables_paid'));
+        $this->assertSame(125.0, (float) $cashFlow->json('0.payables_paid'));
+        $this->assertSame(350.0, (float) $dre->json('data.revenue'));
+        $this->assertSame(125.0, (float) $dre->json('data.costs'));
+    }
+}

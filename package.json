@@ -1,0 +1,20 @@
+{
+  "private": true,
+  "scripts": {
+    "test": "node scripts/test-runner.mjs",
+    "test:backend": "node scripts/test-runner.mjs backend",
+    "test:frontend": "node scripts/test-runner.mjs frontend",
+    "test:analysis": "node scripts/test-runner.mjs analysis",
+    "test:parallel": "node scripts/test-runner.mjs --parallel",
+    "test:watch": "node scripts/test-runner.mjs frontend --watch",
+    "test:coverage": "node scripts/test-runner.mjs --coverage",
+    "test:quick": "node scripts/test-runner.mjs backend --suite=Unit",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3"
+  }
+}

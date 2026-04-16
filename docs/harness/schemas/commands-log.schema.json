@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kalibrium.local/schemas/commands-log.schema.json",
+  "title": "Autonomous Harness Command Log JSONL Entry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "audited_layer",
+    "cycle",
+    "command",
+    "cwd",
+    "started_at",
+    "finished_at",
+    "exit_code",
+    "status",
+    "stdout_excerpt",
+    "stderr_excerpt",
+    "replacement_for",
+    "original_command",
+    "effective_command",
+    "waiver_basis",
+    "canonical_basis",
+    "approved_by",
+    "justification",
+    "essential_for_approval",
+    "actor_role",
+    "agent_id",
+    "review_round",
+    "context_fingerprint",
+    "source_bundle_hash",
+    "environment",
+    "output_hash"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "run_id": { "type": "string" },
+    "audited_layer": { "type": "integer", "minimum": 0, "maximum": 7 },
+    "cycle": { "type": "integer", "minimum": 1 },
+    "command": { "type": "string" },
+    "cwd": { "type": "string" },
+    "started_at": { "type": "string", "format": "date-time" },
+    "finished_at": { "type": "string", "format": "date-time" },
+    "exit_code": { "type": ["integer", "null"] },
+    "status": {
+      "enum": [
+        "passed",
+        "failed",
+        "not_executed",
+        "blocked_environment",
+        "blocked_policy",
+        "waived_by_policy",
+        "replaced_by_equivalent"
+      ]
+    },
+    "stdout_excerpt": { "type": ["string", "null"] },
+    "stderr_excerpt": { "type": ["string", "null"] },
+    "replacement_for": { "type": ["string", "null"] },
+    "original_command": { "type": ["string", "null"] },
+    "effective_command": { "type": ["string", "null"] },
+    "waiver_basis": { "type": ["string", "null"] },
+    "canonical_basis": { "type": ["string", "null"] },
+    "approved_by": { "type": ["string", "null"] },
+    "justification": { "type": ["string", "null"] },
+    "essential_for_approval": { "type": "boolean" },
+    "actor_role": { "enum": ["orchestrator", "auditor", "fixer", "verifier", "llm-cli"] },
+    "agent_id": { "type": "string", "minLength": 1 },
+    "review_round": { "type": "integer", "minimum": 1, "maximum": 10 },
+    "context_fingerprint": { "type": "string", "minLength": 1 },
+    "source_bundle_hash": { "type": "string", "minLength": 1 },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node_version", "platform", "arch", "pid", "shell"],
+      "properties": {
+        "node_version": { "type": "string", "minLength": 1 },
+        "platform": { "type": "string", "minLength": 1 },
+        "arch": { "type": "string", "minLength": 1 },
+        "pid": { "type": "integer" },
+        "shell": { "type": ["string", "null"] }
+      }
+    },
+    "output_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "passed" } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "exit_code": { "const": 0 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "status": { "const": "replaced_by_equivalent" } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "original_command": { "type": "string" },
+          "effective_command": { "type": "string" },
+          "canonical_basis": { "type": "string" },
+          "approved_by": { "type": "string" },
+          "justification": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "status": { "const": "waived_by_policy" } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "waiver_basis": { "type": "string" },
+          "canonical_basis": { "type": "string" },
+          "approved_by": { "type": "string" },
+          "essential_for_approval": { "const": false }
+        }
+      }
+    }
+  ]
+}

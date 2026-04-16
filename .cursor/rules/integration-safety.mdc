@@ -1,0 +1,138 @@
+# Integração de Código Externo (REGRA OBRIGATÓRIA)
+
+## Contexto
+
+Quando integrar código de fonte externa (outro agente, Antigravity, copy-paste de outro projeto, PR de terceiros), aplicar SEMPRE as regras abaixo para evitar erros já corrigidos no passado.
+
+---
+
+## 1. Frontend: Nenhuma biblioteca de UI nova sem conferir o projeto
+
+O projeto usa **componentes próprios** em `frontend/src/components/ui/` e `frontend/src/components/common/`. Não usa Material UI, Chakra, Ant Design, etc.
+
+- **Regra:** Antes de usar qualquer componente de UI, verificar se já existe no projeto (`@/components/ui/*`, `@/components/common/*`).
+- **Se o código externo usar** `@mui/material`, `chakra-ui`, `antd`, etc.: reescrever usando os componentes do projeto (Button, Input, Modal, Card, PageHeader, etc.) ou `div`/elementos nativos.
+- **Regra:** NUNCA adicionar `@mui/material`, `chakra-ui`, `antd` como dependência para "uma tela nova" vinda de fora.
+
+---
+
+## 2. Frontend: Todo componente usado deve estar importado
+
+Erros do tipo `ReferenceError: X is not defined` ocorrem quando um componente é usado no JSX mas não foi importado.
+
+- **Regra:** Ao criar ou editar uma página/componente, garantir que **todos** os símbolos usados no arquivo tenham import correspondente (componentes de UI, ícones de `lucide-react`, hooks, `cn` de `@/lib/utils`, etc.).
+- **Checklist antes de commitar:** procurar no arquivo por `<NomeComponente` ou `NomeComponente(` e conferir se existe `import ... NomeComponente` no topo.
+
+### 2.1 Tipos e interfaces compartilhados
+
+- **Regra:** Tipos/interfaces usados por mais de um arquivo devem ser **exportados** (ex.: `InputProps` em `@/components/ui/input`) ou definidos em arquivo compartilhado (ex.: `@/types/...`).
+- **Regra:** Para a mesma entidade (ex.: `FiscalNote`, `User`), evitar dois tipos com o mesmo nome em arquivos diferentes; preferir **uma única definição** (exportada) ou garantir compatibilidade (campos opcionais onde a API pode omitir).
+- **Regra:** Ao usar `variant="neutral"`, `size="xs"`, etc., garantir que o componente (`Button`, `Badge`) declare essa variante/tamanho em seus tipos; caso contrário, adicionar no componente ou usar variante/tamanho já existente.
+
+---
+
+## 3. API / lib: Usar a base do projeto
+
+- **Regra:** Chamadas HTTP devem usar `import api from '@/lib/api'` (ou `@/lib/crm-features-api` quando for CRM). NUNCA criar novo cliente (ex.: `axios.create`) ou usar path como `@/services/api` se o projeto usar `@/lib/api`.
+- **Regra:** Verificar em `frontend/src/lib/api.ts` o `baseURL` (ex.: `/api/v1`) e não duplicar lógica de auth/interceptors.
+
+---
+
+## 4. Rotas Laravel: Rotas específicas ANTES de rotas com parâmetro
+
+O Laravel faz match na ordem. Se existir `Route::get('customers/{customer}', ...)` antes de `Route::get('customers/search-duplicates', ...)`, a URL `customers/search-duplicates` será interpretada como `{customer} = 'search-duplicates'` e retornará 404 (recurso não encontrado).
+
+- **Regra:** Rotas com path literal (ex.: `customers/search-duplicates`, `customers/merge`, `customers/options`) devem ser registradas **antes** de rotas com segmento dinâmico (ex.: `customers/{customer}`).
+- **Padrão:** Agrupar no `api.php`: primeiro todos os `GET/POST path/literal`, depois os `path/{id}`.
+
+---
+
+## 5. Frontend-Backend: Rotas devem existir antes de chamar
+
+Ao criar uma página no frontend que consome endpoints da API, os endpoints devem existir no backend. E vice-versa: ao criar rotas no backend, o frontend deve ter como consumi-las.
+
+- **Regra:** Antes de criar chamada `api.get('/endpoint')` ou `api.post('/endpoint')` no frontend, verificar que a rota existe em `backend/routes/api.php` com o método HTTP correto (GET, POST, PUT, DELETE).
+- **Regra:** Ao criar uma nova rota no backend, verificar se o controller referenciado existe e tem o método definido.
+- **Regra:** Se o frontend chamar endpoint que ainda não existe, criar o endpoint completo (rota + controller + método) antes de integrar.
+- **Checklist:** Verificar método HTTP (GET vs POST vs PUT), prefixo de rota (ex.: `hr/` vs `hr-advanced/`), e permissão do middleware.
+
+```ts
+// ERRADO — frontend chama endpoint que não existe no backend
+const { data } = await api.get('/hr/clock/my')  // rota não registrada
+
+// CORRETO — verificar que a rota existe em api.php antes
+// Route::get('clock/my', [HRAdvancedController::class, 'myClockEntries']);
+const { data } = await api.get('/hr/clock/my')
+```
+
+---
+
+## 6. Migrations: Seguir regras de produção
+
+Migrations vindas de código externo costumam não seguir as regras do projeto. Sempre revisar.
+
+- **Regra:** Verificar `.cursor/rules/migration-production.mdc`. Resumo rápido:
+  - NUNCA usar `->after()`
+  - NUNCA usar `->default()` em coluna JSON
+  - Usar `Schema::hasTable()` / `Schema::hasColumn()` em alterações incrementais
+  - Novas colunas: `nullable()` ou `default()` seguro
+  - Índices compostos: nome curto se risco de > 64 caracteres
+- **Regra:** Migration vazia ou só com `return` → preencher com lógica real ou remover; não deixar stub vazio.
+
+### 6.1 Dependências: versão major (Zod, React, etc.)
+
+Ao integrar código que usa versão diferente de lib (ex.: Zod 3 vs Zod 4), a API pode ter mudado.
+
+- **Regra:** Verificar changelog/breaking changes da lib (ex.: Zod 4 remove ou altera `required_error`; usar `message` ou API atual).
+- **Regra:** Após atualizar dependência major no projeto, rodar `npm run build` (frontend) e corrigir erros de tipo antes de commitar.
+
+---
+
+## 7. Deploy: Backend com alteração de código = rebuild do container
+
+Alterações em `backend/routes/api.php`, controllers, models, etc. **não** aparecem no servidor só com `git pull` se o código estiver **dentro da imagem Docker**. O container precisa ser reconstruído.
+
+- **Regra:** Se o deploy incluir mudanças em arquivos PHP do backend (rotas, controllers, models, config), rodar `docker compose build backend` e `up -d backend` (e `restart nginx`). Não confiar apenas em `route:cache` com código antigo na imagem.
+- **Regra:** Se o deploy incluir mudanças no frontend (React/TS/Vite), rodar `docker compose build frontend` e `up -d frontend`.
+- **Referência completa:** `.cursor/rules/deploy-production.mdc` (fluxo completo + erros comuns)
+
+---
+
+## 8. Frontend Hooks: Cache Safety (React Query + Zustand)
+
+Ao integrar código que busca dados da API, NUNCA criar padrões que contornem o cache do React Query.
+
+```ts
+// ❌ ERRADO — bypass do React Query cache com useState + useEffect
+const [data, setData] = useState([])
+useEffect(() => {
+  api.get('/resources').then(r => setData(r.data.data))
+}, [])
+
+// ✅ CORRETO — usar React Query (cache, retry, invalidação automática)
+const { data } = useQuery({
+  queryKey: ['resources'],
+  queryFn: () => api.get('/resources').then(r => r.data),
+})
+const items = data?.data ?? []
+```
+
+- **Estado servidor (dados da API):** EXCLUSIVAMENTE React Query (`useQuery`, `useMutation`). PROIBIDO `useState` + `useEffect` para fetching
+- **Estado UI local (modal aberto, tab selecionada):** `useState` é OK
+- **Estado global (user logado, theme, sidebar):** EXCLUSIVAMENTE Zustand
+- **Invalidação:** Toda `useMutation` que altera dados DEVE chamar `queryClient.invalidateQueries()` no `onSuccess`
+- **Referência:** `.cursor/rules/frontend-type-consistency.mdc` regra 13 (Gerenciamento de Estado Estrito) e regra 18 (React Query Padrões)
+
+---
+
+## Checklist ao integrar código externo
+
+- [ ] Frontend: nenhuma lib de UI nova (MUI, Chakra, etc.); usar componentes do projeto
+- [ ] Frontend: todos os componentes/símbolos usados estão importados
+- [ ] Frontend: tipos compartilhados exportados; mesma entidade não tem dois tipos incompatíveis
+- [ ] Frontend: variant/size usados existem no componente (Button, Badge)
+- [ ] Frontend: onError com optional chaining e preferir `err?.response?.data?.message`; controles de formulário e botões só com ícone com acessibilidade (label/aria-label)
+- [ ] Frontend: chamadas HTTP usam `@/lib/api` (ou crm-features-api)
+- [ ] Backend: rotas literais (`/search-duplicates`, `/merge`) registradas antes de rotas `/{id}`
+- [ ] Migrations: sem `after()`, sem `default()` em JSON, com guards quando necessário
+- [ ] Deploy: rebuild do backend se houve mudança em PHP; rebuild do frontend se houve mudança em TS/React

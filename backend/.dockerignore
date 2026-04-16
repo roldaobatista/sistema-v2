@@ -1,0 +1,18 @@
+# Excluir .env do build — em produção é montado via volume
+# O .env NUNCA deve ser copiado na imagem Docker (COPY . .)
+# Em produção: docker-compose monta ./backend/.env:/var/www/.env:ro
+.env
+.env.example
+.env.*.local
+
+# Desenvolvimento
+node_modules
+vendor
+.phpunit.cache
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+.git
+.gitignore
+docker-compose*.yml

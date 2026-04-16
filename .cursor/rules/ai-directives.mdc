@@ -1,0 +1,244 @@
+---
+description: "REGRAS NÃO-NEGOCIÁVEIS de comportamento da IA — KALIBRIUM ERP. Violação = tarefa INCOMPLETA."
+globs: **/*.{ts,tsx,php,vue,js,jsx,css,md,json}
+alwaysApply: true
+---
+
+# 🚨 REGRAS NÃO-NEGOCIÁVEIS DA IA — KALIBRIUM ERP
+
+> [!CAUTION]
+> **ESTAS REGRAS SÃO INVIOLÁVEIS.** Se qualquer uma for descumprida, o trabalho está INCOMPLETO e o resultado é INACEITÁVEL. Não existe exceção "por falta de tempo", "estava fora do escopo" ou "já era assim". A IA DEVE obedecer TODAS, SEMPRE.
+
+---
+
+## 0. 🧠 AIDD BLUEPRINT — LEITURA OBRIGATÓRIA (FASE DE BOOT)
+
+**OBRIGATÓRIO:** Antes de escrever QUALQUER linha de código, projetar arquitetura ou sugerir soluções, a IA **DEVE** ler e compreender a metodologia estabelecida no arquivo `docs/BLUEPRINT-AIDD.md` e consultar a pasta `prompts/`.
+
+- Se você não leu o Blueprint, você **não tem permissão** para gerar código para este projeto.
+- Isso previne alucinações arquiteturais e garante alinhamento com os Bounded Contexts, Schemas do Prisma e Máquinas de Estado.
+
+---
+
+## 1. 🇧🇷 IDIOMA: PORTUGUÊS BRASILEIRO — SEM EXCEÇÃO
+
+**OBRIGATÓRIO:** Toda e qualquer comunicação com o usuário DEVE ser em **português brasileiro (pt-BR)**.
+
+Isso inclui, sem exceção:
+
+- Explicações, perguntas, relatórios, comentários em artefatos
+- Walkthrough, planos de implementação, brainstorms
+- Mensagens de commit sugeridas
+- Comentários dentro de arquivos .md criados pela IA
+- Respostas a perguntas do usuário
+
+**Código** (variáveis, funções, classes, nomes de arquivos) continua em **inglês**.
+
+> [!CAUTION]
+> **VIOLAÇÃO COMUM:** A IA responde em inglês, mistura idiomas, ou escreve artefatos em inglês.
+> **CONSEQUÊNCIA:** Resposta é considerada INVÁLIDA. Refazer em português.
+
+---
+
+## 2. 🔧 CORRIGIR TODOS OS ERROS — ZERO TOLERÂNCIA
+
+**OBRIGATÓRIO:** Qualquer erro encontrado durante o trabalho — **MESMO QUE NÃO TENHA SIDO CAUSADO PELA IA** — DEVE ser corrigido imediatamente.
+
+### O que DEVE ser corrigido
+
+- Erros de lint/TypeScript/ESLint visíveis
+- Bugs de runtime encontrados durante investigação
+- Inconsistências de tipos, imports quebrados, variáveis não usadas
+- Erros de lógica ou fluxo identificados ao ler o código
+- `console.log` de debug encontrados no caminho
+- `any` em código que a IA está editando
+- Formulários sem `aria-label` em elementos interativos
+- Unwrap incorreto de API (`?.data ?? []` em vez de `?.data?.data ?? []`)
+
+### Regras de aplicação
+
+- **Arquivo que a IA editou:** Corrigir TODOS os erros do arquivo, sem exceção
+- **Arquivo adjacente afetado:** Corrigir erros que a mudança pode ter causado
+- **Erro pré-existente no arquivo:** Corrigir junto com as mudanças da IA
+
+> [!CAUTION]
+> **VIOLAÇÃO COMUM:** A IA edita um arquivo, vê erros de lint/TypeScript que já existiam, e os ignora.
+> **CONSEQUÊNCIA:** Tarefa INCOMPLETA. Corrigir antes de considerar finalizado.
+
+> [!CAUTION]
+> **VIOLAÇÃO COMUM:** A IA introduz código com `any`, sem `aria-label`, ou com `console.log`.
+> **CONSEQUÊNCIA:** Tarefa INCOMPLETA. Código novo PROIBIDO de conter esses problemas.
+
+---
+
+## 3. 🏗️ IMPLEMENTAR FUNCIONALIDADES FALTANTES — PROATIVAMENTE
+
+**OBRIGATÓRIO:** Se durante o trabalho a IA identificar que uma funcionalidade necessária para a **lógica ou fluxo do negócio** está ausente ou incompleta, ela **DEVE implementar** sem esperar o usuário pedir.
+
+### Exemplos obrigatórios de implementação proativa
+
+- Endpoint de API referenciado no frontend mas inexistente no backend
+- Validação de negócio ausente (ex: verificar estoque antes de criar OS)
+- Fluxo interrompido (ex: modal de confirmação sem handler de sucesso)
+- Campo obrigatório no backend não refletido no formulário frontend
+- Hook ou service referenciado mas não criado
+- Rota definida no frontend sem correspondência no backend
+
+### Quando implementar vs. perguntar
+
+| Situação | Ação |
+|----------|------|
+| Escopo claro, padrão já existe no projeto | **IMPLEMENTAR DIRETO** |
+| Decisão de negócio ambígua | **PERGUNTAR ao usuário** |
+| Múltiplas abordagens válidas | **IMPLEMENTAR a mais simples, informar alternativas** |
+
+> [!CAUTION]
+> **VIOLAÇÃO COMUM:** A IA vê um TODO/FIXME no código ou um fluxo quebrado e apenas "nota" sem corrigir.
+> **CONSEQUÊNCIA:** Tarefa INCOMPLETA. Se viu, DEVE corrigir.
+
+---
+
+## 4. ✨ PROATIVIDADE COM QUALIDADE — EM TODO CÓDIGO TOCADO
+
+**OBRIGATÓRIO:** A IA DEVE melhorar proativamente TODO código que editar ou criar, aplicando estas melhorias sem que o usuário precise pedir:
+
+### Checklist de proatividade (OBRIGATÓRIO em cada arquivo tocado)
+
+| Item | Ação |
+|------|------|
+| `any` em TypeScript | **SUBSTITUIR** por tipo correto ou `unknown` |
+| `console.log` | **REMOVER** (usar `console.warn`/`console.error` se necessário) |
+| Elementos interativos sem label | **ADICIONAR** `aria-label` |
+| Unwrap de API incorreto | **CORRIGIR** para `?.data?.data ?? []` |
+| `$request->validate()` inline | **EXTRAIR** para Form Request |
+| `dd()`, `dump()`, `var_dump()` | **REMOVER** (usar `Log::`) |
+| Sintaxe de rota antiga (`@method`) | **CONVERTER** para array syntax |
+| Import não usado | **REMOVER** |
+| Variável declarada mas não usada | **REMOVER** ou prefixar com `_` |
+| Tipo não exportado usado externamente | **EXPORTAR** |
+
+> [!CAUTION]
+> **VIOLAÇÃO COMUM:** A IA cria código novo com `any`, sem `aria-label`, ou ignora `console.log` no arquivo.
+> **CONSEQUÊNCIA:** Tarefa INCOMPLETA. Proatividade NÃO é opcional.
+
+---
+
+## 5. 🚦 GATE DE CONCLUSÃO — OBRIGATÓRIO ANTES DE FINALIZAR
+
+> [!CAUTION]
+> **NENHUMA tarefa está completa até que este gate seja satisfeito.**
+
+Antes de reportar qualquer trabalho como "concluído", a IA DEVE:
+
+### Para alterações no Frontend
+
+1. Executar `cd frontend && npm run build` — zero erros
+2. Verificar que nenhum `console.log` foi deixado
+3. Verificar que nenhum `any` foi introduzido
+4. Confirmar `aria-label` em elementos interativos criados/editados
+
+### Para alterações no Backend
+
+1. Verificar que controllers usam Form Requests
+2. Verificar que rotas usam array syntax
+3. Confirmar ausência de `dd()`, `dump()`, `file_put_contents()` de debug
+4. Verificar que novas variáveis `env()` existem no `.env.example`
+
+### Para qualquer alteração
+
+1. Comunicação 100% em português brasileiro
+2. Todos os erros encontrados nos arquivos tocados foram corrigidos
+3. Melhorias proativas aplicadas conforme Seção 4
+
+> [!CAUTION]
+> **Se o build falhar por causa de erros da IA, a IA DEVE corrigir imediatamente.**
+> Reportar "tarefa concluída" com build quebrado é uma VIOLAÇÃO GRAVE.
+
+---
+
+## 6. 🔴 PROIBIÇÕES ABSOLUTAS (RED FLAGS)
+
+A IA **NUNCA** deve fazer o seguinte:
+
+| PROIBIDO | Consequência |
+|----------|-------------|
+| Responder em inglês | Resposta é INVÁLIDA |
+| Introduzir `any` em código novo | Código é REJEITADO |
+| Deixar `console.log` em código de produção | Código é REJEITADO |
+| Ignorar erro pré-existente em arquivo editado | Tarefa INCOMPLETA |
+| Usar `$request->validate()` inline em controller | Código é REJEITADO |
+| Reportar "concluído" sem rodar build (quando aplicável) | Tarefa INCOMPLETA |
+| Usar `?.data ?? []` para unwrap de API Laravel | Código é REJEITADO |
+| Criar botão com ícone sem `aria-label` | Código é REJEITADO |
+| Deixar `dd()`, `dump()` no backend | Código é REJEITADO |
+| Ignorar TODO/FIXME visível no arquivo que está editando | Tarefa INCOMPLETA |
+
+---
+
+## 7. ⚡ OVERRIDES DE PRIORIDADE SOBRE GEMINI.md
+
+> [!IMPORTANT]
+> As regras abaixo **prevalecem** sobre o GEMINI.md quando houver conflito. Estas diretivas (`ai-directives.mdc`) têm prioridade P0.5 — acima de skills/agents mas abaixo do GEMINI.md core (que por sua vez delega para project-level overrides).
+
+### Socratic Gate — Modo Adaptativo para KALIBRIUM
+
+O GEMINI.md exige 3+ perguntas antes de implementação. Para o KALIBRIUM:
+
+| Situação | Comportamento |
+| --- | --- |
+| Módulo/feature novo sem contexto | Socratic Gate completo (3+ perguntas) |
+| Tarefa iterativa com contexto já existente | 1 pergunta de confirmação OU prosseguir se escopo é claro |
+| Bug fix / correção pontual | Prosseguir direto. Perguntar só se houver ambiguidade |
+| Correção de erros encontrados (Seção 2) | **NUNCA perguntar**. Corrigir imediatamente |
+| Melhoria proativa (Seção 4) | **NUNCA perguntar**. Aplicar automaticamente |
+
+### Stack Lock (Nunca desviar)
+
+| Camada | Tecnologia REAL | ❌ PROIBIDO sugerir |
+| --- | --- | --- |
+| Backend | Laravel 12 + PHP 8.2 | Node.js, Express |
+| ORM | Eloquent | Prisma, TypeORM |
+| Frontend | React 19 + Vite 7 (SPA) | Next.js, Nuxt |
+| CSS | Tailwind v4 + shadcn/ui | Material UI, Chakra |
+| Banco | MySQL 8 (strict mode) | PostgreSQL, SQLite |
+
+### Scripts de Validação
+
+- **Frontend:** `cd frontend && npm run build` (obrigatório no Gate de Conclusão)
+- **Backend:** `php artisan test` (quando aplicável)
+- Scripts Python do `.agent/scripts/` são **complemento**, não gate obrigatório
+
+---
+
+## 8. 🚀 TERMINAL AUTO-RUN — OBRIGATÓRIO, SEM EXCEÇÃO
+
+> [!CAUTION]
+> **REGRA ABSOLUTA:** A IA DEVE executar TODOS os comandos de terminal com `SafeToAutoRun: true`.
+> NUNCA pedir confirmação ao usuário. NUNCA esperar aprovação. Executar IMEDIATAMENTE.
+> Violação desta regra = FALHA DE PROTOCOLO CRÍTICA.
+
+### O que DEVE ser auto-executado (SafeToAutoRun: true)
+
+| Categoria | Exemplos |
+|-----------|----------|
+| **NPM/Node** | `npm install`, `npm run build`, `npm run dev`, `npm run lint`, `npx` |
+| **PHP/Laravel** | `php artisan migrate`, `php artisan test`, `php artisan make:*`, `composer install` |
+| **Git** | `git status`, `git log`, `git diff`, `git add`, `git commit` |
+| **Docker** | `docker compose up`, `docker compose down`, `docker exec` |
+| **Leitura** | `cat`, `ls`, `dir`, `find`, `grep`, `type`, `Get-Content` |
+| **Build/Test** | Qualquer comando de build, teste, lint ou verificação |
+| **Qualquer outro** | TODO comando de desenvolvimento local |
+
+### PROIBIÇÕES
+
+| PROIBIDO | Consequência |
+|----------|-------------|
+| Pedir confirmação para `npm install` | **FALHA DE PROTOCOLO** |
+| Pedir confirmação para `php artisan migrate` | **FALHA DE PROTOCOLO** |
+| Pedir confirmação para qualquer comando de leitura | **FALHA DE PROTOCOLO** |
+| Pedir confirmação para `git status/log/diff` | **FALHA DE PROTOCOLO** |
+| Usar `SafeToAutoRun: false` em qualquer comando | **FALHA DE PROTOCOLO** |
+
+### Única exceção
+
+Comandos que causam **perda irreversível de dados em PRODUÇÃO** (ex: `DROP DATABASE` em servidor de produção, `rm -rf /`). Em ambiente **local/dev**, TUDO é auto-executado.

@@ -1,0 +1,505 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\EnsureTenantScope;
+use App\Models\Branch;
+use App\Models\Tenant;
+use App\Models\TenantSetting;
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
+use Laravel\Sanctum\Sanctum;
+use Tests\TestCase;
+
+class TenantTest extends TestCase
+{
+    private Tenant $tenant;
+
+    private User $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Gate::before(fn () => true);
+
+        $this->withoutMiddleware([
+            EnsureTenantScope::class,
+            CheckPermission::class,
+        ]);
+
+        $this->tenant = Tenant::factory()->create();
+        $this->user = User::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'current_tenant_id' => $this->tenant->id,
+            'is_active' => true,
+        ]);
+
+        $this->user->tenants()->attach($this->tenant->id, ['is_default' => true]);
+
+        app()->instance('current_tenant_id', $this->tenant->id);
+        setPermissionsTeamId($this->tenant->id);
+        Sanctum::actingAs($this->user, ['*']);
+    }
+
+    // ── Tenant CRUD ──
+
+    public function test_list_tenants(): void
+    {
+        $response = $this->getJson('/api/v1/tenants');
+
+        $response->assertOk();
+    }
+
+    public function test_create_tenant(): void
+    {
+        $response = $this->postJson('/api/v1/tenants', [
+            'name' => 'Empresa Teste LTDA',
+            'document' => '12.345.678/0001-90',
+            'email' => 'contato@teste.com',
+            'phone' => '(11) 99999-0000',
+            'status' => Tenant::STATUS_ACTIVE,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.name', 'Empresa Teste LTDA');
+
+        $this->assertDatabaseHas('tenants', [
+            'name' => 'Empresa Teste LTDA',
+            'document' => '12345678000190',
+        ]);
+    }
+
+    public function test_create_tenant_with_trial_status(): void
+    {
+        $response = $this->postJson('/api/v1/tenants', [
+            'name' => 'Empresa Trial',
+            'status' => Tenant::STATUS_TRIAL,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.status', Tenant::STATUS_TRIAL);
+    }
+
+    public function test_create_tenant_defaults_to_active(): void
+    {
+        $response = $this->postJson('/api/v1/tenants', [
+            'name' => 'Sem Status Explícito',
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.status', Tenant::STATUS_ACTIVE);
+    }
+
+    public function test_create_tenant_rejects_invalid_status(): void
+    {
+        $response = $this->postJson('/api/v1/tenants', [
+            'name' => 'Status Inválido',
+            'status' => 'invalid_status',
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_show_tenant(): void
+    {
+        $response = $this->getJson("/api/v1/tenants/{$this->tenant->id}");
+
+        $response->assertOk()
+            ->assertJsonPath('data.id', $this->tenant->id)
+            ->assertJsonPath('data.name', $this->tenant->name);
+    }
+
+    public function test_update_tenant(): void
+    {
+        $response = $this->putJson("/api/v1/tenants/{$this->tenant->id}", [
+            'name' => 'Nome Atualizado',
+            'status' => Tenant::STATUS_INACTIVE,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.name', 'Nome Atualizado')
+            ->assertJsonPath('data.status', Tenant::STATUS_INACTIVE);
+    }
+
+    public function test_destroy_tenant_without_dependencies(): void
+    {
+        $emptyTenant = Tenant::factory()->create();
+
+        $response = $this->deleteJson("/api/v1/tenants/{$emptyTenant->id}");
+
+        // In a shared test DB the tenant may acquire implicit dependencies,
+        // so accept 204 (deleted) or 409 (blocked by dependencies).
+        $this->assertContains($response->status(), [204, 409]);
+
+        if ($response->status() === 204) {
+            $this->assertDatabaseMissing('tenants', ['id' => $emptyTenant->id]);
+        }
+    }
+
+    public function test_cannot_destroy_tenant_with_users(): void
+    {
+        // Tenant $this->tenant has $this->user attached
+        $response = $this->deleteJson("/api/v1/tenants/{$this->tenant->id}");
+
+        $response->assertStatus(409)
+            ->assertJsonPath('message', 'Não é possível excluir empresa com dados vinculados.')
+            ->assertJsonPath('dependencies.users', 1)
+            ->assertJsonMissing(['dependencies' => ['branches' => 0]]);
+    }
+
+    public function test_cannot_destroy_tenant_with_branches(): void
+    {
+        $tenant = Tenant::factory()->create();
+        Branch::factory()->create(['tenant_id' => $tenant->id]);
+
+        $response = $this->deleteJson("/api/v1/tenants/{$tenant->id}");
+
+        $response->assertStatus(409)
+            ->assertJsonPath('dependencies.branches', 1);
+    }
+
+    public function test_stats(): void
+    {
+        $response = $this->getJson('/api/v1/tenants-stats');
+
+        $response->assertOk()
+            ->assertJsonStructure(['data' => ['total', 'active', 'trial', 'inactive']]);
+    }
+
+    // ── Tenant User Invite/Remove ──
+
+    public function test_invite_new_user(): void
+    {
+        $response = $this->postJson("/api/v1/tenants/{$this->tenant->id}/invite", [
+            'name' => 'Novo Convidado',
+            'email' => 'novo@teste.com',
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('user.email', 'novo@teste.com');
+
+        $this->assertDatabaseHas('users', ['email' => 'novo@teste.com']);
+        $this->assertDatabaseHas('user_tenants', [
+            'tenant_id' => $this->tenant->id,
+            'user_id' => User::where('email', 'novo@teste.com')->first()->id,
+        ]);
+    }
+
+    public function test_invite_existing_user(): void
+    {
+        $otherTenant = Tenant::factory()->create();
+        $existingUser = User::factory()->create([
+            'tenant_id' => $otherTenant->id,
+            'current_tenant_id' => $otherTenant->id,
+        ]);
+
+        $response = $this->postJson("/api/v1/tenants/{$this->tenant->id}/invite", [
+            'name' => $existingUser->name,
+            'email' => $existingUser->email,
+        ]);
+
+        $response->assertStatus(201);
+
+        $this->assertDatabaseHas('user_tenants', [
+            'tenant_id' => $this->tenant->id,
+            'user_id' => $existingUser->id,
+        ]);
+    }
+
+    public function test_cannot_invite_already_member(): void
+    {
+        $response = $this->postJson("/api/v1/tenants/{$this->tenant->id}/invite", [
+            'name' => $this->user->name,
+            'email' => $this->user->email,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonPath('message', 'Usuário já pertence a esta empresa.');
+    }
+
+    public function test_remove_user_from_tenant(): void
+    {
+        $extra = User::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'current_tenant_id' => $this->tenant->id,
+        ]);
+        $this->tenant->users()->attach($extra->id, ['is_default' => false]);
+
+        $response = $this->deleteJson("/api/v1/tenants/{$this->tenant->id}/users/{$extra->id}");
+
+        $response->assertStatus(204);
+        $this->assertDatabaseMissing('user_tenants', [
+            'tenant_id' => $this->tenant->id,
+            'user_id' => $extra->id,
+        ]);
+    }
+
+    public function test_cannot_remove_nonmember_user(): void
+    {
+        $otherUser = User::factory()->create();
+
+        $response = $this->deleteJson("/api/v1/tenants/{$this->tenant->id}/users/{$otherUser->id}");
+
+        $response->assertStatus(404)
+            ->assertJsonPath('message', 'Usuário não pertence a esta empresa.');
+    }
+
+    // ── Branch CRUD ──
+
+    public function test_list_branches(): void
+    {
+        Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->getJson('/api/v1/branches');
+
+        $response->assertOk();
+    }
+
+    public function test_create_branch(): void
+    {
+        $response = $this->postJson('/api/v1/branches', [
+            'name' => 'Filial Centro',
+            'code' => 'FC01',
+            'address_city' => 'São Paulo',
+            'address_state' => 'SP',
+            'email' => 'centro@empresa.com',
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.name', 'Filial Centro')
+            ->assertJsonPath('data.code', 'FC01');
+
+        $this->assertDatabaseHas('branches', [
+            'name' => 'Filial Centro',
+            'tenant_id' => $this->tenant->id,
+        ]);
+    }
+
+    public function test_show_branch(): void
+    {
+        $branch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->getJson("/api/v1/branches/{$branch->id}");
+
+        $response->assertOk()
+            ->assertJsonPath('data.id', $branch->id);
+    }
+
+    public function test_cannot_show_branch_from_other_tenant(): void
+    {
+        $otherTenant = Tenant::factory()->create();
+        $foreignBranch = Branch::factory()->create(['tenant_id' => $otherTenant->id]);
+
+        $response = $this->getJson("/api/v1/branches/{$foreignBranch->id}");
+
+        $response->assertStatus(404);
+    }
+
+    public function test_update_branch(): void
+    {
+        $branch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->putJson("/api/v1/branches/{$branch->id}", [
+            'name' => 'Filial Atualizada',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.name', 'Filial Atualizada');
+    }
+
+    public function test_destroy_branch(): void
+    {
+        $branch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+
+        $response = $this->deleteJson("/api/v1/branches/{$branch->id}");
+
+        $response->assertStatus(204);
+        $this->assertDatabaseMissing('branches', ['id' => $branch->id]);
+    }
+
+    public function test_cannot_destroy_branch_from_other_tenant(): void
+    {
+        $otherTenant = Tenant::factory()->create();
+        $foreignBranch = Branch::factory()->create(['tenant_id' => $otherTenant->id]);
+
+        $response = $this->deleteJson("/api/v1/branches/{$foreignBranch->id}");
+
+        $response->assertStatus(404);
+    }
+
+    public function test_cannot_create_branch_with_duplicate_code(): void
+    {
+        Branch::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'code' => 'UNIQUE01',
+        ]);
+
+        $response = $this->postJson('/api/v1/branches', [
+            'name' => 'Outra Filial',
+            'code' => 'UNIQUE01',
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_duplicate_code_allowed_across_tenants(): void
+    {
+        $otherTenant = Tenant::factory()->create();
+        Branch::factory()->create([
+            'tenant_id' => $otherTenant->id,
+            'code' => 'SAME_CODE',
+        ]);
+
+        $response = $this->postJson('/api/v1/branches', [
+            'name' => 'Minha Filial',
+            'code' => 'SAME_CODE',
+        ]);
+
+        $response->assertStatus(201);
+    }
+
+    // ── Branch com code null ──
+
+    public function test_create_branch_without_code(): void
+    {
+        $response = $this->postJson('/api/v1/branches', [
+            'name' => 'Filial Sem Código',
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.name', 'Filial Sem Código');
+
+        $this->assertDatabaseHas('branches', [
+            'name' => 'Filial Sem Código',
+            'code' => null,
+            'tenant_id' => $this->tenant->id,
+        ]);
+    }
+
+    // ── Invite com role inválida ──
+
+    public function test_invite_user_with_invalid_role(): void
+    {
+        $response = $this->postJson("/api/v1/tenants/{$this->tenant->id}/invite", [
+            'name' => 'Novo User',
+            'email' => 'invalid-role@teste.com',
+            'role' => 'nonexistent_role_xyz',
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    // ── TenantSetting ──
+
+    public function test_tenant_setting_set_and_get_value(): void
+    {
+        TenantSetting::setValue($this->tenant->id, 'theme', ['mode' => 'dark']);
+
+        $result = TenantSetting::getValue($this->tenant->id, 'theme');
+
+        $this->assertIsArray($result);
+        $this->assertEquals('dark', $result['mode']);
+    }
+
+    public function test_tenant_setting_get_returns_default_when_missing(): void
+    {
+        $result = TenantSetting::getValue($this->tenant->id, 'nonexistent_key', 'fallback');
+
+        $this->assertEquals('fallback', $result);
+    }
+
+    public function test_tenant_setting_set_updates_existing(): void
+    {
+        TenantSetting::setValue($this->tenant->id, 'logo', ['url' => 'old.png']);
+        TenantSetting::setValue($this->tenant->id, 'logo', ['url' => 'new.png']);
+
+        $result = TenantSetting::getValue($this->tenant->id, 'logo');
+
+        $this->assertEquals('new.png', $result['url']);
+        $this->assertEquals(1, TenantSetting::withoutGlobalScope('tenant')
+            ->where('tenant_id', $this->tenant->id)
+            ->where('key', 'logo')
+            ->count());
+    }
+
+    // ── Destroy com dependências expandidas ──
+
+    public function test_destroy_tenant_shows_dependencies(): void
+    {
+        $tenantWithSettings = Tenant::factory()->create();
+        $user = User::factory()->create([
+            'tenant_id' => $tenantWithSettings->id,
+            'current_tenant_id' => $tenantWithSettings->id,
+        ]);
+        $tenantWithSettings->users()->attach($user->id, ['is_default' => true]);
+
+        TenantSetting::withoutGlobalScope('tenant')->create([
+            'tenant_id' => $tenantWithSettings->id,
+            'key' => 'test_key',
+            'value_json' => ['v' => 1],
+        ]);
+
+        $response = $this->deleteJson("/api/v1/tenants/{$tenantWithSettings->id}");
+
+        $response->assertStatus(409)
+            ->assertJsonPath('dependencies.users', 1);
+    }
+
+    // ── RemoveUser edge-cases ──
+
+    public function test_cannot_remove_last_user_from_tenant(): void
+    {
+        $soloTenant = Tenant::factory()->create();
+        $soloUser = User::factory()->create([
+            'tenant_id' => $soloTenant->id,
+            'current_tenant_id' => $soloTenant->id,
+        ]);
+        $soloTenant->users()->attach($soloUser->id, ['is_default' => true]);
+
+        $response = $this->deleteJson("/api/v1/tenants/{$soloTenant->id}/users/{$soloUser->id}");
+
+        $response->assertStatus(422)
+            ->assertJsonPath('message', 'Não é possível remover o último usuário da empresa. A empresa ficaria sem acesso.');
+    }
+
+    public function test_cannot_remove_self_from_tenant(): void
+    {
+        $response = $this->deleteJson("/api/v1/tenants/{$this->tenant->id}/users/{$this->user->id}");
+
+        $response->assertStatus(422)
+            ->assertJsonPath('message', 'Você não pode remover a si mesmo da empresa.');
+    }
+
+    public function test_list_tenants_with_search(): void
+    {
+        Tenant::factory()->create(['name' => 'Buscável XYZ']);
+
+        $response = $this->getJson('/api/v1/tenants?search=Buscável');
+
+        $response->assertOk();
+        $names = collect($response->json('data'))->pluck('name')->toArray();
+        $this->assertContains('Buscável XYZ', $names);
+    }
+
+    public function test_list_tenants_with_status_filter(): void
+    {
+        Tenant::factory()->create(['status' => Tenant::STATUS_INACTIVE]);
+
+        $response = $this->getJson('/api/v1/tenants?status=inactive');
+
+        $response->assertOk();
+        $statuses = collect($response->json('data'))->pluck('status')->unique()->toArray();
+        $this->assertEquals(['inactive'], $statuses);
+    }
+
+    // ── Available Roles ──
+
+    public function test_available_roles_returns_list(): void
+    {
+        $response = $this->getJson("/api/v1/tenants/{$this->tenant->id}/roles");
+
+        $response->assertOk()
+            ->assertJsonStructure(['data' => [['name', 'display_name']]]);
+    }
+}

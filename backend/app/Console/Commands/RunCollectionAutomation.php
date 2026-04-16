@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\Tenant;
+use App\Services\CollectionAutomationService;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
+
+class RunCollectionAutomation extends Command
+{
+    protected $signature = 'collection:run {--tenant= : ID do tenant específico}';
+
+    protected $description = 'Executa a régua de cobrança automatizada para todos os tenants';
+
+    public function handle(CollectionAutomationService $service): int
+    {
+        $tenantId = $this->option('tenant');
+        $tenants = $tenantId
+            ? Tenant::where('id', $tenantId)->get()
+            : Tenant::where('status', Tenant::STATUS_ACTIVE)->get();
+
+        foreach ($tenants as $tenant) {
+            app()->instance('current_tenant_id', $tenant->id);
+
+            $this->info("Processando cobranças: {$tenant->name} (ID: {$tenant->id})");
+
+            try {
+                $results = $service->processForTenant($tenant->id);
+                $this->info("  → {$results['processed']} parcelas verificadas, {$results['sent']} ações enviadas.");
+            } catch (\Throwable $e) {
+                Log::error("RunCollectionAutomation: falha no tenant #{$tenant->id}", ['error' => $e->getMessage()]);
+                $this->error("  → Erro: {$e->getMessage()}");
+            }
+        }
+
+        return self::SUCCESS;
+    }
+}

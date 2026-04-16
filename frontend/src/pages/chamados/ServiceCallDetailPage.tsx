@@ -1,0 +1,695 @@
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { AxiosError } from 'axios'
+import {
+    ArrowLeft, Phone, AlertCircle, XCircle,
+    UserCheck, MapPin, ClipboardList, Wrench, Link as LinkIcon,
+    Send, AlertTriangle, RotateCcw, MessageSquare, Pencil, History,
+} from 'lucide-react'
+import api, { getApiErrorMessage, unwrapData } from '@/lib/api'
+import { unwrapServiceCallAssignees, unwrapServiceCallAuditLogs, unwrapServiceCallPayload } from '@/lib/service-call-normalizers'
+import { safeArray } from '@/lib/safe-array'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Modal } from '@/components/ui/modal'
+import { useAuthStore } from '@/stores/auth-store'
+import { toast } from 'sonner'
+import { serviceCallStatus, priorityConfig, getStatusEntry } from '@/lib/status-config'
+
+// Must stay in sync with ServiceCall::ALLOWED_TRANSITIONS on backend
+const statusTransitions: Record<string, string[]> = {
+    pending_scheduling: ['scheduled', 'cancelled'],
+    scheduled: ['rescheduled', 'awaiting_confirmation', 'in_progress', 'converted_to_os', 'cancelled'],
+    rescheduled: ['scheduled', 'awaiting_confirmation', 'cancelled'],
+    awaiting_confirmation: ['scheduled', 'in_progress', 'converted_to_os', 'cancelled'],
+    in_progress: ['converted_to_os', 'cancelled'],
+    converted_to_os: [],
+    cancelled: ['pending_scheduling'],
+}
+
+type ServiceCallComment = {
+    id: number
+    user?: { name?: string }
+    created_at: string
+    content: string
+}
+
+type ServiceCallAuditLog = {
+    id: number
+    description: string
+    action_label?: string
+    action: string
+    user?: { name?: string } | null
+    created_at?: string | null
+}
+
+function formatSlaRemaining(minutes: number | null | undefined): string {
+    if (minutes == null) return ''
+    const abs = Math.abs(minutes)
+    const h = Math.floor(abs / 60)
+    const m = abs % 60
+    const parts = []
+    if (h > 0) parts.push(`${h}h`)
+    if (m > 0 || parts.length === 0) parts.push(`${m}min`)
+    return minutes >= 0 ? `Restam ${parts.join(' ')}` : `Estourado há ${parts.join(' ')}`
+}
+
+function toLocalDateTimeInput(value?: string | null): string {
+    if (!value) return ''
+
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return ''
+
+    const timezoneOffset = date.getTimezoneOffset() * 60000
+    return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16)
+}
+
+export function ServiceCallDetailPage() {
+    const { id } = useParams<{ id: string }>()
+    const navigate = useNavigate()
+    const queryClient = useQueryClient()
+    const { hasPermission, hasRole } = useAuthStore()
+
+    const [cancelModalOpen, setCancelModalOpen] = useState(false)
+    const [reopenModalOpen, setReopenModalOpen] = useState(false)
+    const [commentText, setCommentText] = useState('')
+    const [activeTab, setActiveTab] = useState<'info' | 'comments' | 'history'>('info')
+    const [assignment, setAssignment] = useState({
+        technician_id: '',
+        driver_id: '',
+        scheduled_date: '',
+    })
+
+    const canUpdate = hasRole('super_admin') || hasPermission('service_calls.service_call.update')
+    const canAssign = hasRole('super_admin') || hasPermission('service_calls.service_call.assign')
+    const canCreate = hasRole('super_admin') || hasPermission('service_calls.service_call.create')
+
+    const { data: call, isLoading, isError } = useQuery({
+        queryKey: ['service-call', id],
+        queryFn: () => api.get(`/service-calls/${id}`).then(unwrapServiceCallPayload),
+        enabled: !!id,
+    })
+
+    const { data: comments = [], refetch: refetchComments } = useQuery<ServiceCallComment[]>({
+        queryKey: ['service-call-comments', id],
+        queryFn: () => api.get(`/service-calls/${id}/comments`).then((r) => safeArray<ServiceCallComment>(unwrapData(r))),
+        enabled: !!id,
+    })
+
+    const { data: assigneesRes } = useQuery({
+        queryKey: ['service-call-assignees'],
+        queryFn: () => api.get('/service-calls-assignees').then(unwrapServiceCallAssignees),
+        enabled: canAssign || canCreate,
+    })
+
+    const { data: auditLogs = [] } = useQuery<ServiceCallAuditLog[]>({
+        queryKey: ['service-call-audit', id],
+        queryFn: () => api.get(`/service-calls/${id}/audit-trail`).then(unwrapServiceCallAuditLogs),
+        enabled: !!id && activeTab === 'history',
+    })
+
+    const invalidateAll = () => {
+        queryClient.invalidateQueries({ queryKey: ['service-call', id] })
+        queryClient.invalidateQueries({ queryKey: ['service-calls'] })
+        queryClient.invalidateQueries({ queryKey: ['service-calls-summary'] })
+        queryClient.invalidateQueries({ queryKey: ['service-call-audit', id] })
+    }
+
+    useEffect(() => {
+        if (!call) return
+        setAssignment({
+            technician_id: call.technician_id ? String(call.technician_id) : '',
+            driver_id: call.driver_id ? String(call.driver_id) : '',
+            scheduled_date: toLocalDateTimeInput(call.scheduled_date),
+        })
+    }, [call])
+
+    const statusMutation = useMutation({
+        mutationFn: (data: { status: string; resolution_notes?: string }) =>
+            api.put(`/service-calls/${id}/status`, data),
+        onSuccess: () => {
+            toast.success('Status atualizado com sucesso')
+            invalidateAll()
+            setCancelModalOpen(false)
+            setReopenModalOpen(false)
+        },
+        onError: (err: AxiosError<{ message?: string }>) => {
+            toast.error(getApiErrorMessage(err, 'Erro ao atualizar status'))
+        },
+    })
+
+    const commentMutation = useMutation({
+        mutationFn: (content: string) => api.post(`/service-calls/${id}/comments`, { content }),
+        onSuccess: () => {
+            toast.success('Comentário adicionado')
+            setCommentText('')
+            refetchComments()
+        },
+        onError: (err: AxiosError<{ message?: string }>) => {
+            toast.error(getApiErrorMessage(err, 'Erro ao adicionar comentario'))
+        },
+    })
+
+    const assignMutation = useMutation({
+        mutationFn: (data: { technician_id: number; driver_id?: number; scheduled_date?: string }) =>
+            api.put(`/service-calls/${id}/assign`, data),
+        onSuccess: (res) => {
+            toast.success('Atribuicao atualizada com sucesso')
+            invalidateAll()
+
+            const updatedCall = unwrapServiceCallPayload(res)
+            setAssignment({
+                technician_id: updatedCall.technician_id ? String(updatedCall.technician_id) : '',
+                driver_id: updatedCall.driver_id ? String(updatedCall.driver_id) : '',
+                scheduled_date: toLocalDateTimeInput(updatedCall.scheduled_date),
+            })
+        },
+        onError: (err: AxiosError<{ message?: string }>) => {
+            toast.error(getApiErrorMessage(err, 'Erro ao atribuir tecnico'))
+        },
+    })
+
+    const convertMutation = useMutation({
+        mutationFn: () => api.post(`/service-calls/${id}/convert-to-os`),
+        onSuccess: (res) => {
+            toast.success('OS criada com sucesso!')
+            invalidateAll()
+            const workOrder = unwrapServiceCallPayload(res)
+            navigate(`/os/${workOrder.id}`)
+        },
+        onError: (err: AxiosError<{ message?: string }>) => {
+            if (err.response?.status === 409) {
+                toast.error(getApiErrorMessage(err, 'Chamado ja possui OS'))
+            } else {
+                toast.error(getApiErrorMessage(err, 'Erro ao converter'))
+            }
+        },
+    })
+
+    if (isLoading) {
+        return (
+            <div className="space-y-6 animate-pulse">
+                <div className="h-8 bg-surface-200 rounded w-64" />
+                <div className="bg-surface-0 rounded-xl p-6 space-y-4">
+                    <div className="h-6 bg-surface-200 rounded w-48" />
+                    <div className="h-4 bg-surface-200 rounded w-full" />
+                    <div className="h-4 bg-surface-200 rounded w-3/4" />
+                </div>
+            </div>
+        )
+    }
+
+    if (isError || !call) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 text-surface-500">
+                <AlertCircle className="w-12 h-12 mb-4 opacity-30" />
+                <p className="text-lg font-medium">Chamado não encontrado</p>
+                <Button variant="outline" className="mt-4" onClick={() => navigate('/chamados')}>
+                    <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
+                </Button>
+            </div>
+        )
+    }
+
+    const sc = getStatusEntry(serviceCallStatus, call.status)
+    const pc = priorityConfig[call.priority]
+    const StatusIcon = sc.icon
+    const transitions = statusTransitions[call.status] || []
+    const technicians = assigneesRes?.technicians ?? []
+    const drivers = assigneesRes?.drivers ?? []
+
+    const handleStatusChange = (newStatus: string) => {
+        if (newStatus === 'cancelled') {
+            setCancelModalOpen(true)
+        } else if (newStatus === 'converted_to_os') {
+            convertMutation.mutate()
+        } else if (newStatus === 'pending_scheduling' && call.status === 'cancelled') {
+            setReopenModalOpen(true)
+        } else {
+            statusMutation.mutate({ status: newStatus })
+        }
+    }
+
+    const handleAssign = () => {
+        if (!assignment.technician_id) {
+            toast.error('Selecione um técnico')
+            return
+        }
+
+        assignMutation.mutate({
+            technician_id: Number(assignment.technician_id),
+            driver_id: assignment.driver_id ? Number(assignment.driver_id) : undefined,
+            scheduled_date: assignment.scheduled_date || undefined,
+        })
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <Button variant="ghost" size="sm" onClick={() => navigate('/chamados')}>
+                        <ArrowLeft className="w-4 h-4" />
+                    </Button>
+                    <div>
+                        <h1 className="text-xl font-bold text-surface-900 flex items-center gap-2">
+                            Chamado {call.call_number}
+                            <Badge variant={sc.variant}>
+                                <StatusIcon className="w-3 h-3 mr-1" />
+                                {sc.label}
+                            </Badge>
+                            {pc && <Badge variant={pc.variant}>{pc.label}</Badge>}
+                            {call.sla_breached && (
+                                <Badge variant="danger">
+                                    <AlertTriangle className="w-3 h-3 mr-1" /> SLA Estourado
+                                </Badge>
+                            )}
+                            {call.sla_remaining_minutes != null && (
+                                <Badge variant={call.sla_remaining_minutes >= 0 ? 'warning' : 'danger'}>
+                                    {formatSlaRemaining(call.sla_remaining_minutes)}
+                                </Badge>
+                            )}
+                        </h1>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    {canUpdate && (
+                        <Button variant="outline" size="sm" onClick={() => navigate(`/chamados/${id}/editar`)}>
+                            <Pencil className="w-4 h-4 mr-1" /> Editar
+                        </Button>
+                    )}
+                    {canCreate && ['scheduled', 'rescheduled', 'awaiting_confirmation', 'in_progress'].includes(call.status) && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            loading={convertMutation.isPending}
+                            onClick={() => convertMutation.mutate()}
+                        >
+                            <LinkIcon className="w-4 h-4 mr-1" /> Gerar OS
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            {canUpdate && transitions.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                    {(transitions || []).map((t) => {
+                        const tc = getStatusEntry(serviceCallStatus, t)
+                        const TIcon = tc.icon
+                        const isCancel = t === 'cancelled'
+                        const isReopen = t === 'pending_scheduling'
+                        return (
+                            <Button
+                                key={t}
+                                variant={isCancel ? 'danger' : isReopen ? 'outline' : 'outline'}
+                                size="sm"
+                                loading={statusMutation.isPending}
+                                onClick={() => handleStatusChange(t)}
+                            >
+                                {isReopen ? <RotateCcw className="w-4 h-4 mr-1" /> : <TIcon className="w-4 h-4 mr-1" />}
+                                {isReopen ? 'Reabrir' : tc.label}
+                            </Button>
+                        )
+                    })}
+                </div>
+            )}
+
+            <div className="flex gap-1 border-b border-default">
+                <button
+                    onClick={() => setActiveTab('info')}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'info'
+                        ? 'border-primary-500 text-primary-600'
+                        : 'border-transparent text-surface-500 hover:text-surface-700'
+                        }`}
+                >
+                    <ClipboardList className="w-4 h-4 inline mr-1" /> Informações
+                </button>
+                <button
+                    onClick={() => setActiveTab('comments')}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'comments'
+                        ? 'border-primary-500 text-primary-600'
+                        : 'border-transparent text-surface-500 hover:text-surface-700'
+                        }`}
+                >
+                    <MessageSquare className="w-4 h-4 inline mr-1" /> Comentários
+                    {comments.length > 0 && (
+                        <span className="ml-1 px-1.5 py-0.5 text-xs bg-surface-200 rounded-full">
+                            {comments.length}
+                        </span>
+                    )}
+                </button>
+                <button
+                    onClick={() => setActiveTab('history')}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'history'
+                        ? 'border-primary-500 text-primary-600'
+                        : 'border-transparent text-surface-500 hover:text-surface-700'
+                        }`}
+                >
+                    <History className="w-4 h-4 inline mr-1" /> Histórico
+                </button>
+            </div>
+
+            {activeTab === 'info' && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="bg-surface-0 rounded-xl shadow-card border border-default p-5 space-y-4">
+                        <h2 className="text-sm font-semibold text-surface-900 flex items-center gap-2">
+                            <Phone className="w-4 h-4" /> Cliente
+                        </h2>
+                        {call.customer ? (
+                            <div className="space-y-2 text-sm">
+                                <p className="font-medium text-surface-900">{call.customer.name}</p>
+                                {call.customer.phone && <p className="text-surface-600">{call.customer.phone}</p>}
+                                {call.customer.email && <p className="text-surface-600">{call.customer.email}</p>}
+                                {call.customer.contacts?.length > 0 && (
+                                    <div className="mt-2 pt-2 border-t border-subtle">
+                                        <p className="text-xs font-medium text-surface-500 mb-1">Contatos</p>
+                                        {(call.customer.contacts || []).map((c: { id: number; name: string; phone?: string; email?: string }) => (
+                                            <p key={c.id} className="text-surface-600">
+                                                {c.name} — {c.phone || c.email}
+                                            </p>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <p className="text-surface-400 text-sm">Nenhum cliente</p>
+                        )}
+                    </div>
+
+                    <div className="bg-surface-0 rounded-xl shadow-card border border-default p-5 space-y-4">
+                        <h2 className="text-sm font-semibold text-surface-900 flex items-center gap-2">
+                            <UserCheck className="w-4 h-4" /> Técnico & Agendamento
+                        </h2>
+                        <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-surface-500">Técnico</span>
+                                <span className="font-medium">{call.technician?.name || <span className="text-surface-400 italic">Não atribuído</span>}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-surface-500">Motorista</span>
+                                <span className="font-medium">{call.driver?.name || <span className="text-surface-400">—</span>}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-surface-500">Agendado para</span>
+                                <span className="font-medium">
+                                    {call.scheduled_date
+                                        ? new Date(call.scheduled_date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                                        : '—'}
+                                </span>
+                            </div>
+                            {call.started_at && (
+                                <div className="flex justify-between">
+                                    <span className="text-surface-500">Iniciado em</span>
+                                    <span className="font-medium">{new Date(call.started_at).toLocaleString('pt-BR')}</span>
+                                </div>
+                            )}
+                            {call.completed_at && (
+                                <div className="flex justify-between">
+                                    <span className="text-surface-500">Concluído em</span>
+                                    <span className="font-medium">{new Date(call.completed_at).toLocaleString('pt-BR')}</span>
+                                </div>
+                            )}
+                            {call.response_time_minutes != null && (
+                                <div className="flex justify-between">
+                                    <span className="text-surface-500">Tempo de Resposta</span>
+                                    <span className="font-medium">{call.response_time_minutes} min</span>
+                                </div>
+                            )}
+                            {call.resolution_time_minutes != null && (
+                                <div className="flex justify-between">
+                                    <span className="text-surface-500">Tempo de Resolução</span>
+                                    <span className="font-medium">{call.resolution_time_minutes} min</span>
+                                </div>
+                            )}
+                            <div className="flex justify-between">
+                                <span className="text-surface-500">Criado em</span>
+                                <span className="font-medium">
+                                    {call.created_at
+                                        ? new Date(call.created_at).toLocaleString('pt-BR')
+                                        : '—'}
+                                </span>
+                            </div>
+                            {call.created_by_user && (
+                                <div className="flex justify-between">
+                                    <span className="text-surface-500">Criado por</span>
+                                    <span className="font-medium">{call.created_by_user.name}</span>
+                                </div>
+                            )}
+                            {call.quote && (
+                                <div className="flex justify-between">
+                                    <span className="text-surface-500">Orçamento</span>
+                                    <button
+                                        onClick={() => navigate(`/orcamentos/${call.quote.id}`)}
+                                        className="font-medium text-primary-600 hover:underline"
+                                    >
+                                        {call.quote.quote_number || `#${call.quote.id}`}
+                                    </button>
+                                </div>
+                            )}
+                            {call.work_orders?.length > 0 && (
+                                <div className="flex justify-between">
+                                    <span className="text-surface-500">Ordem de Serviço</span>
+                                    <div className="flex flex-col items-end gap-1">
+                                        {call.work_orders.map((wo: { id: number; os_number?: string; number?: string }) => (
+                                            <button
+                                                key={wo.id}
+                                                onClick={() => navigate(`/os/${wo.id}`)}
+                                                className="font-medium text-primary-600 hover:underline"
+                                            >
+                                                {wo.os_number ?? wo.number}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        {canAssign && (
+                            <div className="mt-4 border-t border-subtle pt-4 space-y-3">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-surface-500">
+                                    Atribuicao
+                                </p>
+
+                                <div>
+                                    <label htmlFor="assign-technician" className="mb-1 block text-xs text-surface-500">Técnico</label>
+                                    <select
+                                        id="assign-technician"
+                                        value={assignment.technician_id}
+                                        onChange={(e) => setAssignment((prev) => ({ ...prev, technician_id: e.target.value }))}
+                                        className="w-full rounded-lg border border-default bg-surface-0 px-3 py-2 text-sm"
+                                    >
+                                        <option value="">Selecione</option>
+                                        {(technicians || []).map((tech: { id: number; name: string }) => (
+                                            <option key={tech.id} value={tech.id}>
+                                                {tech.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="assign-driver" className="mb-1 block text-xs text-surface-500">Motorista</label>
+                                    <select
+                                        id="assign-driver"
+                                        value={assignment.driver_id}
+                                        onChange={(e) => setAssignment((prev) => ({ ...prev, driver_id: e.target.value }))}
+                                        className="w-full rounded-lg border border-default bg-surface-0 px-3 py-2 text-sm"
+                                    >
+                                        <option value="">Sem motorista</option>
+                                        {(drivers || []).map((driver: { id: number; name: string }) => (
+                                            <option key={driver.id} value={driver.id}>
+                                                {driver.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="assign-scheduled-date" className="mb-1 block text-xs text-surface-500">Data agendada</label>
+                                    <input
+                                        id="assign-scheduled-date"
+                                        type="datetime-local"
+                                        value={assignment.scheduled_date}
+                                        onChange={(e) => setAssignment((prev) => ({ ...prev, scheduled_date: e.target.value }))}
+                                        className="w-full rounded-lg border border-default bg-surface-0 px-3 py-2 text-sm"
+                                    />
+                                </div>
+
+                                <div className="flex justify-end">
+                                    <Button size="sm" loading={assignMutation.isPending} onClick={handleAssign}>
+                                        Salvar atribuicao
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="bg-surface-0 rounded-xl shadow-card border border-default p-5 space-y-4">
+                        <h2 className="text-sm font-semibold text-surface-900 flex items-center gap-2">
+                            <MapPin className="w-4 h-4" /> Localização
+                        </h2>
+                        <div className="space-y-2 text-sm">
+                            {call.address && <p className="text-surface-700">{call.address}</p>}
+                            {call.city && <p className="text-surface-600">{call.city}/{call.state}</p>}
+                            {(call.google_maps_link || (call.latitude && call.longitude)) && (
+                                <a
+                                    href={call.google_maps_link || `https://www.google.com/maps?q=${call.latitude},${call.longitude}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary-600 hover:underline text-xs"
+                                >
+                                    Ver no Google Maps ↗
+                                </a>
+                            )}
+                            {!call.address && !call.city && !call.google_maps_link && <p className="text-surface-400">Sem endereço</p>}
+                        </div>
+                    </div>
+
+                    <div className="bg-surface-0 rounded-xl shadow-card border border-default p-5 space-y-4">
+                        <h2 className="text-sm font-semibold text-surface-900 flex items-center gap-2">
+                            <Wrench className="w-4 h-4" /> Equipamentos ({call.equipments?.length || 0})
+                        </h2>
+                        {call.equipments?.length > 0 ? (
+                            <div className="space-y-2">
+                                {(call.equipments || []).map((eq: { id: number; tag?: string; model?: string; serial_number?: string; pivot?: { observations?: string } }) => (
+                                    <div key={eq.id} className="flex items-center justify-between p-2 bg-surface-50 rounded-lg text-sm">
+                                        <div>
+                                            <p className="font-medium">{eq.tag || eq.model || `#${eq.id}`}</p>
+                                            {eq.serial_number && <p className="text-xs text-surface-500">S/N: {eq.serial_number}</p>}
+                                        </div>
+                                        {eq.pivot?.observations && (
+                                            <span className="text-xs text-surface-500 max-w-32 truncate">{eq.pivot.observations}</span>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-surface-400 text-sm">Nenhum equipamento vinculado</p>
+                        )}
+                    </div>
+
+                    <div className="bg-surface-0 rounded-xl shadow-card border border-default p-5 space-y-4 lg:col-span-2">
+                        <h2 className="text-sm font-semibold text-surface-900">Observações</h2>
+                        <p className="text-sm text-surface-700 whitespace-pre-wrap">
+                            {call.observations || <span className="text-surface-400">Sem observações</span>}
+                        </p>
+                        {call.resolution_notes && (
+                            <>
+                                <h2 className="text-sm font-semibold text-surface-900 mt-4">Notas de Resolução</h2>
+                                <p className="text-sm text-surface-700 whitespace-pre-wrap">{call.resolution_notes}</p>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'comments' && (
+                <div className="space-y-4">
+                    {canCreate && (
+                        <div className="bg-surface-0 rounded-xl shadow-card border border-default p-4">
+                            <textarea
+                                value={commentText}
+                                onChange={(e) => setCommentText(e.target.value)}
+                                placeholder="Adicionar comentário interno..."
+                                rows={3}
+                                className="w-full px-3 py-2 rounded-lg border border-default bg-surface-0 text-sm resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            />
+                            <div className="flex justify-end mt-2">
+                                <Button
+                                    size="sm"
+                                    disabled={!commentText.trim()}
+                                    loading={commentMutation.isPending}
+                                    onClick={() => commentText.trim() && commentMutation.mutate(commentText.trim())}
+                                >
+                                    <Send className="w-4 h-4 mr-1" /> Enviar
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {comments.length === 0 ? (
+                        <div className="flex flex-col items-center py-12 text-surface-500">
+                            <MessageSquare className="w-10 h-10 mb-3 opacity-30" />
+                            <p className="text-sm">Nenhum comentário ainda</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {comments.map((c) => (
+                                <div key={c.id} className="bg-surface-0 rounded-xl shadow-card border border-default p-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-sm font-medium text-surface-900">
+                                            {c.user?.name || 'Usuário'}
+                                        </span>
+                                        <span className="text-xs text-surface-500">
+                                            {new Date(c.created_at).toLocaleString('pt-BR')}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-surface-700 whitespace-pre-wrap">{c.content}</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {activeTab === 'history' && (
+                <div className="bg-surface-0 rounded-xl shadow-card border border-default overflow-hidden">
+                    {auditLogs.length === 0 ? (
+                        <div className="flex flex-col items-center py-12 text-surface-500">
+                            <History className="w-10 h-10 mb-3 opacity-30" />
+                            <p className="text-sm">Nenhum registro no histórico</p>
+                        </div>
+                    ) : (
+                        <div className="divide-y divide-subtle">
+                            {auditLogs.map((log) => (
+                                <div key={log.id} className="flex gap-4 px-5 py-4">
+                                    <div className="flex-shrink-0 w-2 h-2 mt-1.5 rounded-full bg-surface-300" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-surface-900">{log.description}</p>
+                                        <p className="text-xs text-surface-500 mt-0.5">
+                                            {log.action_label || log.action} • {log.user?.name || 'Sistema'} • {log.created_at ? new Date(log.created_at).toLocaleString('pt-BR') : ''}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            <Modal open={cancelModalOpen} onOpenChange={setCancelModalOpen} title="Cancelar Chamado">
+                <div className="space-y-4">
+                    <p className="text-sm text-surface-600">
+                        Tem certeza que deseja cancelar o chamado <strong>{call.call_number}</strong>?
+                    </p>
+                    <div className="flex justify-end gap-3">
+                        <Button variant="outline" onClick={() => setCancelModalOpen(false)}>Voltar</Button>
+                        <Button
+                            variant="danger"
+                            loading={statusMutation.isPending}
+                            onClick={() => statusMutation.mutate({ status: 'cancelled' })}
+                        >
+                            <XCircle className="w-4 h-4 mr-1" /> Cancelar Chamado
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal open={reopenModalOpen} onOpenChange={setReopenModalOpen} title="Reabrir Chamado">
+                <div className="space-y-4">
+                    <p className="text-sm text-surface-600">
+                        Deseja reabrir o chamado <strong>{call.call_number}</strong>?
+                    </p>
+                    <div className="flex justify-end gap-3">
+                        <Button variant="outline" onClick={() => setReopenModalOpen(false)}>Voltar</Button>
+                        <Button
+                            loading={statusMutation.isPending}
+                            onClick={() => statusMutation.mutate({ status: 'pending_scheduling' })}
+                        >
+                            <RotateCcw className="w-4 h-4 mr-1" /> Reabrir
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+        </div>
+    )
+}
