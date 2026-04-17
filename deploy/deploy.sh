@@ -32,6 +32,15 @@ step()  { echo -e "\n${BLUE}━━━ $1 ━━━${NC}"; }
 
 # --- Configuração ---
 BACKUP_DIR="/root/backups"
+# Carrega .env raiz (DOMAIN, CERTBOT_EMAIL, DB_*, etc.) para o shell do deploy.
+# Executar a partir da raiz do repo (mesmo requisito dos demais paths relativos).
+if [ -f ".env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    source .env
+    set +a
+fi
+
 BACKUP_RETENTION_DAYS=30
 HEALTH_CHECK_RETRIES=30
 HEALTH_CHECK_INTERVAL=5
@@ -72,7 +81,7 @@ read_env_value() {
         return 0
     fi
 
-    grep -E "^${key}=" "$file" 2>/dev/null | tail -1 | cut -d '=' -f2- | tr -d '\r' | sed -e "s/^[\"']//" -e "s/[\"']$//"
+    grep -E "^${key}=" "$file" 2>/dev/null | tail -1 | cut -d '=' -f2- | tr -d '\r' | sed -e "s/^[\"']//" -e "s/[\"']$//" || true
 }
 
 trim_value() {
