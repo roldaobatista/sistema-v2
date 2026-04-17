@@ -242,6 +242,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [frontend-build, backend-tests]
+    env:
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      REDIS_HOST: 127.0.0.1
+      SESSION_DRIVER: array
+      SEED_ADMIN_PASSWORD: CHANGE_ME_E2E_PASSWORD
+      SEED_USER_PASSWORD: CHANGE_ME_E2E_RESTRICTED_PASSWORD
+      E2E_PASSWORD: CHANGE_ME_E2E_PASSWORD
+      E2E_RESTRICTED_PASSWORD: CHANGE_ME_E2E_RESTRICTED_PASSWORD
     steps:
       - uses: actions/checkout@v4
 
@@ -249,7 +258,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.4"
-          extensions: mbstring, xml, mysql, bcmath
+          extensions: mbstring, xml, mysql, bcmath, sqlite3, pdo_sqlite
 
       - name: Install Composer Dependencies
         working-directory: backend
@@ -262,6 +271,10 @@ jobs:
           php artisan key:generate
           sed -i 's/APP_ENV=.*/APP_ENV=testing/' .env
           sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+          sed -i 's/CACHE_STORE=.*/CACHE_STORE=array/' .env
+          sed -i 's/QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
+          sed -i 's/REDIS_HOST=.*/REDIS_HOST=127.0.0.1/' .env
+          sed -i 's/SESSION_DRIVER=.*/SESSION_DRIVER=array/' .env
           touch database/database.sqlite
           sed -i "s|DB_DATABASE=.*|DB_DATABASE=$PWD/database/database.sqlite|" .env
           php artisan migrate --no-interaction --force

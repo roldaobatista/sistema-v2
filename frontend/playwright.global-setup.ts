@@ -5,6 +5,16 @@ import { existsSync } from 'node:fs'
 import { open, rm } from 'node:fs/promises'
 import type { FullConfig } from '@playwright/test'
 
+type SeedCommandError = Error & {
+    status?: number | null
+    signal?: NodeJS.Signals | null
+    stdout?: string | Buffer
+    stderr?: string | Buffer
+}
+
+const SENSITIVE_ENV_NAME_PATTERN = /(PASSWORD|TOKEN|SECRET|KEY|CREDENTIAL|AUTH)/i
+const MAX_SEED_OUTPUT_LENGTH = 6000
+
 function isLocalApi(apiBase: string): boolean {
     return apiBase.includes('127.0.0.1') || apiBase.includes('localhost')
 }
@@ -40,8 +50,41 @@ async function withSeedLock<T>(lockFile: string, action: () => Promise<T>): Prom
     }
 }
 
-function seedCommandFailed(error: unknown): boolean {
+function seedCommandFailed(error: unknown): error is SeedCommandError {
     return error instanceof Error
+}
+
+function normalizeCommandOutput(output: string | Buffer | undefined): string {
+    if (!output) {
+        return ''
+    }
+
+    return Buffer.isBuffer(output) ? output.toString('utf8') : output
+}
+
+function truncateCommandOutput(output: string): string {
+    if (output.length <= MAX_SEED_OUTPUT_LENGTH) {
+        return output
+    }
+
+    return `${output.slice(0, MAX_SEED_OUTPUT_LENGTH)}\n[output truncado em ${MAX_SEED_OUTPUT_LENGTH} caracteres]`
+}
+
+function redactSensitiveValues(output: string): string {
+    const sensitiveValues = Object.entries(process.env)
+        .filter(([key, value]) => SENSITIVE_ENV_NAME_PATTERN.test(key) && typeof value === 'string' && value.length >= 8)
+        .map(([, value]) => value as string)
+
+    return [...new Set(sensitiveValues)].reduce((redactedOutput, value) => redactedOutput.split(value).join('[masked]'), output)
+}
+
+function formatCommandOutput(label: string, output: string | Buffer | undefined): string | null {
+    const normalizedOutput = normalizeCommandOutput(output).trim()
+    if (!normalizedOutput) {
+        return null
+    }
+
+    return `${label}:\n${truncateCommandOutput(redactSensitiveValues(normalizedOutput))}`
 }
 
 function getSeedErrorMessage(error: unknown): string {
@@ -49,9 +92,15 @@ function getSeedErrorMessage(error: unknown): string {
         return 'erro desconhecido ao seedar ambiente E2E'
     }
 
-    const message = error.message.trim()
-    const firstLine = message.split(/\r?\n/).find(Boolean)
-    return firstLine || 'erro desconhecido ao seedar ambiente E2E'
+    const details = [
+        `status=${error.status ?? 'unknown'}`,
+        `signal=${error.signal ?? 'none'}`,
+        formatCommandOutput('message', error.message),
+        formatCommandOutput('stdout', error.stdout),
+        formatCommandOutput('stderr', error.stderr),
+    ].filter((detail): detail is string => detail !== null)
+
+    return details.join('\n')
 }
 
 function resolvePhpBinary(): string {
