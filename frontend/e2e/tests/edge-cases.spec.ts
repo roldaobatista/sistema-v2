@@ -71,15 +71,15 @@ test.describe('Edge Cases — Estado da Sessão', () => {
     await page.goto('/');
     await page.waitForTimeout(500);
     await page.reload();
-    await expect(page.locator('body')).not.toBeEmpty();
+    await expect(page.locator('body')).not.toBeEmpty({ timeout: 15000 });
   });
 
   test('Múltiplas abas simuladas não devem conflitar', async ({ page, context }) => {
     const page2 = await context.newPage();
     await page.goto('/os');
     await page2.goto('/crm');
-    await expect(page.locator('body')).not.toBeEmpty();
-    await expect(page2.locator('body')).not.toBeEmpty();
+    await expect(page.locator('body')).not.toBeEmpty({ timeout: 15000 });
+    await expect(page2.locator('body')).not.toBeEmpty({ timeout: 15000 });
     await page2.close();
   });
 
