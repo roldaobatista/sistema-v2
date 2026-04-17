@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (generated via artisan migrate)
--- Generated: 2026-04-17 18:21:02
+-- Generated: 2026-04-17 19:18:17
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7347,6 +7347,590 @@ CREATE TABLE "cameras" ("id" integer primary key autoincrement not null, "name" 
 
 CREATE TABLE "audit_logs" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "user_id" integer default (NULL), "action" varchar(50) not null, "auditable_type" varchar(255) default (NULL), "auditable_id" integer default (NULL), "description" varchar(255) default (NULL), "old_values" text default (NULL), "new_values" text default (NULL), "ip_address" varchar(45) default (NULL), "user_agent" varchar(255) default (NULL), "created_at" datetime not null default (CURRENT_TIMESTAMP));
 
+CREATE INDEX "access_time_restrictions_tenant_id_idx" on "access_time_restrictions" ("tenant_id");
+
+CREATE INDEX "account_payable_categories_tenant_id_idx" on "account_payable_categories" ("tenant_id");
+
+CREATE INDEX "account_payable_installments_tenant_id_idx" on "account_payable_installments" ("tenant_id");
+
+CREATE INDEX "account_payable_payments_tenant_id_idx" on "account_payable_payments" ("tenant_id");
+
+CREATE INDEX "account_plans_tenant_id_idx" on "account_plans" ("tenant_id");
+
+CREATE INDEX "account_receivable_installments_tenant_id_idx" on "account_receivable_installments" ("tenant_id");
+
+CREATE INDEX "accounts_receivable_tenant_id_idx" on "accounts_receivable" ("tenant_id");
+
+CREATE INDEX "admissions_tenant_id_idx" on "admissions" ("tenant_id");
+
+CREATE INDEX "analytics_datasets_tenant_id_idx" on "analytics_datasets" ("tenant_id");
+
+CREATE INDEX "api_keys_tenant_id_idx" on "api_keys" ("tenant_id");
+
+CREATE INDEX "asset_disposals_tenant_id_idx" on "asset_disposals" ("tenant_id");
+
+CREATE INDEX "asset_inventories_tenant_id_idx" on "asset_inventories" ("tenant_id");
+
+CREATE INDEX "asset_movements_tenant_id_idx" on "asset_movements" ("tenant_id");
+
+CREATE INDEX "asset_tags_tenant_id_idx" on "asset_tags" ("tenant_id");
+
+CREATE INDEX "audit_blockchain_hashes_tenant_id_idx" on "audit_blockchain_hashes" ("tenant_id");
+
+CREATE INDEX "auto_assignment_rules_tenant_id_idx" on "auto_assignment_rules" ("tenant_id");
+
+CREATE INDEX "automation_rules_tenant_id_idx" on "automation_rules" ("tenant_id");
+
+CREATE INDEX "auvo_imports_tenant_id_idx" on "auvo_imports" ("tenant_id");
+
+CREATE INDEX "auxiliary_tools_tenant_id_idx" on "auxiliary_tools" ("tenant_id");
+
+CREATE INDEX "bank_accounts_tenant_id_idx" on "bank_accounts" ("tenant_id");
+
+CREATE INDEX "bank_statement_entries_tenant_id_idx" on "bank_statement_entries" ("tenant_id");
+
+CREATE INDEX "bank_statements_tenant_id_idx" on "bank_statements" ("tenant_id");
+
+CREATE INDEX "batches_tenant_id_idx" on "batches" ("tenant_id");
+
+CREATE INDEX "branches_tenant_id_idx" on "branches" ("tenant_id");
+
+CREATE INDEX "calibration_readings_tenant_id_idx" on "calibration_readings" ("tenant_id");
+
+CREATE INDEX "capa_records_tenant_id_idx" on "capa_records" ("tenant_id");
+
+CREATE INDEX "central_attachments_tenant_id_idx" on "central_attachments" ("tenant_id");
+
+CREATE INDEX "central_notification_prefs_tenant_id_idx" on "central_notification_prefs" ("tenant_id");
+
+CREATE INDEX "central_rules_tenant_id_idx" on "central_rules" ("tenant_id");
+
+CREATE INDEX "central_subtasks_tenant_id_idx" on "central_subtasks" ("tenant_id");
+
+CREATE INDEX "central_templates_tenant_id_idx" on "central_templates" ("tenant_id");
+
+CREATE INDEX "central_time_entries_tenant_id_idx" on "central_time_entries" ("tenant_id");
+
+CREATE INDEX "certificate_signatures_tenant_id_idx" on "certificate_signatures" ("tenant_id");
+
+CREATE INDEX "certificate_templates_tenant_id_idx" on "certificate_templates" ("tenant_id");
+
+CREATE INDEX "chat_messages_tenant_id_idx" on "chat_messages" ("tenant_id");
+
+CREATE INDEX "checklist_submissions_tenant_id_idx" on "checklist_submissions" ("tenant_id");
+
+CREATE INDEX "checklists_tenant_id_idx" on "checklists" ("tenant_id");
+
+CREATE INDEX "clt_violations_tenant_id_idx" on "clt_violations" ("tenant_id");
+
+CREATE INDEX "collection_action_logs_tenant_id_idx" on "collection_action_logs" ("tenant_id");
+
+CREATE INDEX "collection_actions_tenant_id_idx" on "collection_actions" ("tenant_id");
+
+CREATE INDEX "collection_logs_tenant_id_idx" on "collection_logs" ("tenant_id");
+
+CREATE INDEX "collection_rules_tenant_id_idx" on "collection_rules" ("tenant_id");
+
+CREATE INDEX "commission_campaigns_tenant_id_idx" on "commission_campaigns" ("tenant_id");
+
+CREATE INDEX "commission_disputes_tenant_id_idx" on "commission_disputes" ("tenant_id");
+
+CREATE INDEX "commission_events_tenant_id_idx" on "commission_events" ("tenant_id");
+
+CREATE INDEX "commission_rules_tenant_id_idx" on "commission_rules" ("tenant_id");
+
+CREATE INDEX "commission_splits_tenant_id_idx" on "commission_splits" ("tenant_id");
+
+CREATE INDEX "commitments_tenant_id_idx" on "commitments" ("tenant_id");
+
+CREATE INDEX "contact_policies_tenant_id_idx" on "contact_policies" ("tenant_id");
+
+CREATE INDEX "continuous_feedback_tenant_id_idx" on "continuous_feedback" ("tenant_id");
+
+CREATE INDEX "contract_addendums_tenant_id_idx" on "contract_addendums" ("tenant_id");
+
+CREATE INDEX "contract_adjustments_tenant_id_idx" on "contract_adjustments" ("tenant_id");
+
+CREATE INDEX "contract_measurements_tenant_id_idx" on "contract_measurements" ("tenant_id");
+
+CREATE INDEX "contracts_tenant_id_idx" on "contracts" ("tenant_id");
+
+CREATE INDEX "corrective_actions_tenant_id_idx" on "corrective_actions" ("tenant_id");
+
+CREATE INDEX "cost_centers_tenant_id_idx" on "cost_centers" ("tenant_id");
+
+CREATE INDEX "crm_activities_tenant_id_idx" on "crm_activities" ("tenant_id");
+
+CREATE INDEX "crm_calendar_events_tenant_id_idx" on "crm_calendar_events" ("tenant_id");
+
+CREATE INDEX "crm_contract_renewals_tenant_id_idx" on "crm_contract_renewals" ("tenant_id");
+
+CREATE INDEX "crm_deal_stage_histories_tenant_id_idx" on "crm_deal_stage_histories" ("tenant_id");
+
+CREATE INDEX "crm_deals_tenant_id_idx" on "crm_deals" ("tenant_id");
+
+CREATE INDEX "crm_email_threads_tenant_id_idx" on "crm_email_threads" ("tenant_id");
+
+CREATE INDEX "crm_external_leads_tenant_id_idx" on "crm_external_leads" ("tenant_id");
+
+CREATE INDEX "crm_follow_up_tasks_tenant_id_idx" on "crm_follow_up_tasks" ("tenant_id");
+
+CREATE INDEX "crm_forecast_snapshots_tenant_id_idx" on "crm_forecast_snapshots" ("tenant_id");
+
+CREATE INDEX "crm_interactive_proposals_tenant_id_idx" on "crm_interactive_proposals" ("tenant_id");
+
+CREATE INDEX "crm_lead_scoring_rules_tenant_id_idx" on "crm_lead_scoring_rules" ("tenant_id");
+
+CREATE INDEX "crm_loss_reasons_tenant_id_idx" on "crm_loss_reasons" ("tenant_id");
+
+CREATE INDEX "crm_messages_tenant_id_idx" on "crm_messages" ("tenant_id");
+
+CREATE INDEX "crm_pipeline_stages_tenant_id_idx" on "crm_pipeline_stages" ("tenant_id");
+
+CREATE INDEX "crm_referrals_tenant_id_idx" on "crm_referrals" ("tenant_id");
+
+CREATE INDEX "crm_sales_goals_tenant_id_idx" on "crm_sales_goals" ("tenant_id");
+
+CREATE INDEX "crm_sequence_enrollments_tenant_id_idx" on "crm_sequence_enrollments" ("tenant_id");
+
+CREATE INDEX "crm_smart_alerts_tenant_id_idx" on "crm_smart_alerts" ("tenant_id");
+
+CREATE INDEX "crm_territories_tenant_id_idx" on "crm_territories" ("tenant_id");
+
+CREATE INDEX "customer_addresses_tenant_id_idx" on "customer_addresses" ("tenant_id");
+
+CREATE INDEX "customer_complaints_tenant_id_idx" on "customer_complaints" ("tenant_id");
+
+CREATE INDEX "customer_documents_tenant_id_idx" on "customer_documents" ("tenant_id");
+
+CREATE INDEX "customer_locations_tenant_id_idx" on "customer_locations" ("tenant_id");
+
+CREATE INDEX "data_masking_rules_tenant_id_idx" on "data_masking_rules" ("tenant_id");
+
+CREATE INDEX "debt_renegotiations_tenant_id_idx" on "debt_renegotiations" ("tenant_id");
+
+CREATE INDEX "departments_tenant_id_idx" on "departments" ("tenant_id");
+
+CREATE INDEX "document_versions_tenant_id_idx" on "document_versions" ("tenant_id");
+
+CREATE INDEX "ecological_disposals_tenant_id_idx" on "ecological_disposals" ("tenant_id");
+
+CREATE INDEX "email_activities_tenant_id_idx" on "email_activities" ("tenant_id");
+
+CREATE INDEX "email_campaigns_tenant_id_idx" on "email_campaigns" ("tenant_id");
+
+CREATE INDEX "email_logs_tenant_id_idx" on "email_logs" ("tenant_id");
+
+CREATE INDEX "email_notes_tenant_id_idx" on "email_notes" ("tenant_id");
+
+CREATE INDEX "email_rules_tenant_id_idx" on "email_rules" ("tenant_id");
+
+CREATE INDEX "email_signatures_tenant_id_idx" on "email_signatures" ("tenant_id");
+
+CREATE INDEX "email_tags_tenant_id_idx" on "email_tags" ("tenant_id");
+
+CREATE INDEX "email_templates_tenant_id_idx" on "email_templates" ("tenant_id");
+
+CREATE INDEX "emails_tenant_id_idx" on "emails" ("tenant_id");
+
+CREATE INDEX "embedded_dashboards_tenant_id_idx" on "embedded_dashboards" ("tenant_id");
+
+CREATE INDEX "employee_benefits_tenant_id_idx" on "employee_benefits" ("tenant_id");
+
+CREATE INDEX "epi_records_tenant_id_idx" on "epi_records" ("tenant_id");
+
+CREATE INDEX "equipment_models_tenant_id_idx" on "equipment_models" ("tenant_id");
+
+CREATE INDEX "equipments_tenant_id_idx" on "equipments" ("tenant_id");
+
+CREATE INDEX "erp_sync_logs_tenant_id_idx" on "erp_sync_logs" ("tenant_id");
+
+CREATE INDEX "escalation_rules_tenant_id_idx" on "escalation_rules" ("tenant_id");
+
+CREATE INDEX "esocial_certificates_tenant_id_idx" on "esocial_certificates" ("tenant_id");
+
+CREATE INDEX "esocial_events_tenant_id_idx" on "esocial_events" ("tenant_id");
+
+CREATE INDEX "espelho_confirmations_tenant_id_idx" on "espelho_confirmations" ("tenant_id");
+
+CREATE INDEX "excentricity_tests_tenant_id_idx" on "excentricity_tests" ("tenant_id");
+
+CREATE INDEX "expense_categories_tenant_id_idx" on "expense_categories" ("tenant_id");
+
+CREATE INDEX "expenses_tenant_id_idx" on "expenses" ("tenant_id");
+
+CREATE INDEX "export_jobs_tenant_id_idx" on "export_jobs" ("tenant_id");
+
+CREATE INDEX "financial_checks_tenant_id_idx" on "financial_checks" ("tenant_id");
+
+CREATE INDEX "fiscal_audit_logs_tenant_id_idx" on "fiscal_audit_logs" ("tenant_id");
+
+CREATE INDEX "fiscal_events_tenant_id_idx" on "fiscal_events" ("tenant_id");
+
+CREATE INDEX "fiscal_invoice_items_tenant_id_idx" on "fiscal_invoice_items" ("tenant_id");
+
+CREATE INDEX "fiscal_notes_tenant_id_idx" on "fiscal_notes" ("tenant_id");
+
+CREATE INDEX "fiscal_scheduled_emissions_tenant_id_idx" on "fiscal_scheduled_emissions" ("tenant_id");
+
+CREATE INDEX "fiscal_templates_tenant_id_idx" on "fiscal_templates" ("tenant_id");
+
+CREATE INDEX "fiscal_webhooks_tenant_id_idx" on "fiscal_webhooks" ("tenant_id");
+
+CREATE INDEX "fleet_fuel_entries_tenant_id_idx" on "fleet_fuel_entries" ("tenant_id");
+
+CREATE INDEX "fleet_maintenances_tenant_id_idx" on "fleet_maintenances" ("tenant_id");
+
+CREATE INDEX "fleet_telemetry_tenant_id_idx" on "fleet_telemetry" ("tenant_id");
+
+CREATE INDEX "fleet_trips_tenant_id_idx" on "fleet_trips" ("tenant_id");
+
+CREATE INDEX "fleet_vehicles_tenant_id_idx" on "fleet_vehicles" ("tenant_id");
+
+CREATE INDEX "fleets_tenant_id_idx" on "fleets" ("tenant_id");
+
+CREATE INDEX "follow_ups_tenant_id_idx" on "follow_ups" ("tenant_id");
+
+CREATE INDEX "fueling_logs_tenant_id_idx" on "fueling_logs" ("tenant_id");
+
+CREATE INDEX "fund_transfers_tenant_id_idx" on "fund_transfers" ("tenant_id");
+
+CREATE INDEX "funnel_email_automations_tenant_id_idx" on "funnel_email_automations" ("tenant_id");
+
+CREATE INDEX "gamification_badges_tenant_id_idx" on "gamification_badges" ("tenant_id");
+
+CREATE INDEX "gamification_user_badges_tenant_id_idx" on "gamification_user_badges" ("tenant_id");
+
+CREATE INDEX "geo_login_alerts_tenant_id_idx" on "geo_login_alerts" ("tenant_id");
+
+CREATE INDEX "geofence_locations_tenant_id_idx" on "geofence_locations" ("tenant_id");
+
+CREATE INDEX "hour_bank_transactions_tenant_id_idx" on "hour_bank_transactions" ("tenant_id");
+
+CREATE INDEX "immutable_backups_tenant_id_idx" on "immutable_backups" ("tenant_id");
+
+CREATE INDEX "important_dates_tenant_id_idx" on "important_dates" ("tenant_id");
+
+CREATE INDEX "imports_tenant_id_idx" on "imports" ("tenant_id");
+
+CREATE INDEX "inmetro_competitor_snapshots_tenant_id_idx" on "inmetro_competitor_snapshots" ("tenant_id");
+
+CREATE INDEX "inmetro_competitors_tenant_id_idx" on "inmetro_competitors" ("tenant_id");
+
+CREATE INDEX "inmetro_compliance_checklists_tenant_id_idx" on "inmetro_compliance_checklists" ("tenant_id");
+
+CREATE INDEX "inmetro_lead_interactions_tenant_id_idx" on "inmetro_lead_interactions" ("tenant_id");
+
+CREATE INDEX "inmetro_lead_scores_tenant_id_idx" on "inmetro_lead_scores" ("tenant_id");
+
+CREATE INDEX "inmetro_locations_tenant_id_idx" on "inmetro_locations" ("tenant_id");
+
+CREATE INDEX "inmetro_prospection_queue_tenant_id_idx" on "inmetro_prospection_queue" ("tenant_id");
+
+CREATE INDEX "inmetro_snapshots_tenant_id_idx" on "inmetro_snapshots" ("tenant_id");
+
+CREATE INDEX "inmetro_webhooks_tenant_id_idx" on "inmetro_webhooks" ("tenant_id");
+
+CREATE INDEX "inmetro_win_loss_tenant_id_idx" on "inmetro_win_loss" ("tenant_id");
+
+CREATE INDEX "inventories_tenant_id_idx" on "inventories" ("tenant_id");
+
+CREATE INDEX "inventory_counts_tenant_id_idx" on "inventory_counts" ("tenant_id");
+
+CREATE INDEX "job_postings_tenant_id_idx" on "job_postings" ("tenant_id");
+
+CREATE INDEX "journey_rules_tenant_id_idx" on "journey_rules" ("tenant_id");
+
+CREATE INDEX "knowledge_base_articles_tenant_id_idx" on "knowledge_base_articles" ("tenant_id");
+
+CREATE INDEX "lab_logbook_entries_tenant_id_idx" on "lab_logbook_entries" ("tenant_id");
+
+CREATE INDEX "leave_requests_tenant_id_idx" on "leave_requests" ("tenant_id");
+
+CREATE INDEX "management_reviews_tenant_id_idx" on "management_reviews" ("tenant_id");
+
+CREATE INDEX "marketplace_requests_tenant_id_idx" on "marketplace_requests" ("tenant_id");
+
+CREATE INDEX "material_requests_tenant_id_idx" on "material_requests" ("tenant_id");
+
+CREATE INDEX "measurement_uncertainties_tenant_id_idx" on "measurement_uncertainties" ("tenant_id");
+
+CREATE INDEX "model_has_permissions_tenant_id_idx" on "model_has_permissions" ("tenant_id");
+
+CREATE INDEX "model_has_roles_tenant_id_idx" on "model_has_roles" ("tenant_id");
+
+CREATE INDEX "nfse_emissions_tenant_id_idx" on "nfse_emissions" ("tenant_id");
+
+CREATE INDEX "non_conformances_tenant_id_idx" on "non_conformances" ("tenant_id");
+
+CREATE INDEX "non_conformities_tenant_id_idx" on "non_conformities" ("tenant_id");
+
+CREATE INDEX "notification_channels_tenant_id_idx" on "notification_channels" ("tenant_id");
+
+CREATE INDEX "notifications_tenant_id_idx" on "notifications" ("tenant_id");
+
+CREATE INDEX "nps_responses_tenant_id_idx" on "nps_responses" ("tenant_id");
+
+CREATE INDEX "nps_surveys_tenant_id_idx" on "nps_surveys" ("tenant_id");
+
+CREATE INDEX "offline_map_regions_tenant_id_idx" on "offline_map_regions" ("tenant_id");
+
+CREATE INDEX "onboarding_checklist_items_tenant_id_idx" on "onboarding_checklist_items" ("tenant_id");
+
+CREATE INDEX "onboarding_checklists_tenant_id_idx" on "onboarding_checklists" ("tenant_id");
+
+CREATE INDEX "onboarding_processes_tenant_id_idx" on "onboarding_processes" ("tenant_id");
+
+CREATE INDEX "onboarding_templates_tenant_id_idx" on "onboarding_templates" ("tenant_id");
+
+CREATE INDEX "online_payments_tenant_id_idx" on "online_payments" ("tenant_id");
+
+CREATE INDEX "partial_payments_tenant_id_idx" on "partial_payments" ("tenant_id");
+
+CREATE INDEX "parts_kits_tenant_id_idx" on "parts_kits" ("tenant_id");
+
+CREATE INDEX "payments_tenant_id_idx" on "payments" ("tenant_id");
+
+CREATE INDEX "payroll_lines_tenant_id_idx" on "payroll_lines" ("tenant_id");
+
+CREATE INDEX "payslips_tenant_id_idx" on "payslips" ("tenant_id");
+
+CREATE INDEX "performance_reviews_tenant_id_idx" on "performance_reviews" ("tenant_id");
+
+CREATE INDEX "photo_annotations_tenant_id_idx" on "photo_annotations" ("tenant_id");
+
+CREATE INDEX "portal_guest_links_tenant_id_idx" on "portal_guest_links" ("tenant_id");
+
+CREATE INDEX "portal_ticket_comments_tenant_id_idx" on "portal_ticket_comments" ("tenant_id");
+
+CREATE INDEX "portal_tickets_tenant_id_idx" on "portal_tickets" ("tenant_id");
+
+CREATE INDEX "positions_tenant_id_idx" on "positions" ("tenant_id");
+
+CREATE INDEX "price_histories_tenant_id_idx" on "price_histories" ("tenant_id");
+
+CREATE INDEX "price_tables_tenant_id_idx" on "price_tables" ("tenant_id");
+
+CREATE INDEX "print_jobs_tenant_id_idx" on "print_jobs" ("tenant_id");
+
+CREATE INDEX "privacy_consents_tenant_id_idx" on "privacy_consents" ("tenant_id");
+
+CREATE INDEX "project_milestones_tenant_id_idx" on "project_milestones" ("tenant_id");
+
+CREATE INDEX "project_resources_tenant_id_idx" on "project_resources" ("tenant_id");
+
+CREATE INDEX "project_time_entries_tenant_id_idx" on "project_time_entries" ("tenant_id");
+
+CREATE INDEX "psei_submissions_tenant_id_idx" on "psei_submissions" ("tenant_id");
+
+CREATE INDEX "purchase_quotations_tenant_id_idx" on "purchase_quotations" ("tenant_id");
+
+CREATE INDEX "purchase_quotes_tenant_id_idx" on "purchase_quotes" ("tenant_id");
+
+CREATE INDEX "push_subscriptions_tenant_id_idx" on "push_subscriptions" ("tenant_id");
+
+CREATE INDEX "qa_alerts_tenant_id_idx" on "qa_alerts" ("tenant_id");
+
+CREATE INDEX "quality_audits_tenant_id_idx" on "quality_audits" ("tenant_id");
+
+CREATE INDEX "quality_corrective_actions_tenant_id_idx" on "quality_corrective_actions" ("tenant_id");
+
+CREATE INDEX "quality_procedures_tenant_id_idx" on "quality_procedures" ("tenant_id");
+
+CREATE INDEX "quick_notes_tenant_id_idx" on "quick_notes" ("tenant_id");
+
+CREATE INDEX "quote_approval_thresholds_tenant_id_idx" on "quote_approval_thresholds" ("tenant_id");
+
+CREATE INDEX "quote_emails_tenant_id_idx" on "quote_emails" ("tenant_id");
+
+CREATE INDEX "quote_templates_tenant_id_idx" on "quote_templates" ("tenant_id");
+
+CREATE INDEX "raw_data_backups_tenant_id_idx" on "raw_data_backups" ("tenant_id");
+
+CREATE INDEX "recall_logs_tenant_id_idx" on "recall_logs" ("tenant_id");
+
+CREATE INDEX "reconciliation_rules_tenant_id_idx" on "reconciliation_rules" ("tenant_id");
+
+CREATE INDEX "recurring_commissions_tenant_id_idx" on "recurring_commissions" ("tenant_id");
+
+CREATE INDEX "recurring_contracts_tenant_id_idx" on "recurring_contracts" ("tenant_id");
+
+CREATE INDEX "referral_codes_tenant_id_idx" on "referral_codes" ("tenant_id");
+
+CREATE INDEX "repair_seal_alerts_tenant_id_idx" on "repair_seal_alerts" ("tenant_id");
+
+CREATE INDEX "repair_seal_assignments_tenant_id_idx" on "repair_seal_assignments" ("tenant_id");
+
+CREATE INDEX "repeatability_tests_tenant_id_idx" on "repeatability_tests" ("tenant_id");
+
+CREATE INDEX "rescissions_tenant_id_idx" on "rescissions" ("tenant_id");
+
+CREATE INDEX "retention_samples_tenant_id_idx" on "retention_samples" ("tenant_id");
+
+CREATE INDEX "rma_requests_tenant_id_idx" on "rma_requests" ("tenant_id");
+
+CREATE INDEX "route_plans_tenant_id_idx" on "route_plans" ("tenant_id");
+
+CREATE INDEX "routes_planning_tenant_id_idx" on "routes_planning" ("tenant_id");
+
+CREATE INDEX "rr_studies_tenant_id_idx" on "rr_studies" ("tenant_id");
+
+CREATE INDEX "satisfaction_surveys_tenant_id_idx" on "satisfaction_surveys" ("tenant_id");
+
+CREATE INDEX "scale_readings_tenant_id_idx" on "scale_readings" ("tenant_id");
+
+CREATE INDEX "scheduled_appointments_tenant_id_idx" on "scheduled_appointments" ("tenant_id");
+
+CREATE INDEX "scheduled_report_exports_tenant_id_idx" on "scheduled_report_exports" ("tenant_id");
+
+CREATE INDEX "scheduled_reports_tenant_id_idx" on "scheduled_reports" ("tenant_id");
+
+CREATE INDEX "schedules_tenant_id_idx" on "schedules" ("tenant_id");
+
+CREATE INDEX "seal_applications_tenant_id_idx" on "seal_applications" ("tenant_id");
+
+CREATE INDEX "search_index_tenant_id_idx" on "search_index" ("tenant_id");
+
+CREATE INDEX "self_service_quote_requests_tenant_id_idx" on "self_service_quote_requests" ("tenant_id");
+
+CREATE INDEX "sensor_readings_tenant_id_idx" on "sensor_readings" ("tenant_id");
+
+CREATE INDEX "service_call_comments_tenant_id_idx" on "service_call_comments" ("tenant_id");
+
+CREATE INDEX "service_call_templates_tenant_id_idx" on "service_call_templates" ("tenant_id");
+
+CREATE INDEX "service_calls_tenant_id_idx" on "service_calls" ("tenant_id");
+
+CREATE INDEX "service_catalogs_tenant_id_idx" on "service_catalogs" ("tenant_id");
+
+CREATE INDEX "service_checklists_tenant_id_idx" on "service_checklists" ("tenant_id");
+
+CREATE INDEX "skill_requirements_tenant_id_idx" on "skill_requirements" ("tenant_id");
+
+CREATE INDEX "skills_tenant_id_idx" on "skills" ("tenant_id");
+
+CREATE INDEX "sla_policies_tenant_id_idx" on "sla_policies" ("tenant_id");
+
+CREATE INDEX "sla_violations_tenant_id_idx" on "sla_violations" ("tenant_id");
+
+CREATE INDEX "stock_disposals_tenant_id_idx" on "stock_disposals" ("tenant_id");
+
+CREATE INDEX "stock_movements_tenant_id_idx" on "stock_movements" ("tenant_id");
+
+CREATE INDEX "stock_transfers_tenant_id_idx" on "stock_transfers" ("tenant_id");
+
+CREATE INDEX "supplier_contracts_tenant_id_idx" on "supplier_contracts" ("tenant_id");
+
+CREATE INDEX "survey_responses_tenant_id_idx" on "survey_responses" ("tenant_id");
+
+CREATE INDEX "surveys_tenant_id_idx" on "surveys" ("tenant_id");
+
+CREATE INDEX "sync_conflict_logs_tenant_id_idx" on "sync_conflict_logs" ("tenant_id");
+
+CREATE INDEX "sync_queue_tenant_id_idx" on "sync_queue" ("tenant_id");
+
+CREATE INDEX "sync_queue_items_tenant_id_idx" on "sync_queue_items" ("tenant_id");
+
+CREATE INDEX "system_alerts_tenant_id_idx" on "system_alerts" ("tenant_id");
+
+CREATE INDEX "system_revisions_tenant_id_idx" on "system_revisions" ("tenant_id");
+
+CREATE INDEX "tax_calculations_tenant_id_idx" on "tax_calculations" ("tenant_id");
+
+CREATE INDEX "tech_cash_advances_tenant_id_idx" on "tech_cash_advances" ("tenant_id");
+
+CREATE INDEX "technician_fund_requests_tenant_id_idx" on "technician_fund_requests" ("tenant_id");
+
+CREATE INDEX "technician_skills_tenant_id_idx" on "technician_skills" ("tenant_id");
+
+CREATE INDEX "ticket_categories_tenant_id_idx" on "ticket_categories" ("tenant_id");
+
+CREATE INDEX "time_clock_adjustments_tenant_id_idx" on "time_clock_adjustments" ("tenant_id");
+
+CREATE INDEX "time_clock_audit_logs_tenant_id_idx" on "time_clock_audit_logs" ("tenant_id");
+
+CREATE INDEX "time_entries_tenant_id_idx" on "time_entries" ("tenant_id");
+
+CREATE INDEX "toll_transactions_tenant_id_idx" on "toll_transactions" ("tenant_id");
+
+CREATE INDEX "tool_calibrations_tenant_id_idx" on "tool_calibrations" ("tenant_id");
+
+CREATE INDEX "tool_checkouts_tenant_id_idx" on "tool_checkouts" ("tenant_id");
+
+CREATE INDEX "tool_inventories_tenant_id_idx" on "tool_inventories" ("tenant_id");
+
+CREATE INDEX "traffic_fines_tenant_id_idx" on "traffic_fines" ("tenant_id");
+
+CREATE INDEX "training_courses_tenant_id_idx" on "training_courses" ("tenant_id");
+
+CREATE INDEX "training_enrollments_tenant_id_idx" on "training_enrollments" ("tenant_id");
+
+CREATE INDEX "trainings_tenant_id_idx" on "trainings" ("tenant_id");
+
+CREATE INDEX "tv_dashboard_configs_tenant_id_idx" on "tv_dashboard_configs" ("tenant_id");
+
+CREATE INDEX "used_stock_items_tenant_id_idx" on "used_stock_items" ("tenant_id");
+
+CREATE INDEX "user_competencies_tenant_id_idx" on "user_competencies" ("tenant_id");
+
+CREATE INDEX "user_skills_tenant_id_idx" on "user_skills" ("tenant_id");
+
+CREATE INDEX "user_tenants_tenant_id_idx" on "user_tenants" ("tenant_id");
+
+CREATE INDEX "vehicle_gps_positions_tenant_id_idx" on "vehicle_gps_positions" ("tenant_id");
+
+CREATE INDEX "vehicle_inspections_tenant_id_idx" on "vehicle_inspections" ("tenant_id");
+
+CREATE INDEX "vehicle_insurances_tenant_id_idx" on "vehicle_insurances" ("tenant_id");
+
+CREATE INDEX "vehicle_tires_tenant_id_idx" on "vehicle_tires" ("tenant_id");
+
+CREATE INDEX "virtual_cards_tenant_id_idx" on "virtual_cards" ("tenant_id");
+
+CREATE INDEX "visit_checkins_tenant_id_idx" on "visit_checkins" ("tenant_id");
+
+CREATE INDEX "visit_reports_tenant_id_idx" on "visit_reports" ("tenant_id");
+
+CREATE INDEX "visit_routes_tenant_id_idx" on "visit_routes" ("tenant_id");
+
+CREATE INDEX "visit_surveys_tenant_id_idx" on "visit_surveys" ("tenant_id");
+
+CREATE INDEX "voice_reports_tenant_id_idx" on "voice_reports" ("tenant_id");
+
+CREATE INDEX "vulnerability_scans_tenant_id_idx" on "vulnerability_scans" ("tenant_id");
+
+CREATE INDEX "warehouses_tenant_id_idx" on "warehouses" ("tenant_id");
+
+CREATE INDEX "warranty_tracking_tenant_id_idx" on "warranty_tracking" ("tenant_id");
+
+CREATE INDEX "webhook_configs_tenant_id_idx" on "webhook_configs" ("tenant_id");
+
+CREATE INDEX "webhooks_tenant_id_idx" on "webhooks" ("tenant_id");
+
+CREATE INDEX "weight_assignments_tenant_id_idx" on "weight_assignments" ("tenant_id");
+
+CREATE INDEX "whatsapp_configs_tenant_id_idx" on "whatsapp_configs" ("tenant_id");
+
+CREATE INDEX "work_order_chats_tenant_id_idx" on "work_order_chats" ("tenant_id");
+
+CREATE INDEX "work_order_checklist_responses_tenant_id_idx" on "work_order_checklist_responses" ("tenant_id");
+
+CREATE INDEX "work_order_displacement_locations_tenant_id_idx" on "work_order_displacement_locations" ("tenant_id");
+
+CREATE INDEX "work_order_displacement_stops_tenant_id_idx" on "work_order_displacement_stops" ("tenant_id");
+
+CREATE INDEX "work_order_events_tenant_id_idx" on "work_order_events" ("tenant_id");
+
+CREATE INDEX "work_order_ratings_tenant_id_idx" on "work_order_ratings" ("tenant_id");
+
+CREATE INDEX "work_order_recurrences_tenant_id_idx" on "work_order_recurrences" ("tenant_id");
+
+CREATE INDEX "work_order_signatures_tenant_id_idx" on "work_order_signatures" ("tenant_id");
+
+CREATE INDEX "work_order_templates_tenant_id_idx" on "work_order_templates" ("tenant_id");
+
+CREATE INDEX "work_order_time_logs_tenant_id_idx" on "work_order_time_logs" ("tenant_id");
+
 -- Migration records
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (1, '0001_01_01_000000_create_users_table', 1);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (2, '0001_01_01_000001_create_cache_table', 1);
@@ -7802,3 +8386,4 @@ INSERT INTO "migrations" ("id", "migration", "batch") VALUES (451, '2026_04_17_1
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (452, '2026_04_17_140000_add_tenant_id_to_tenant_safe_tables', 8);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (453, '2026_04_17_150000_backfill_tenant_id_and_make_not_null', 9);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (454, '2026_04_17_160000_revert_tenant_id_not_null_on_pivots', 10);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (455, '2026_04_17_170000_add_tenant_id_indexes_to_remaining_tables', 11);
