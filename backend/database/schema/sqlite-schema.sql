@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (generated via artisan migrate)
--- Generated: 2026-04-17 17:22:41
+-- Generated: 2026-04-17 17:38:33
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -334,19 +334,6 @@ CREATE TABLE "asset_records" (
 
 CREATE UNIQUE INDEX "asset_records_tenant_code_unique" ON "asset_records" ("tenant_id","code");
 
-CREATE TABLE "asset_tag_scans" (
- "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "asset_tag_id" integer NOT NULL,
- "scanned_by" integer NOT NULL,
- "action" varchar(50) NOT NULL DEFAULT 'scan',
- "location" varchar(255) DEFAULT NULL,
- "latitude" numeric DEFAULT NULL,
- "longitude" numeric DEFAULT NULL,
- "metadata" text DEFAULT NULL,
- "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL
-);
-
 CREATE TABLE "asset_tags" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -623,18 +610,6 @@ CREATE TABLE "batches" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
-
-CREATE TABLE "biometric_configs" (
- "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "user_id" integer NOT NULL,
- "enabled" tinyint NOT NULL DEFAULT '0',
- "type" varchar(20) DEFAULT NULL,
- "device_id" varchar(255) DEFAULT NULL,
- "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL
-);
-
-CREATE UNIQUE INDEX "biometric_configs_user_id_unique" ON "biometric_configs" ("user_id");
 
 CREATE TABLE "branches" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3694,23 +3669,6 @@ CREATE TABLE "inmetro_compliance_checklists" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
-CREATE TABLE "inmetro_history" (
- "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "instrument_id" integer NOT NULL,
- "event_type" varchar NOT NULL DEFAULT 'verification',
- "event_date" date NOT NULL,
- "result" varchar NOT NULL DEFAULT 'approved',
- "executor" varchar(255) DEFAULT NULL,
- "executor_document" varchar(20) DEFAULT NULL,
- "validity_date" date DEFAULT NULL,
- "notes" text,
- "osint_threat_level" varchar(50) DEFAULT NULL,
- "source" varchar(30) NOT NULL DEFAULT 'psie_import',
- "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL,
- "competitor_id" integer DEFAULT NULL
-);
-
 CREATE TABLE "inmetro_instruments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "location_id" integer NOT NULL,
@@ -3998,12 +3956,6 @@ CREATE TABLE "inventory_items" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL,
  "tenant_id" integer DEFAULT NULL
-);
-
-CREATE TABLE "inventory_tables_v3" (
- "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL
 );
 
 CREATE TABLE "invoices" (
@@ -4350,20 +4302,6 @@ CREATE TABLE "minimum_wages" (
 
 CREATE UNIQUE INDEX "minimum_wages_year_month_unique" ON "minimum_wages" ("year","month");
 
-CREATE TABLE "mobile_notifications" (
- "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "user_id" integer NOT NULL,
- "title" varchar(255) NOT NULL,
- "body" text NOT NULL,
- "type" varchar(30) DEFAULT NULL,
- "entity_type" varchar(30) DEFAULT NULL,
- "entity_id" integer DEFAULT NULL,
- "response_action" varchar(20) DEFAULT NULL,
- "responded_at" datetime NULL DEFAULT NULL,
- "read" tinyint NOT NULL DEFAULT '0',
- "created_at" datetime NOT NULL
-);
-
 CREATE TABLE "model_has_permissions" (
  "permission_id" integer NOT NULL,
  "model_type" varchar(255) NOT NULL,
@@ -4628,18 +4566,6 @@ CREATE TABLE "online_payments" (
  "amount" numeric DEFAULT NULL,
  "paid_at" datetime NULL DEFAULT NULL,
  "created_at" datetime NOT NULL
-);
-
-CREATE TABLE "operational_snapshots" (
- "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "status" varchar(32) NOT NULL,
- "alerts_count" int NOT NULL DEFAULT '0',
- "health_payload" text NOT NULL,
- "metrics_payload" text DEFAULT NULL,
- "alerts_payload" text DEFAULT NULL,
- "captured_at" datetime NOT NULL,
- "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL
 );
 
 CREATE TABLE "partial_payments" (
@@ -5380,16 +5306,6 @@ CREATE TABLE "qa_alerts" (
  "status" varchar(255) NOT NULL DEFAULT 'pending',
  "reviewed_by" integer DEFAULT NULL,
  "reviewed_at" datetime NULL DEFAULT NULL,
- "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL
-);
-
-CREATE TABLE "qr_scans" (
- "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "work_order_id" integer NOT NULL,
- "ip_address" varchar(45) DEFAULT NULL,
- "user_agent" varchar(500) DEFAULT NULL,
- "scanned_at" datetime NOT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
@@ -7217,41 +7133,6 @@ CREATE TABLE "user_competencies" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
-CREATE TABLE "user_favorites" (
- "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "user_id" integer NOT NULL,
- "favoritable_type" varchar(255) NOT NULL,
- "favoritable_id" integer NOT NULL,
- "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL
-);
-
-CREATE UNIQUE INDEX "user_favorites_unique" ON "user_favorites" ("user_id","favoritable_type","favoritable_id");
-
-CREATE TABLE "user_preferences" (
- "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "user_id" integer NOT NULL,
- "dark_mode" tinyint NOT NULL DEFAULT '0',
- "language" varchar(5) NOT NULL DEFAULT 'pt_BR',
- "notifications" tinyint NOT NULL DEFAULT '1',
- "data_saver" tinyint NOT NULL DEFAULT '0',
- "offline_sync" tinyint NOT NULL DEFAULT '1',
- "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL
-);
-
-CREATE UNIQUE INDEX "user_preferences_user_id_unique" ON "user_preferences" ("user_id");
-
-CREATE TABLE "user_sessions" (
- "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "user_id" integer NOT NULL,
- "token_id" varchar(255) DEFAULT NULL,
- "ip_address" varchar(45) DEFAULT NULL,
- "user_agent" text,
- "last_activity" datetime NOT NULL,
- "created_at" datetime NOT NULL
-);
-
 CREATE TABLE "user_skills" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -7581,18 +7462,6 @@ CREATE TABLE "vulnerability_scans" (
  "completed_at" datetime NULL DEFAULT NULL
 );
 
-CREATE TABLE "warehouse_stocks" (
- "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "warehouse_id" integer NOT NULL,
- "product_id" integer NOT NULL,
- "batch_id" integer DEFAULT NULL,
- "quantity" numeric NOT NULL DEFAULT '0.00',
- "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL
-);
-
-CREATE UNIQUE INDEX "ws_unique" ON "warehouse_stocks" ("warehouse_id","product_id","batch_id");
-
 CREATE TABLE "warehouses" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -7652,19 +7521,6 @@ CREATE TABLE "webhook_configs" (
  "updated_at" datetime NULL DEFAULT NULL,
  "last_triggered_at" datetime NULL DEFAULT NULL,
  "failure_count" int NOT NULL DEFAULT '0'
-);
-
-CREATE TABLE "webhook_logs" (
- "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "webhook_id" integer NOT NULL,
- "event" varchar(100) NOT NULL,
- "payload" text DEFAULT NULL,
- "response_status" int DEFAULT NULL,
- "response_body" text,
- "duration_ms" int DEFAULT NULL,
- "status" varchar(20) NOT NULL DEFAULT 'pending',
- "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL
 );
 
 CREATE TABLE "webhooks" (
@@ -8224,6 +8080,62 @@ CREATE INDEX "users_tenant_cpf_hash_idx" on "users" ("tenant_id", "cpf_hash");
 
 CREATE INDEX "employee_dependents_tenant_cpf_hash_idx" on "employee_dependents" ("tenant_id", "cpf_hash");
 
+CREATE TABLE "mobile_notifications" ("id" integer primary key autoincrement not null, "user_id" integer not null, "title" varchar(255) not null, "body" text not null, "type" varchar(30) default (NULL), "entity_type" varchar(30) default (NULL), "entity_id" integer default (NULL), "response_action" varchar(20) default (NULL), "responded_at" datetime default (NULL), "read" tinyint not null default ('0'), "created_at" datetime not null, "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
+
+CREATE INDEX "mobile_notifications_tenant_id_idx" on "mobile_notifications" ("tenant_id");
+
+CREATE TABLE "qr_scans" ("id" integer primary key autoincrement not null, "work_order_id" integer not null, "ip_address" varchar(45) default (NULL), "user_agent" varchar(500) default (NULL), "scanned_at" datetime not null, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
+
+CREATE INDEX "qr_scans_tenant_id_idx" on "qr_scans" ("tenant_id");
+
+CREATE TABLE "asset_tag_scans" ("id" integer primary key autoincrement not null, "asset_tag_id" integer not null, "scanned_by" integer not null, "action" varchar(50) not null default ('scan'), "location" varchar(255) default (NULL), "latitude" numeric default (NULL), "longitude" numeric default (NULL), "metadata" text default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
+
+CREATE INDEX "asset_tag_scans_tenant_id_idx" on "asset_tag_scans" ("tenant_id");
+
+CREATE TABLE "biometric_configs" ("id" integer primary key autoincrement not null, "user_id" integer not null, "enabled" tinyint not null default ('0'), "type" varchar(20) default (NULL), "device_id" varchar(255) default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
+
+CREATE INDEX "biometric_configs_tenant_id_idx" on "biometric_configs" ("tenant_id");
+
+CREATE UNIQUE INDEX "biometric_configs_user_id_unique" on "biometric_configs" ("user_id");
+
+CREATE TABLE "warehouse_stocks" ("id" integer primary key autoincrement not null, "warehouse_id" integer not null, "product_id" integer not null, "batch_id" integer default (NULL), "quantity" numeric not null default ('0.00'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
+
+CREATE INDEX "warehouse_stocks_tenant_id_idx" on "warehouse_stocks" ("tenant_id");
+
+CREATE UNIQUE INDEX "ws_unique" on "warehouse_stocks" ("warehouse_id", "product_id", "batch_id");
+
+CREATE TABLE "webhook_logs" ("id" integer primary key autoincrement not null, "webhook_id" integer not null, "event" varchar(100) not null, "payload" text default (NULL), "response_status" int default (NULL), "response_body" text, "duration_ms" int default (NULL), "status" varchar(20) not null default ('pending'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
+
+CREATE INDEX "webhook_logs_tenant_id_idx" on "webhook_logs" ("tenant_id");
+
+CREATE TABLE "user_favorites" ("id" integer primary key autoincrement not null, "user_id" integer not null, "favoritable_type" varchar(255) not null, "favoritable_id" integer not null, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
+
+CREATE INDEX "user_favorites_tenant_id_idx" on "user_favorites" ("tenant_id");
+
+CREATE UNIQUE INDEX "user_favorites_unique" on "user_favorites" ("user_id", "favoritable_type", "favoritable_id");
+
+CREATE TABLE "user_preferences" ("id" integer primary key autoincrement not null, "user_id" integer not null, "dark_mode" tinyint not null default ('0'), "language" varchar(5) not null default ('pt_BR'), "notifications" tinyint not null default ('1'), "data_saver" tinyint not null default ('0'), "offline_sync" tinyint not null default ('1'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
+
+CREATE INDEX "user_preferences_tenant_id_idx" on "user_preferences" ("tenant_id");
+
+CREATE UNIQUE INDEX "user_preferences_user_id_unique" on "user_preferences" ("user_id");
+
+CREATE TABLE "user_sessions" ("id" integer primary key autoincrement not null, "user_id" integer not null, "token_id" varchar(255) default (NULL), "ip_address" varchar(45) default (NULL), "user_agent" text, "last_activity" datetime not null, "created_at" datetime not null, "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
+
+CREATE INDEX "user_sessions_tenant_id_idx" on "user_sessions" ("tenant_id");
+
+CREATE TABLE "operational_snapshots" ("id" integer primary key autoincrement not null, "status" varchar(32) not null, "alerts_count" int not null default ('0'), "health_payload" text not null, "metrics_payload" text default (NULL), "alerts_payload" text default (NULL), "captured_at" datetime not null, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
+
+CREATE INDEX "operational_snapshots_tenant_id_idx" on "operational_snapshots" ("tenant_id");
+
+CREATE TABLE "inmetro_history" ("id" integer primary key autoincrement not null, "instrument_id" integer not null, "event_type" varchar not null default ('verification'), "event_date" date not null, "result" varchar not null default ('approved'), "executor" varchar(255) default (NULL), "executor_document" varchar(20) default (NULL), "validity_date" date default (NULL), "notes" text, "osint_threat_level" varchar(50) default (NULL), "source" varchar(30) not null default ('psie_import'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "competitor_id" integer default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
+
+CREATE INDEX "inmetro_history_tenant_id_idx" on "inmetro_history" ("tenant_id");
+
+CREATE TABLE "inventory_tables_v3" ("id" integer primary key autoincrement not null, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
+
+CREATE INDEX "inventory_tables_v3_tenant_id_idx" on "inventory_tables_v3" ("tenant_id");
+
 -- Migration records
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (1, '0001_01_01_000000_create_users_table', 1);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (2, '0001_01_01_000001_create_cache_table', 1);
@@ -8676,3 +8588,4 @@ INSERT INTO "migrations" ("id", "migration", "batch") VALUES (448, '2026_04_10_2
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (449, '2026_04_10_300001_create_accreditation_scopes_table', 7);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (450, '2026_04_10_500000_fix_production_schema_drifts', 7);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (451, '2026_04_17_120000_add_document_hash_for_encrypted_search', 7);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (452, '2026_04_17_140000_add_tenant_id_to_tenant_safe_tables', 8);

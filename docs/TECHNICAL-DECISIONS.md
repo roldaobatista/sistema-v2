@@ -210,5 +210,32 @@ Registrar aqui escolhas que foram consideradas e descartadas, com motivo — evi
 
 **Consequência operacional:** o `product-expert` NÃO bloqueia camadas porque PRD está incompleto. Apenas reporta gap.
 
+### 14.4 Tabelas system-wide sem `tenant_id` (Wave 2A — DATA-003 / SEC-009)
+
+**Decisão:** algumas tabelas são intencionalmente system-wide (compartilhadas entre todos os tenants) e NÃO devem ter `tenant_id`. São catálogos/lookups de plataforma sem dados pertencentes a um tenant individual.
+
+**Tabela exceção atual:**
+
+| Tabela | Justificativa |
+|---|---|
+| `marketplace_partners` | Catálogo público de parceiros do marketplace Kalibrium (nome, categoria, logo, website). Visível para todos os tenants — não contém dados privados de tenant. Editado via admin de plataforma. |
+
+**Critério para adicionar nova exceção system-wide:**
+
+1. Tabela é de catálogo/lookup compartilhado (ex.: `bank_account_types`, `cancellation_reasons`).
+2. Não contém PII nem dados financeiros/operacionais de tenant.
+3. Edição é restrita a admin de plataforma (não controller multi-tenant).
+4. Vazamento entre tenants é semanticamente esperado (todos veem o mesmo conteúdo).
+
+**Tabelas que entraram em Wave 2A com `tenant_id` NULLABLE (Categoria 1):**
+
+`mobile_notifications`, `qr_scans`, `asset_tag_scans`, `biometric_configs`, `warehouse_stocks`, `webhook_logs`, `user_favorites`, `user_preferences`, `user_sessions`, `operational_snapshots`, `inmetro_history`, `inventory_tables_v3`.
+
+**NOT NULL será aplicado em Wave 2B** após backfill via job dedicado (mantém ambiente sem downtime).
+
+**Tabelas Categoria 2 (herdam tenant via parent BTT — sem mudança de schema):**
+
+Tabelas filhas (`*_items`, `*_suppliers`, `*_attachments`, `*_approvals`, `*_messages`, `*_stops`, `returned_used_item_dispositions`, `product_kits`, `onboarding_steps`) cujo parent já possui `BelongsToTenant`. O acesso DEVE ocorrer SEMPRE via relacionamento Eloquent do parent — NUNCA via query direta na tabela filha sem join com parent. Caso contrário, considerar promoção para Categoria 1 em wave futura.
+
 ---
 

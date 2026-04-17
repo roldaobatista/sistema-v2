@@ -12,7 +12,7 @@ class AssetTagScan extends Model
     use BelongsToTenant;
 
     protected $fillable = [
-        'asset_tag_id', 'scanned_by', 'action', 'location', 'latitude', 'longitude', 'metadata',
+        'tenant_id', 'asset_tag_id', 'scanned_by', 'action', 'location', 'latitude', 'longitude', 'metadata',
     ];
 
     protected function casts(): array

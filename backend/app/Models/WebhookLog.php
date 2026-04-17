@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/** @global Intentionally global */
 class WebhookLog extends Model
 {
+    use BelongsToTenant;
+
     protected $fillable = [
-        'webhook_id', 'event', 'payload', 'response_status',
+        'tenant_id', 'webhook_id', 'event', 'payload', 'response_status',
         'response_body', 'duration_ms', 'status',
     ];
 

@@ -60,15 +60,19 @@ class StockServiceProfessionalTest extends TestCase
             'is_active' => true,
         ]);
 
+        // Bind tenant BEFORE creating WarehouseStock so BelongsToTenant
+        // auto-fill populates tenant_id (H1 — Wave 2A DATA-003).
+        app()->instance('current_tenant_id', $this->tenant->id);
+
         // Seed stock balance so reserve() checks pass
         WarehouseStock::create([
+            'tenant_id' => $this->tenant->id,
             'warehouse_id' => $this->warehouse->id,
             'product_id' => $this->product->id,
             'quantity' => 100,
         ]);
 
         $this->actingAs($this->user);
-        app()->instance('current_tenant_id', $this->tenant->id);
     }
 
     private function createWorkOrder(): WorkOrder
