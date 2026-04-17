@@ -20,7 +20,7 @@ class AgendaService
     public function listar(array $filters, int $perPage = 20): LengthAwarePaginator
     {
         $query = AgendaItem::query()
-            ->with(['responsavel:id,name', 'criadoPor:id,name', 'source', 'watchers.user:id,name']);
+            ->with(['assignee:id,name', 'creator:id,name', 'source', 'watchers.user:id,name']);
 
         $user = auth()->user();
         $userId = $user?->id ? (int) $user->id : null;
@@ -30,21 +30,21 @@ class AgendaService
         $onlyMine = $scope === 'minhas' || ! empty($filters['only_mine']);
 
         if ($onlyMine && $userId) {
-            $query->where('responsavel_user_id', $userId);
+            $query->where('assignee_user_id', $userId);
         } elseif ($userId) {
             $query->visivelPara($userId, $departmentId);
         }
 
         if (! empty($filters['search'])) {
             $s = SearchSanitizer::contains($filters['search']);
-            $query->where(fn ($q) => $q->where('titulo', 'like', $s)
-                ->orWhere('descricao_curta', 'like', $s)
+            $query->where(fn ($q) => $q->where('title', 'like', $s)
+                ->orWhere('short_description', 'like', $s)
                 ->orWhere('ref_id', 'like', $s)
             );
         }
 
-        if (! empty($filters['tipo'])) {
-            $query->where('tipo', strtolower((string) $filters['tipo']));
+        if (! empty($filters['type'])) {
+            $query->where('type', strtolower((string) $filters['type']));
         }
 
         if (! empty($filters['status'])) {
@@ -52,21 +52,21 @@ class AgendaService
             $query->whereIn('status', $statuses);
         }
 
-        if (! empty($filters['prioridade'])) {
-            $query->where('prioridade', strtolower((string) $filters['prioridade']));
+        if (! empty($filters['priority'])) {
+            $query->where('priority', strtolower((string) $filters['priority']));
         }
 
-        $responsavelId = $filters['responsavel_user_id'] ?? $filters['responsavel'] ?? null;
+        $responsavelId = $filters['assignee_user_id'] ?? $filters['assignee'] ?? null;
         if ($responsavelId !== null && $responsavelId !== '') {
-            $query->where('responsavel_user_id', (int) $responsavelId);
+            $query->where('assignee_user_id', (int) $responsavelId);
         }
 
         if (! empty($filters['criado_por'])) {
-            $query->where('criado_por_user_id', (int) $filters['criado_por']);
+            $query->where('created_by_user_id', (int) $filters['criado_por']);
         }
 
-        if (! empty($filters['visibilidade'])) {
-            $query->where('visibilidade', strtolower((string) $filters['visibilidade']));
+        if (! empty($filters['visibility'])) {
+            $query->where('visibility', strtolower((string) $filters['visibility']));
         }
 
         $tab = $filters['tab'] ?? $filters['aba'] ?? null;
@@ -85,15 +85,15 @@ class AgendaService
         $dir = in_array($dir, ['asc', 'desc'], true) ? $dir : 'asc';
 
         if (empty($sort)) {
-            $query->orderByRaw("CASE WHEN prioridade = 'urgent' THEN 1 WHEN prioridade = 'high' THEN 2 WHEN prioridade = 'medium' THEN 3 WHEN prioridade = 'low' THEN 4 ELSE 5 END ASC")
+            $query->orderByRaw("CASE WHEN priority = 'urgent' THEN 1 WHEN priority = 'high' THEN 2 WHEN priority = 'medium' THEN 3 WHEN priority = 'low' THEN 4 ELSE 5 END ASC")
                 ->orderBy('due_at', 'asc')
                 ->orderBy('created_at', 'desc');
-        } elseif ($sort === 'prioridade') {
-            $query->orderByRaw("CASE WHEN prioridade = 'urgent' THEN 1 WHEN prioridade = 'high' THEN 2 WHEN prioridade = 'medium' THEN 3 WHEN prioridade = 'low' THEN 4 ELSE 5 END ".($dir === 'desc' ? 'DESC' : 'ASC'))
+        } elseif ($sort === 'priority') {
+            $query->orderByRaw("CASE WHEN priority = 'urgent' THEN 1 WHEN priority = 'high' THEN 2 WHEN priority = 'medium' THEN 3 WHEN priority = 'low' THEN 4 ELSE 5 END ".($dir === 'desc' ? 'DESC' : 'ASC'))
                 ->orderBy('due_at', 'asc')
                 ->orderBy('created_at', 'desc');
         } else {
-            $allowedSort = in_array($sort, ['due_at', 'created_at', 'titulo', 'prioridade'], true) ? $sort : 'created_at';
+            $allowedSort = in_array($sort, ['due_at', 'created_at', 'title', 'priority'], true) ? $sort : 'created_at';
             $query->orderBy($allowedSort, $dir);
         }
 
@@ -108,7 +108,7 @@ class AgendaService
             return false;
         }
 
-        if ($item->responsavel_user_id === (int) $userId || $item->criado_por_user_id === (int) $userId) {
+        if ($item->assignee_user_id === (int) $userId || $item->created_by_user_id === (int) $userId) {
             return true;
         }
 
@@ -145,13 +145,13 @@ class AgendaService
             $data['tenant_id'] = app()->bound('current_tenant_id')
                 ? app('current_tenant_id')
                 : ($user->current_tenant_id ?? $user->tenant_id);
-            $data['criado_por_user_id'] = $user->id;
-            $data['responsavel_user_id'] ??= $user->id;
+            $data['created_by_user_id'] = $user->id;
+            $data['assignee_user_id'] ??= $user->id;
 
             $data['status'] ??= AgendaItemStatus::ABERTO;
-            $data['prioridade'] ??= AgendaItemPriority::MEDIA;
-            $data['origem'] ??= AgendaItemOrigin::MANUAL;
-            $data['visibilidade'] ??= AgendaItemVisibility::PRIVADO;
+            $data['priority'] ??= AgendaItemPriority::MEDIA;
+            $data['origin'] ??= AgendaItemOrigin::MANUAL;
+            $data['visibility'] ??= AgendaItemVisibility::PRIVADO;
 
             $watcherIds = $data['watchers'] ?? [];
             unset($data['watchers']);
@@ -165,18 +165,18 @@ class AgendaService
             app(AgendaAutomationService::class)->aplicarRegras($item);
             $item->refresh();
 
-            if ($item->responsavel_user_id && $item->responsavel_user_id !== $user->id) {
+            if ($item->assignee_user_id && $item->assignee_user_id !== $user->id) {
                 $item->gerarNotificacao(
                     'agenda_item_assigned',
                     'Nova tarefa atribuída a você',
-                    "{$user->name} atribuiu \"{$item->titulo}\" para você.",
+                    "{$user->name} atribuiu \"{$item->title}\" para você.",
                     ['actor_user_id' => (int) $user->id]
                 );
             }
 
             if (! empty($watcherIds)) {
                 $watcherOnlyIds = collect($watcherIds)
-                    ->reject(fn ($id) => (int) $id === (int) $user->id || (int) $id === (int) $item->responsavel_user_id)
+                    ->reject(fn ($id) => (int) $id === (int) $user->id || (int) $id === (int) $item->assignee_user_id)
                     ->values();
 
                 foreach ($watcherOnlyIds as $wid) {
@@ -184,7 +184,7 @@ class AgendaService
                         (int) $wid,
                         'agenda_item_watching',
                         'Você foi adicionado como seguidor',
-                        "{$user->name} adicionou você como seguidor em \"{$item->titulo}\".",
+                        "{$user->name} adicionou você como seguidor em \"{$item->title}\".",
                         ['actor_user_id' => (int) $user->id]
                     );
                 }
@@ -198,7 +198,7 @@ class AgendaService
     {
         return DB::transaction(function () use ($item, $data) {
             $oldStatus = $item->statusEnum();
-            $oldResponsavel = $item->responsavel_user_id;
+            $oldResponsavel = $item->assignee_user_id;
             $actorId = (int) (auth()->user()?->id ?? 0);
 
             $data = $this->normalizeItemPayload($data);
@@ -232,21 +232,21 @@ class AgendaService
                 $item->gerarNotificacao(
                     'agenda_item_status_changed',
                     'Status alterado na Agenda',
-                    "O item \"{$item->titulo}\" mudou de ".($oldStatusValue ?? 'indefinido').' para '.($newStatusValue ?? 'indefinido').'.',
+                    "O item \"{$item->title}\" mudou de ".($oldStatusValue ?? 'indefinido').' para '.($newStatusValue ?? 'indefinido').'.',
                     ['actor_user_id' => $actorId]
                 );
             }
 
-            if (isset($data['responsavel_user_id']) && $data['responsavel_user_id'] != $oldResponsavel) {
-                $this->logHistory($item, 'assigned', $oldResponsavel, $data['responsavel_user_id']);
+            if (isset($data['assignee_user_id']) && $data['assignee_user_id'] != $oldResponsavel) {
+                $this->logHistory($item, 'assigned', $oldResponsavel, $data['assignee_user_id']);
 
-                $this->ensureWatcher($item, (int) $data['responsavel_user_id'], 'auto');
+                $this->ensureWatcher($item, (int) $data['assignee_user_id'], 'auto');
 
-                if ((int) $data['responsavel_user_id'] !== $actorId) {
+                if ((int) $data['assignee_user_id'] !== $actorId) {
                     $item->gerarNotificacao(
                         'agenda_item_assigned',
                         'Item atribuído a você',
-                        "Você foi definido(a) como responsável por \"{$item->titulo}\".",
+                        "Você foi definido(a) como responsável por \"{$item->title}\".",
                         ['actor_user_id' => $actorId]
                     );
                 }
@@ -272,7 +272,7 @@ class AgendaService
         $item->gerarNotificacao(
             'agenda_item_comment',
             'Novo comentário na Agenda',
-            "{$userName} comentou em \"{$item->titulo}\": ".mb_substr($body, 0, 80),
+            "{$userName} comentou em \"{$item->title}\": ".mb_substr($body, 0, 80),
             ['actor_user_id' => $userId, 'comment_id' => $comment->id]
         );
 
@@ -327,7 +327,7 @@ class AgendaService
             'total_aberto' => $abertas,
             'abertas' => $abertas,
             'urgentes' => (clone $base)
-                ->where('prioridade', AgendaItemPriority::URGENTE)
+                ->where('priority', AgendaItemPriority::URGENTE)
                 ->whereNotIn('status', [AgendaItemStatus::CONCLUIDO, AgendaItemStatus::CANCELADO])
                 ->count(),
             'seguindo' => $seguindo,
@@ -338,8 +338,8 @@ class AgendaService
     {
         $this->ensureWatcher($item, $creatorId, 'auto');
 
-        if ($item->responsavel_user_id && $item->responsavel_user_id !== $creatorId) {
-            $this->ensureWatcher($item, (int) $item->responsavel_user_id, 'auto');
+        if ($item->assignee_user_id && $item->assignee_user_id !== $creatorId) {
+            $this->ensureWatcher($item, (int) $item->assignee_user_id, 'auto');
         }
 
         foreach ($extraWatcherIds as $watcherId) {
@@ -389,7 +389,7 @@ class AgendaService
                     (int) $userId,
                     'agenda_item_mentioned',
                     'Você foi mencionado(a)',
-                    (auth()->user()?->name ?? 'Alguém')." mencionou você em \"{$item->titulo}\".",
+                    (auth()->user()?->name ?? 'Alguém')." mencionou você em \"{$item->title}\".",
                     ['actor_user_id' => $actorId]
                 );
             }
@@ -409,7 +409,7 @@ class AgendaService
             }
         }
 
-        foreach (['tipo', 'status', 'prioridade', 'origem', 'visibilidade'] as $enumKey) {
+        foreach (['type', 'status', 'priority', 'origin', 'visibility'] as $enumKey) {
             if (array_key_exists($enumKey, $payload) && $payload[$enumKey] !== null) {
                 $payload[$enumKey] = strtolower((string) $payload[$enumKey]);
             }

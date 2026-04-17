@@ -19,16 +19,16 @@ class CrmDealAgendaObserver
             AgendaItem::criarDeOrigem(
                 model: $deal,
                 tipo: AgendaItemType::TAREFA,
-                titulo: "Deal: {$deal->title} — {$deal->customer?->name}",
+                title: "Deal: {$deal->title} — {$deal->customer?->name}",
                 responsavelId: $responsavel,
                 extras: [
-                    'prioridade' => $this->mapPriority($deal),
+                    'priority' => $this->mapPriority($deal),
                     'due_at' => $deal->expected_close_date,
-                    'descricao_curta' => $deal->value
+                    'short_description' => $deal->value
                         ? 'Valor: R$ '.number_format((float) $deal->value, 2, ',', '.')
                         : null,
                     'tags' => ['crm', 'deal'],
-                    'contexto' => [
+                    'context' => [
                         'deal_id' => $deal->id,
                         'cliente' => $deal->customer?->name,
                         'pipeline' => $deal->pipeline?->name,
@@ -71,15 +71,15 @@ class CrmDealAgendaObserver
             $overrides = [];
 
             if ($deal->isDirty('stage_id')) {
-                $overrides['descricao_curta'] = "Etapa: {$deal->stage?->name}";
-                $overrides['contexto'] = array_merge(
+                $overrides['short_description'] = "Etapa: {$deal->stage?->name}";
+                $overrides['context'] = array_merge(
                     $deal->metadata ?? [],
                     ['stage' => $deal->stage?->name]
                 );
             }
 
             if ($deal->isDirty('assigned_to') && $deal->assigned_to) {
-                $overrides['responsavel_user_id'] = $deal->assigned_to;
+                $overrides['assignee_user_id'] = $deal->assigned_to;
             }
 
             if (! empty($overrides)) {

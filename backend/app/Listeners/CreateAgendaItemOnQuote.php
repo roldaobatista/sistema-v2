@@ -25,12 +25,12 @@ class CreateAgendaItemOnQuote implements ShouldQueueAfterCommit
             AgendaItem::criarDeOrigem(
                 model: $quote,
                 tipo: AgendaItemType::ORCAMENTO,
-                titulo: "Orcamento #{$quote->quote_number} aprovado - {$quote->customer?->name}",
+                title: "Orcamento #{$quote->quote_number} aprovado - {$quote->customer?->name}",
                 responsavelId: $responsavel,
                 extras: [
-                    'prioridade' => AgendaItemPriority::ALTA,
-                    'descricao_curta' => 'Valor: R$ '.number_format((float) ($quote->total ?? 0), 2, ',', '.'),
-                    'contexto' => [
+                    'priority' => AgendaItemPriority::ALTA,
+                    'short_description' => 'Valor: R$ '.number_format((float) ($quote->total ?? 0), 2, ',', '.'),
+                    'context' => [
                         'numero' => $quote->quote_number,
                         'cliente' => $quote->customer?->name,
                         'valor' => $quote->total,

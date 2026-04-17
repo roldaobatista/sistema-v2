@@ -553,7 +553,7 @@ test('CrmDealAgendaObserver creates agenda item when deal is created', function 
 
     $this->assertDatabaseHas('central_items', [
         'tenant_id' => $this->tenant->id,
-        'responsavel_user_id' => $this->user->id,
+        'assignee_user_id' => $this->user->id,
     ]);
 });
 
@@ -576,7 +576,7 @@ test('CrmDealAgendaObserver maps high-value deals to urgent priority', function 
     ]);
 
     $agenda = AgendaItem::withoutGlobalScopes()
-        ->where('ref_tipo', (new CrmDeal)->getMorphClass())
+        ->where('ref_type', (new CrmDeal)->getMorphClass())
         ->where('ref_id', $deal->id)
         ->first();
 
@@ -604,7 +604,7 @@ test('CrmDealAgendaObserver closes agenda when deal is won', function () {
     $deal->update(['status' => 'won']);
 
     $agenda = AgendaItem::withoutGlobalScopes()
-        ->where('ref_tipo', (new CrmDeal)->getMorphClass())
+        ->where('ref_type', (new CrmDeal)->getMorphClass())
         ->where('ref_id', $deal->id)
         ->first();
 

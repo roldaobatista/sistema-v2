@@ -41,10 +41,10 @@ class AgendaAliasContractRegressionTest extends TestCase
     {
         AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'criado_por_user_id' => $this->user->id,
-            'responsavel_user_id' => $this->user->id,
+            'created_by_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
             'tipo' => AgendaItemType::TAREFA,
-            'titulo' => 'Alias paginado',
+            'title' => 'Alias paginado',
             'status' => AgendaItemStatus::ABERTO,
         ]);
 
@@ -53,24 +53,24 @@ class AgendaAliasContractRegressionTest extends TestCase
         $response->assertOk()
             ->assertJsonStructure([
                 'data' => [
-                    ['id', 'titulo', 'status', 'tipo'],
+                    ['id', 'title', 'status', 'tipo'],
                 ],
                 'meta' => ['current_page', 'per_page'],
                 'current_page',
                 'per_page',
             ])
-            ->assertJsonPath('data.0.titulo', 'Alias paginado');
+            ->assertJsonPath('data.0.title', 'Alias paginado');
     }
 
     public function test_agenda_items_alias_summary_and_completion_follow_canonical_payload(): void
     {
         $item = AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'criado_por_user_id' => $this->user->id,
-            'responsavel_user_id' => $this->user->id,
+            'created_by_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
             'tipo' => AgendaItemType::TAREFA,
-            'titulo' => 'Alias completar',
-            'prioridade' => AgendaItemPriority::ALTA,
+            'title' => 'Alias completar',
+            'priority' => AgendaItemPriority::ALTA,
             'status' => AgendaItemStatus::ABERTO,
         ]);
 
@@ -98,10 +98,10 @@ class AgendaAliasContractRegressionTest extends TestCase
     {
         AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'criado_por_user_id' => $this->user->id,
-            'responsavel_user_id' => $this->user->id,
+            'created_by_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
             'tipo' => AgendaItemType::TAREFA,
-            'titulo' => 'Canonical static route',
+            'title' => 'Canonical static route',
             'status' => AgendaItemStatus::ABERTO,
         ]);
 
@@ -122,6 +122,6 @@ class AgendaAliasContractRegressionTest extends TestCase
         $this->actingAs($this->user)
             ->getJson('/api/v1/agenda/items')
             ->assertOk()
-            ->assertJsonPath('data.0.titulo', 'Canonical static route');
+            ->assertJsonPath('data.0.title', 'Canonical static route');
     }
 }

@@ -25,7 +25,7 @@ class AgendaTimeEntry extends Model
         'started_at',
         'stopped_at',
         'duration_seconds',
-        'descricao',
+        'description',
     ];
 
     protected function casts(): array

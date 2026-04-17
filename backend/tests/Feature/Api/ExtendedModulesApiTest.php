@@ -110,8 +110,8 @@ class ExtendedModulesApiTest extends TestCase
     public function test_agenda_items_store(): void
     {
         $response = $this->actingAs($this->admin)->postJson('/api/v1/agenda-items', [
-            'titulo' => 'Tarefa de Teste',
-            'tipo' => 'tarefa',
+            'title' => 'Tarefa de Teste',
+            'type' => 'tarefa',
         ]);
         $this->assertTrue(in_array($response->status(), [200, 201]));
     }

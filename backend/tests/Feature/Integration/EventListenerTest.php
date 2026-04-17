@@ -165,7 +165,7 @@ test('CreateAgendaItemOnWorkOrder creates agenda item on WorkOrderStarted', func
 
     $this->assertDatabaseHas('central_items', [
         'tenant_id' => $this->tenant->id,
-        'responsavel_user_id' => $this->user->id,
+        'assignee_user_id' => $this->user->id,
     ]);
 });
 
@@ -299,7 +299,7 @@ test('CreateAgendaItemOnWorkOrder marks agenda as completed on WorkOrderComplete
     $completeEvent = new WorkOrderCompleted($wo, $this->user, 'in_progress');
     $listener->handleWorkOrderCompleted($completeEvent);
 
-    $agenda = AgendaItem::where('ref_tipo', WorkOrder::class)
+    $agenda = AgendaItem::where('ref_type', WorkOrder::class)
         ->where('ref_id', $wo->id)
         ->first();
 

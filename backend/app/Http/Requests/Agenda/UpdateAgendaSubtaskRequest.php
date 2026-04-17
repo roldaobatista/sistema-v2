@@ -14,7 +14,7 @@ class UpdateAgendaSubtaskRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'titulo' => 'sometimes|string|max:255',
+            'title' => 'sometimes|string|max:255',
             'concluido' => 'sometimes|boolean',
             'ordem' => 'sometimes|integer|min:0',
         ];

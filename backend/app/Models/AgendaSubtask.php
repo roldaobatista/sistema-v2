@@ -21,7 +21,7 @@ class AgendaSubtask extends Model
     protected $fillable = [
         'tenant_id',
         'agenda_item_id',
-        'titulo',
+        'title',
         'concluido',
         'ordem',
         'completed_by',

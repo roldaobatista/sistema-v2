@@ -38,18 +38,18 @@ class AgendaControllerTest extends TestCase
         Sanctum::actingAs($this->user, ['*']);
     }
 
-    private function createAgendaItem(?int $tenantId = null, string $titulo = 'Tarefa'): AgendaItem
+    private function createAgendaItem(?int $tenantId = null, string $title = 'Tarefa'): AgendaItem
     {
         return AgendaItem::create([
             'tenant_id' => $tenantId ?? $this->tenant->id,
-            'tipo' => 'tarefa',
-            'origem' => 'MANUAL',
-            'titulo' => $titulo,
-            'descricao_curta' => 'Descrição',
-            'responsavel_user_id' => $this->user->id,
-            'prioridade' => 'medium',
-            'visibilidade' => 'team',
-            'criado_por_user_id' => $this->user->id,
+            'type' => 'tarefa',
+            'origin' => 'MANUAL',
+            'title' => $title,
+            'short_description' => 'Descrição',
+            'assignee_user_id' => $this->user->id,
+            'priority' => 'medium',
+            'visibility' => 'team',
+            'created_by_user_id' => $this->user->id,
             'status' => 'open',
         ]);
     }

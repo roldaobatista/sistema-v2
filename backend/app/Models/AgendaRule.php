@@ -17,24 +17,24 @@ class AgendaRule extends Model
     protected $table = 'central_rules';
 
     protected $fillable = [
-        'tenant_id', 'nome', 'descricao', 'ativo',
-        'evento_trigger', 'tipo_item', 'status_trigger', 'prioridade_minima',
-        'acao_tipo', 'acao_config',
-        'responsavel_user_id', 'role_alvo',
+        'tenant_id', 'name', 'description', 'active',
+        'event_trigger', 'item_type', 'status_trigger', 'min_priority',
+        'action_type', 'action_config',
+        'assignee_user_id', 'target_role',
         'created_by',
     ];
 
     protected function casts(): array
     {
         return [
-            'ativo' => 'boolean',
-            'acao_config' => 'array',
+            'active' => 'boolean',
+            'action_config' => 'array',
         ];
     }
 
-    public function responsavel(): BelongsTo
+    public function assignee(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'responsavel_user_id');
+        return $this->belongsTo(User::class, 'assignee_user_id');
     }
 
     public function creator(): BelongsTo
@@ -46,11 +46,11 @@ class AgendaRule extends Model
 
     public function scopeAtivas($query)
     {
-        return $query->where('ativo', true);
+        return $query->where('active', true);
     }
 
     public function scopeParaEvento($query, string $evento)
     {
-        return $query->where('evento_trigger', $evento);
+        return $query->where('event_trigger', $evento);
     }
 }

@@ -422,9 +422,9 @@ class QuoteRealLogicTest extends TestCase
             'quote_number' => 'ORC-00001',
         ]);
         $data = $q->centralSyncData();
-        $this->assertArrayHasKey('titulo', $data);
+        $this->assertArrayHasKey('title', $data);
         $this->assertArrayHasKey('status', $data);
-        $this->assertStringContainsString('ORC-00001', $data['titulo']);
+        $this->assertStringContainsString('ORC-00001', $data['title']);
     }
 
     // ── Relationships ──

@@ -17,7 +17,7 @@ class UpdateAgendaItemRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $nullable = ['descricao_curta', 'due_at', 'remind_at', 'snooze_until', 'tags', 'visibility_users', 'visibility_departments'];
+        $nullable = ['short_description', 'due_at', 'remind_at', 'snooze_until', 'tags', 'visibility_users', 'visibility_departments'];
         $cleaned = [];
         foreach ($nullable as $field) {
             if ($this->has($field) && $this->input($field) === '') {
@@ -37,12 +37,12 @@ class UpdateAgendaItemRequest extends FormRequest
         $visibilidades = array_map(fn ($c) => $c->value, AgendaItemVisibility::cases());
 
         return [
-            'titulo' => 'sometimes|string|max:255',
-            'descricao_curta' => 'nullable|string|max:255',
+            'title' => 'sometimes|string|max:255',
+            'short_description' => 'nullable|string|max:255',
             'status' => ['sometimes', 'string', Rule::in(array_merge($statuses, array_map('strtolower', $statuses)))],
-            'prioridade' => ['sometimes', 'string', Rule::in(array_merge($prioridades, array_map('strtolower', $prioridades)))],
-            'visibilidade' => ['sometimes', 'string', Rule::in(array_merge($visibilidades, array_map('strtolower', $visibilidades)))],
-            'responsavel_user_id' => ['sometimes', Rule::exists('users', 'id')->where(fn ($q) => $q->where('tenant_id', $tenantId))],
+            'priority' => ['sometimes', 'string', Rule::in(array_merge($prioridades, array_map('strtolower', $prioridades)))],
+            'visibility' => ['sometimes', 'string', Rule::in(array_merge($visibilidades, array_map('strtolower', $visibilidades)))],
+            'assignee_user_id' => ['sometimes', Rule::exists('users', 'id')->where(fn ($q) => $q->where('tenant_id', $tenantId))],
             'due_at' => 'nullable|date',
             'remind_at' => 'nullable|date',
             'snooze_until' => 'nullable|date',

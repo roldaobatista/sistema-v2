@@ -14,7 +14,7 @@ class StoreAgendaTemplateRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $nullable = ['descricao', 'tipo', 'prioridade', 'visibilidade', 'categoria', 'due_days', 'subtasks', 'default_watchers', 'tags'];
+        $nullable = ['description', 'type', 'priority', 'visibility', 'categoria', 'due_days', 'subtasks', 'default_watchers', 'tags'];
         $cleaned = [];
         foreach ($nullable as $field) {
             if ($this->has($field) && $this->input($field) === '') {
@@ -32,10 +32,10 @@ class StoreAgendaTemplateRequest extends FormRequest
 
         return [
             'nome' => 'required|string|max:150',
-            'descricao' => 'nullable|string|max:500',
-            'tipo' => ['nullable', 'string', Rule::in(['task', 'reminder'])],
-            'prioridade' => ['nullable', 'string'],
-            'visibilidade' => ['nullable', 'string'],
+            'description' => 'nullable|string|max:500',
+            'type' => ['nullable', 'string', Rule::in(['task', 'reminder'])],
+            'priority' => ['nullable', 'string'],
+            'visibility' => ['nullable', 'string'],
             'categoria' => 'nullable|string|max:60',
             'due_days' => 'nullable|integer|min:0|max:365',
             'subtasks' => 'nullable|array',

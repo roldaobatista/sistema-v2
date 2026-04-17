@@ -19,27 +19,27 @@ class AgendaItemFactory extends Factory
     {
         return [
             'tenant_id' => 1,
-            'tipo' => fake()->randomElement(AgendaItemType::cases()),
-            'titulo' => fake()->sentence(4),
-            'descricao_curta' => fake()->optional()->sentence(8),
-            'responsavel_user_id' => User::factory(),
-            'criado_por_user_id' => User::factory(),
+            'type' => fake()->randomElement(AgendaItemType::cases()),
+            'title' => fake()->sentence(4),
+            'short_description' => fake()->optional()->sentence(8),
+            'assignee_user_id' => User::factory(),
+            'created_by_user_id' => User::factory(),
             'status' => AgendaItemStatus::ABERTO,
-            'prioridade' => fake()->randomElement(AgendaItemPriority::cases()),
-            'origem' => AgendaItemOrigin::MANUAL,
-            'visibilidade' => AgendaItemVisibility::EQUIPE,
+            'priority' => fake()->randomElement(AgendaItemPriority::cases()),
+            'origin' => AgendaItemOrigin::MANUAL,
+            'visibility' => AgendaItemVisibility::EQUIPE,
             'due_at' => fake()->optional()->dateTimeBetween('now', '+7 days'),
         ];
     }
 
     public function tarefa(): static
     {
-        return $this->state(fn () => ['tipo' => AgendaItemType::TASK]);
+        return $this->state(fn () => ['type' => AgendaItemType::TASK]);
     }
 
     public function urgente(): static
     {
-        return $this->state(fn () => ['prioridade' => AgendaItemPriority::URGENTE]);
+        return $this->state(fn () => ['priority' => AgendaItemPriority::URGENTE]);
     }
 
     public function atrasado(): static

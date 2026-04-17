@@ -280,7 +280,7 @@ class WorkOrder extends Model
                 $workOrder->os_number = $workOrder->number;
             }
 
-            // Auto-atribuir SLA policy baseado na prioridade
+            // Auto-atribuir SLA policy baseado na priority
             if (! $workOrder->sla_policy_id && $workOrder->tenant_id) {
                 $slaPolicy = SlaPolicy::where('tenant_id', $workOrder->tenant_id)
                     ->where('is_active', true)
@@ -1019,14 +1019,14 @@ class WorkOrder extends Model
             self::STATUS_CANCELLED => AgendaItemStatus::CANCELADO,
         ];
 
-        $titulo = "OS #{$this->business_number}";
+        $title = "OS #{$this->business_number}";
         if ($this->relationLoaded('customer') && $this->customer) {
-            $titulo .= " - {$this->customer->name}";
+            $title .= " - {$this->customer->name}";
         }
 
         return [
             'status' => $statusMap[$this->status] ?? AgendaItemStatus::ABERTO,
-            'titulo' => $titulo,
+            'title' => $title,
         ];
     }
 

@@ -120,7 +120,7 @@ class FormRequestValidationTest extends TestCase
         $request->setUserResolver(fn () => $this->createAuthenticatedUser());
         $rules = $request->rules();
 
-        $this->assertArrayHasKey('titulo', $rules);
+        $this->assertArrayHasKey('title', $rules);
     }
 
     // ── StoreCrmDealRequest ──

@@ -182,7 +182,7 @@ class UserController extends Controller
             'expenses' => ['created_by'],
             'commission_events' => ['user_id'],
             'crm_deals' => ['assigned_to'],
-            'central_items' => ['responsavel_user_id', 'criado_por_user_id', 'closed_by'],
+            'central_items' => ['assignee_user_id', 'created_by_user_id', 'closed_by'],
             'technician_cash_transactions' => ['created_by'],
         ];
 

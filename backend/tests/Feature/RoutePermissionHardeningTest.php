@@ -675,8 +675,8 @@ class RoutePermissionHardeningTest extends TestCase
             ->assertOk();
 
         $payload = [
-            'tipo' => 'task',
-            'titulo' => 'Tarefa sem permissão de criação',
+            'type' => 'task',
+            'title' => 'Tarefa sem permissão de criação',
         ];
 
         $this->postJson('/api/v1/agenda/items', $payload)

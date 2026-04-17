@@ -65,10 +65,10 @@ class CentralTest extends TestCase
         // Create an item so the listing is not empty
         AgendaItem::create([
             'tenant_id' => $this->tenant->id,
-            'criado_por_user_id' => $this->user->id,
-            'responsavel_user_id' => $this->user->id,
-            'tipo' => AgendaItemType::TAREFA,
-            'titulo' => 'List Test Item',
+            'created_by_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
+            'type' => AgendaItemType::TAREFA,
+            'title' => 'List Test Item',
             'status' => AgendaItemStatus::ABERTO,
         ]);
 
@@ -80,26 +80,26 @@ class CentralTest extends TestCase
         $data = $response->json('data');
         $items = is_array($data) && isset($data['data']) ? $data['data'] : $data;
         $this->assertNotEmpty($items);
-        $titles = collect($items)->pluck('titulo');
+        $titles = collect($items)->pluck('title');
         $this->assertTrue($titles->contains('List Test Item'));
     }
 
     public function test_can_create_central_item()
     {
         $payload = [
-            'tipo' => AgendaItemType::TAREFA->value,
-            'titulo' => 'Test Task',
-            'descricao_curta' => 'Short description',
-            'prioridade' => AgendaItemPriority::ALTA->value,
+            'type' => AgendaItemType::TAREFA->value,
+            'title' => 'Test Task',
+            'short_description' => 'Short description',
+            'priority' => AgendaItemPriority::ALTA->value,
         ];
 
         $response = $this->postJson('/api/v1/agenda/items', $payload);
 
         $response->assertStatus(201)
-            ->assertJsonPath('data.titulo', 'Test Task');
+            ->assertJsonPath('data.title', 'Test Task');
 
         $this->assertDatabaseHas('central_items', [
-            'titulo' => 'Test Task',
+            'title' => 'Test Task',
             'tenant_id' => $this->tenant->id,
         ]);
     }
@@ -113,9 +113,9 @@ class CentralTest extends TestCase
         ]);
 
         $response = $this->postJson('/api/v1/agenda/items', [
-            'tipo' => AgendaItemType::TAREFA->value,
-            'titulo' => 'Item para atribuicao',
-            'responsavel_user_id' => $assignee->id,
+            'type' => AgendaItemType::TAREFA->value,
+            'title' => 'Item para atribuicao',
+            'assignee_user_id' => $assignee->id,
         ]);
 
         $response->assertCreated();
@@ -135,32 +135,32 @@ class CentralTest extends TestCase
     {
         $item = AgendaItem::create([
             'tenant_id' => $this->tenant->id,
-            'criado_por_user_id' => $this->user->id,
-            'responsavel_user_id' => $this->user->id,
-            'tipo' => AgendaItemType::TAREFA,
-            'titulo' => 'Old Title',
+            'created_by_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
+            'type' => AgendaItemType::TAREFA,
+            'title' => 'Old Title',
             'status' => AgendaItemStatus::ABERTO,
-            'prioridade' => AgendaItemPriority::MEDIA,
+            'priority' => AgendaItemPriority::MEDIA,
         ]);
 
-        $payload = ['titulo' => 'New Title', 'prioridade' => AgendaItemPriority::URGENTE->value];
+        $payload = ['title' => 'New Title', 'priority' => AgendaItemPriority::URGENTE->value];
 
         $response = $this->patchJson("/api/v1/agenda/items/{$item->id}", $payload);
 
         $response->assertStatus(200)
-            ->assertJsonPath('data.titulo', 'New Title');
+            ->assertJsonPath('data.title', 'New Title');
 
-        $this->assertDatabaseHas('central_items', ['id' => $item->id, 'prioridade' => AgendaItemPriority::URGENTE]);
+        $this->assertDatabaseHas('central_items', ['id' => $item->id, 'priority' => AgendaItemPriority::URGENTE]);
     }
 
     public function test_can_comment_on_item()
     {
         $item = AgendaItem::create([
             'tenant_id' => $this->tenant->id,
-            'criado_por_user_id' => $this->user->id,
-            'responsavel_user_id' => $this->user->id,
-            'tipo' => AgendaItemType::TAREFA,
-            'titulo' => 'Item for Comment',
+            'created_by_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
+            'type' => AgendaItemType::TAREFA,
+            'title' => 'Item for Comment',
             'status' => AgendaItemStatus::ABERTO,
         ]);
 
@@ -181,10 +181,10 @@ class CentralTest extends TestCase
     {
         AgendaItem::create([
             'tenant_id' => $this->tenant->id,
-            'criado_por_user_id' => $this->user->id,
-            'responsavel_user_id' => $this->user->id,
-            'tipo' => AgendaItemType::TAREFA,
-            'titulo' => 'Task 1',
+            'created_by_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
+            'type' => AgendaItemType::TAREFA,
+            'title' => 'Task 1',
             'status' => AgendaItemStatus::ABERTO,
             'due_at' => now()->startOfDay(),
         ]);
@@ -211,16 +211,16 @@ class CentralTest extends TestCase
         try {
             $item = AgendaItem::create([
                 'tenant_id' => $this->tenant->id,
-                'criado_por_user_id' => $this->user->id,
-                'responsavel_user_id' => User::factory()->create([
+                'created_by_user_id' => $this->user->id,
+                'assignee_user_id' => User::factory()->create([
                     'tenant_id' => $this->tenant->id,
                     'current_tenant_id' => $this->tenant->id,
                     'is_active' => true,
                 ])->id,
-                'tipo' => AgendaItemType::TAREFA,
-                'titulo' => 'Item visivel por watcher legado',
+                'type' => AgendaItemType::TAREFA,
+                'title' => 'Item visivel por watcher legado',
                 'status' => AgendaItemStatus::ABERTO,
-                'visibilidade' => 'private',
+                'visibility' => 'private',
             ]);
 
             AgendaItemWatcher::query()->insert([
@@ -239,7 +239,7 @@ class CentralTest extends TestCase
 
             $this->getJson('/api/v1/agenda/items')
                 ->assertOk()
-                ->assertJsonFragment(['titulo' => 'Item visivel por watcher legado']);
+                ->assertJsonFragment(['title' => 'Item visivel por watcher legado']);
 
             $this->getJson('/api/v1/agenda/summary')
                 ->assertOk()
@@ -258,12 +258,12 @@ class CentralTest extends TestCase
     {
         AgendaItem::create([
             'tenant_id' => $this->tenant->id,
-            'criado_por_user_id' => $this->user->id,
-            'responsavel_user_id' => $this->user->id,
-            'tipo' => AgendaItemType::OS,
-            'titulo' => 'OS atrasada',
+            'created_by_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
+            'type' => AgendaItemType::OS,
+            'title' => 'OS atrasada',
             'status' => AgendaItemStatus::ABERTO,
-            'prioridade' => AgendaItemPriority::ALTA,
+            'priority' => AgendaItemPriority::ALTA,
             'due_at' => now()->subDay(),
         ]);
 
@@ -286,10 +286,10 @@ class CentralTest extends TestCase
             ->assertJsonStructure(['data']);
 
         $this->postJson('/api/v1/agenda/items', [
-            'tipo' => AgendaItemType::TAREFA->value,
-            'titulo' => 'Urgente para workload',
-            'prioridade' => AgendaItemPriority::URGENTE->value,
-            'responsavel_user_id' => $this->user->id,
+            'type' => AgendaItemType::TAREFA->value,
+            'title' => 'Urgente para workload',
+            'priority' => AgendaItemPriority::URGENTE->value,
+            'assignee_user_id' => $this->user->id,
         ])->assertCreated();
 
         $this->getJson('/api/v1/agenda/workload')
@@ -311,10 +311,10 @@ class CentralTest extends TestCase
 
         $item = AgendaItem::create([
             'tenant_id' => $this->tenant->id,
-            'criado_por_user_id' => $this->user->id,
-            'responsavel_user_id' => $this->user->id,
-            'tipo' => AgendaItemType::TAREFA,
-            'titulo' => 'Item para reatribuicao',
+            'created_by_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
+            'type' => AgendaItemType::TAREFA,
+            'title' => 'Item para reatribuicao',
             'status' => AgendaItemStatus::ABERTO,
         ]);
 
@@ -340,19 +340,19 @@ class CentralTest extends TestCase
     public function test_can_manage_central_rules(): void
     {
         $createResponse = $this->postJson('/api/v1/agenda/rules', [
-            'nome' => 'Priorizar OS urgentes',
-            'descricao' => 'Regra MVP',
-            'ativo' => true,
-            'tipo_item' => 'work_order',
-            'prioridade_minima' => 'high',
-            'acao_tipo' => 'set_priority',
-            'acao_config' => ['prioridade' => 'urgent'],
+            'name' => 'Priorizar OS urgentes',
+            'description' => 'Regra MVP',
+            'active' => true,
+            'item_type' => 'work_order',
+            'min_priority' => 'high',
+            'action_type' => 'set_priority',
+            'action_config' => ['priority' => 'urgent'],
         ]);
 
         $createResponse->assertCreated()
-            ->assertJsonPath('data.nome', 'Priorizar OS urgentes')
-            ->assertJsonPath('data.tipo_item', 'work_order')
-            ->assertJsonPath('data.prioridade_minima', 'high');
+            ->assertJsonPath('data.name', 'Priorizar OS urgentes')
+            ->assertJsonPath('data.item_type', 'work_order')
+            ->assertJsonPath('data.min_priority', 'high');
 
         $ruleId = (int) $createResponse->json('data.id');
 
@@ -360,8 +360,8 @@ class CentralTest extends TestCase
             'id' => $ruleId,
             'tenant_id' => $this->tenant->id,
             'created_by' => $this->user->id,
-            'tipo_item' => 'work_order',
-            'prioridade_minima' => 'high',
+            'item_type' => 'work_order',
+            'min_priority' => 'high',
         ]);
 
         $this->getJson('/api/v1/agenda/rules')
@@ -369,11 +369,11 @@ class CentralTest extends TestCase
             ->assertJsonPath('data.0.id', $ruleId);
 
         $this->patchJson("/api/v1/agenda/rules/{$ruleId}", [
-            'nome' => 'Priorizar OS críticas',
-            'ativo' => false,
+            'name' => 'Priorizar OS críticas',
+            'active' => false,
         ])->assertOk()
-            ->assertJsonPath('data.nome', 'Priorizar OS críticas')
-            ->assertJsonPath('data.ativo', false);
+            ->assertJsonPath('data.name', 'Priorizar OS críticas')
+            ->assertJsonPath('data.active', false);
 
         $this->deleteJson("/api/v1/agenda/rules/{$ruleId}")
             ->assertNoContent();
@@ -385,22 +385,22 @@ class CentralTest extends TestCase
     {
         AgendaRule::create([
             'tenant_id' => $this->tenant->id,
-            'nome' => 'Elevar prioridade de tarefas',
-            'ativo' => true,
-            'tipo_item' => AgendaItemType::TAREFA->value,
-            'prioridade_minima' => AgendaItemPriority::BAIXA->value,
-            'acao_tipo' => 'set_priority',
-            'acao_config' => ['prioridade' => 'urgent'],
+            'name' => 'Elevar priority de tarefas',
+            'active' => true,
+            'item_type' => AgendaItemType::TAREFA->value,
+            'min_priority' => AgendaItemPriority::BAIXA->value,
+            'action_type' => 'set_priority',
+            'action_config' => ['priority' => 'urgent'],
             'created_by' => $this->user->id,
         ]);
 
         $response = $this->postJson('/api/v1/agenda/items', [
-            'tipo' => AgendaItemType::TAREFA->value,
-            'titulo' => 'Item com automação',
-            'prioridade' => AgendaItemPriority::BAIXA->value,
+            'type' => AgendaItemType::TAREFA->value,
+            'title' => 'Item com automação',
+            'priority' => AgendaItemPriority::BAIXA->value,
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.prioridade', AgendaItemPriority::URGENTE->value);
+            ->assertJsonPath('data.priority', AgendaItemPriority::URGENTE->value);
     }
 }

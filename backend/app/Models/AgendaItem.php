@@ -27,13 +27,13 @@ use Illuminate\Support\Str;
 /**
  * @property int $id
  * @property int $tenant_id
- * @property string $tipo
- * @property string|null $titulo
- * @property string|null $descricao_curta
+ * @property string $type
+ * @property string|null $title
+ * @property string|null $short_description
  * @property string $status
- * @property string $prioridade
- * @property string|null $origem
- * @property string|null $visibilidade
+ * @property string $priority
+ * @property string|null $origin
+ * @property string|null $visibility
  * @property Carbon|null $due_at
  * @property Carbon|null $remind_at
  * @property Carbon|null $remind_notified_at
@@ -41,12 +41,12 @@ use Illuminate\Support\Str;
  * @property Carbon|null $sla_due_at
  * @property Carbon|null $closed_at
  * @property Carbon|null $recurrence_next_at
- * @property int|null $responsavel_user_id
- * @property int|null $criado_por_user_id
+ * @property int|null $assignee_user_id
+ * @property int|null $created_by_user_id
  * @property int|null $closed_by
- * @property string|null $ref_tipo
+ * @property string|null $ref_type
  * @property int|null $ref_id
- * @property array|null $contexto
+ * @property array|null $context
  * @property array|null $tags
  * @property array|null $visibility_users
  * @property array|null $visibility_departments
@@ -55,8 +55,8 @@ use Illuminate\Support\Str;
  * @property Carbon|null $deleted_at
  * @property-read bool $completed
  * @property-read Carbon|null $completedAt
- * @property-read User|null $responsavel
- * @property-read User|null $criadoPor
+ * @property-read User|null $assignee
+ * @property-read User|null $creator
  * @property-read User|null $closedByUser
  * @property-read Model|null $source
  * @property-read Collection<int, AgendaItemComment> $comments
@@ -86,7 +86,7 @@ class AgendaItem extends Model
             'snooze_until' => 'datetime',
             'sla_due_at' => 'datetime',
             'closed_at' => 'datetime',
-            'contexto' => 'array',
+            'context' => 'array',
             'tags' => 'array',
             'recurrence_next_at' => 'datetime',
             'visibility_departments' => 'array',
@@ -100,7 +100,7 @@ class AgendaItem extends Model
         return parent::fill($this->normalizeLegacyAliases($attributes));
     }
 
-    protected function tipo(): Attribute
+    protected function type(): Attribute
     {
         return Attribute::make(
             get: fn ($value) => $this->resolveAgendaEnumCase(AgendaItemType::class, $value, [
@@ -120,7 +120,7 @@ class AgendaItem extends Model
         );
     }
 
-    protected function prioridade(): Attribute
+    protected function priority(): Attribute
     {
         return Attribute::make(
             get: fn ($value) => $this->resolveAgendaEnumCase(AgendaItemPriority::class, $value),
@@ -128,7 +128,7 @@ class AgendaItem extends Model
         );
     }
 
-    protected function origem(): Attribute
+    protected function origin(): Attribute
     {
         return Attribute::make(
             get: fn ($value) => $this->resolveAgendaEnumCase(AgendaItemOrigin::class, $value),
@@ -136,7 +136,7 @@ class AgendaItem extends Model
         );
     }
 
-    protected function visibilidade(): Attribute
+    protected function visibility(): Attribute
     {
         return Attribute::make(
             get: fn ($value) => $this->resolveAgendaEnumCase(AgendaItemVisibility::class, $value),
@@ -181,14 +181,14 @@ class AgendaItem extends Model
             return;
         }
 
-        $this->attributes['responsavel_user_id'] = $value;
-        $this->attributes['criado_por_user_id'] ??= $value;
+        $this->attributes['assignee_user_id'] = $value;
+        $this->attributes['created_by_user_id'] ??= $value;
     }
 
     public function getUserIdAttribute(): ?int
     {
-        return isset($this->attributes['responsavel_user_id'])
-            ? (int) $this->attributes['responsavel_user_id']
+        return isset($this->attributes['assignee_user_id'])
+            ? (int) $this->attributes['assignee_user_id']
             : null;
     }
 
@@ -199,29 +199,39 @@ class AgendaItem extends Model
 
     public function priorityEnum(): ?AgendaItemPriority
     {
-        return $this->resolveAgendaEnumCase(AgendaItemPriority::class, $this->attributes['prioridade'] ?? null);
+        return $this->resolveAgendaEnumCase(AgendaItemPriority::class, $this->attributes['priority'] ?? null);
     }
 
     public function typeEnum(): ?AgendaItemType
     {
-        return $this->resolveAgendaEnumCase(AgendaItemType::class, $this->attributes['tipo'] ?? null, [
+        return $this->resolveAgendaEnumCase(AgendaItemType::class, $this->attributes['type'] ?? null, [
             'REUNIAO' => AgendaItemType::LEMBRETE->value,
         ]);
     }
 
     public function visibilityEnum(): ?AgendaItemVisibility
     {
-        return $this->resolveAgendaEnumCase(AgendaItemVisibility::class, $this->attributes['visibilidade'] ?? null);
+        return $this->resolveAgendaEnumCase(AgendaItemVisibility::class, $this->attributes['visibility'] ?? null);
+    }
+
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assignee_user_id');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
     }
 
     public function responsavel(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'responsavel_user_id');
+        return $this->assignee();
     }
 
     public function criadoPor(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'criado_por_user_id');
+        return $this->creator();
     }
 
     public function closedBy(): BelongsTo
@@ -278,7 +288,7 @@ class AgendaItem extends Model
 
     public function source(): MorphTo
     {
-        return $this->morphTo(__FUNCTION__, 'ref_tipo', 'ref_id');
+        return $this->morphTo(__FUNCTION__, 'ref_type', 'ref_id');
     }
 
     public function scopeAtrasados(Builder $query): Builder
@@ -309,14 +319,14 @@ class AgendaItem extends Model
             return $query->whereRaw('0 = 1');
         }
 
-        return $query->where('responsavel_user_id', $userId);
+        return $query->where('assignee_user_id', $userId);
     }
 
     public function scopeDaEquipe(Builder $query, array $userIds): Builder
     {
-        return $query->whereIn('responsavel_user_id', $userIds)
-            ->orWhere('visibilidade', AgendaItemVisibility::EQUIPE)
-            ->orWhere('visibilidade', AgendaItemVisibility::EMPRESA);
+        return $query->whereIn('assignee_user_id', $userIds)
+            ->orWhere('visibility', AgendaItemVisibility::EQUIPE)
+            ->orWhere('visibility', AgendaItemVisibility::EMPRESA);
     }
 
     public function scopeVisivelPara(Builder $query, ?int $userId, ?int $departmentId = null): Builder
@@ -326,21 +336,21 @@ class AgendaItem extends Model
         }
 
         return $query->where(function (Builder $q) use ($userId, $departmentId) {
-            $q->where('responsavel_user_id', $userId)
-                ->orWhere('criado_por_user_id', $userId)
-                ->orWhere('visibilidade', AgendaItemVisibility::EMPRESA)
-                ->orWhere('visibilidade', AgendaItemVisibility::EQUIPE)
+            $q->where('assignee_user_id', $userId)
+                ->orWhere('created_by_user_id', $userId)
+                ->orWhere('visibility', AgendaItemVisibility::EMPRESA)
+                ->orWhere('visibility', AgendaItemVisibility::EQUIPE)
                 ->orWhereHas('watchers', fn (Builder $wq) => $wq->where('user_id', $userId));
 
             if ($departmentId) {
                 $q->orWhere(function (Builder $dq) use ($departmentId) {
-                    $dq->where('visibilidade', AgendaItemVisibility::DEPARTAMENTO)
+                    $dq->where('visibility', AgendaItemVisibility::DEPARTAMENTO)
                         ->whereJsonContains('visibility_departments', $departmentId);
                 });
             }
 
             $q->orWhere(function (Builder $cq) use ($userId) {
-                $cq->where('visibilidade', AgendaItemVisibility::CUSTOM)
+                $cq->where('visibility', AgendaItemVisibility::CUSTOM)
                     ->whereJsonContains('visibility_users', $userId);
             });
         });
@@ -349,14 +359,14 @@ class AgendaItem extends Model
     public static function criarDeOrigem(
         Model $model,
         AgendaItemType $tipo,
-        string $titulo,
+        string $title,
         ?int $responsavelId = null,
         array $extras = []
     ): self {
         $tenantId = $model->tenant_id ?? app('current_tenant_id');
         $authUser = auth()->user();
         $authUserId = $authUser instanceof User ? (int) $authUser->id : null;
-        $criadoPorUserId = $extras['criado_por_user_id']
+        $criadoPorUserId = $extras['created_by_user_id']
             ?? $authUserId
             ?? $responsavelId
             ?? User::query()->where('tenant_id', $tenantId)->value('id');
@@ -365,31 +375,31 @@ class AgendaItem extends Model
 
         $payload = self::normalizePayload([
             'tenant_id' => $tenantId,
-            'tipo' => $tipo,
-            'origem' => $extras['origem'] ?? AgendaItemOrigin::AUTO,
-            'ref_tipo' => $model->getMorphClass(),
+            'type' => $tipo,
+            'origin' => $extras['origin'] ?? $extras['source'] ?? AgendaItemOrigin::AUTO,
+            'ref_type' => $model->getMorphClass(),
             'ref_id' => $model->getKey(),
-            'titulo' => $titulo,
-            'descricao_curta' => $extras['descricao_curta'] ?? null,
-            'responsavel_user_id' => $responsavelId,
-            'criado_por_user_id' => $criadoPorUserId,
+            'title' => $title,
+            'short_description' => $extras['short_description'] ?? null,
+            'assignee_user_id' => $responsavelId,
+            'created_by_user_id' => $criadoPorUserId,
             'status' => $extras['status'] ?? AgendaItemStatus::ABERTO,
-            'prioridade' => $extras['prioridade'] ?? AgendaItemPriority::MEDIA,
-            'visibilidade' => $extras['visibilidade'] ?? AgendaItemVisibility::EQUIPE,
+            'priority' => $extras['priority'] ?? AgendaItemPriority::MEDIA,
+            'visibility' => $extras['visibility'] ?? AgendaItemVisibility::EQUIPE,
             'due_at' => $extras['due_at'] ?? null,
             'remind_at' => $extras['remind_at'] ?? null,
             'snooze_until' => $extras['snooze_until'] ?? null,
             'sla_due_at' => $extras['sla_due_at'] ?? null,
             'closed_at' => $extras['closed_at'] ?? null,
             'closed_by' => $extras['closed_by'] ?? null,
-            'contexto' => $extras['contexto'] ?? null,
+            'context' => $extras['context'] ?? null,
             'tags' => $extras['tags'] ?? null,
         ]);
 
         $item = static::withoutGlobalScopes()->updateOrCreate(
             [
                 'tenant_id' => $tenantId,
-                'ref_tipo' => $model->getMorphClass(),
+                'ref_type' => $model->getMorphClass(),
                 'ref_id' => $model->getKey(),
             ],
             $payload
@@ -397,7 +407,7 @@ class AgendaItem extends Model
 
         if ($item->wasRecentlyCreated) {
             $item->autoAddOriginWatchers($criadoPorUserId, $responsavelId, $extras['watchers'] ?? []);
-            $item->dispararPushSeNecessario($titulo);
+            $item->dispararPushSeNecessario($title);
         }
 
         return $item;
@@ -426,15 +436,15 @@ class AgendaItem extends Model
         }
     }
 
-    public function dispararPushSeNecessario(?string $titulo = null): void
+    public function dispararPushSeNecessario(?string $title = null): void
     {
         if (! $this->tenant_id) {
             return;
         }
 
-        $recipients = $this->resolveNotificationRecipients(null, $this->criado_por_user_id);
-        $body = $this->descricao_curta ?: ($titulo ?? $this->titulo);
-        $this->enviarPushParaDestinatarios($recipients, "Agenda: {$this->titulo}", $body, $this->criado_por_user_id);
+        $recipients = $this->resolveNotificationRecipients(null, $this->created_by_user_id);
+        $body = $this->short_description ?: ($title ?? $this->title);
+        $this->enviarPushParaDestinatarios($recipients, "Agenda: {$this->title}", $body, $this->created_by_user_id);
     }
 
     public static function syncFromSource(Model $source, array $overrides = []): void
@@ -446,7 +456,7 @@ class AgendaItem extends Model
 
         $item = static::withoutGlobalScopes()
             ->where('tenant_id', $tenantId)
-            ->where('ref_tipo', $source->getMorphClass())
+            ->where('ref_type', $source->getMorphClass())
             ->where('ref_id', $source->getKey())
             ->first();
 
@@ -473,7 +483,7 @@ class AgendaItem extends Model
         $recipients = $this->resolveNotificationRecipients($notifyEvent, $extraData['actor_user_id'] ?? null);
 
         $basePayload = array_merge([
-            'message' => $message ?? ($this->descricao_curta ?: null),
+            'message' => $message ?? ($this->short_description ?: null),
             'icon' => 'inbox',
             'color' => 'blue',
             'link' => "/central?item={$this->id}",
@@ -482,12 +492,12 @@ class AgendaItem extends Model
             'data' => array_merge([
                 'agenda_item_id' => $this->id,
                 'status' => $this->statusEnum()?->value,
-                'prioridade' => $this->priorityEnum()?->value,
+                'priority' => $this->priorityEnum()?->value,
             ], $extraData),
         ], $opts);
 
-        $pushTitle = $title ?? "Agenda: {$this->titulo}";
-        $pushBody = $message ?? ($this->descricao_curta ?: $this->titulo);
+        $pushTitle = $title ?? "Agenda: {$this->title}";
+        $pushBody = $message ?? ($this->short_description ?: $this->title);
 
         foreach ($recipients as $userId) {
             Notification::notify(
@@ -514,7 +524,7 @@ class AgendaItem extends Model
             $typeEnum = $this->typeEnum();
             $itemType = $typeEnum instanceof AgendaItemType
                 ? $typeEnum->value
-                : (string) ($this->attributes['tipo'] ?? '');
+                : (string) ($this->attributes['type'] ?? '');
 
             foreach ($recipientIds as $userId) {
                 if ($excludeId && (int) $userId === (int) $excludeId) {
@@ -548,11 +558,11 @@ class AgendaItem extends Model
     {
         $userIds = collect();
 
-        if ($this->responsavel_user_id) {
-            $userIds->push($this->responsavel_user_id);
+        if ($this->assignee_user_id) {
+            $userIds->push($this->assignee_user_id);
         }
-        if ($this->criado_por_user_id) {
-            $userIds->push($this->criado_por_user_id);
+        if ($this->created_by_user_id) {
+            $userIds->push($this->created_by_user_id);
         }
 
         $watcherQuery = $this->watchers();
@@ -585,9 +595,9 @@ class AgendaItem extends Model
             (int) $this->tenant_id,
             $userId,
             $type,
-            $title ?? "Agenda: {$this->titulo}",
+            $title ?? "Agenda: {$this->title}",
             array_merge([
-                'message' => $message ?? ($this->descricao_curta ?: null),
+                'message' => $message ?? ($this->short_description ?: null),
                 'icon' => 'inbox',
                 'color' => 'blue',
                 'link' => "/central?item={$this->id}",
@@ -596,7 +606,7 @@ class AgendaItem extends Model
                 'data' => array_merge([
                     'agenda_item_id' => $this->id,
                     'status' => $this->statusEnum()?->value,
-                    'prioridade' => $this->priorityEnum()?->value,
+                    'priority' => $this->priorityEnum()?->value,
                 ], $extraData),
             ], $opts)
         );
@@ -641,12 +651,31 @@ class AgendaItem extends Model
 
     private function normalizeLegacyAliases(array $attributes): array
     {
-        if (array_key_exists('user_id', $attributes) && ! array_key_exists('responsavel_user_id', $attributes)) {
-            $attributes['responsavel_user_id'] = $attributes['user_id'];
+        $ptAliases = [
+            'tipo' => 'type',
+            'titulo' => 'title',
+            'descricao_curta' => 'short_description',
+            'prioridade' => 'priority',
+            'visibilidade' => 'visibility',
+            'contexto' => 'context',
+            'ref_tipo' => 'ref_type',
+            'responsavel_user_id' => 'assignee_user_id',
+            'criado_por_user_id' => 'created_by_user_id',
+            'origem' => 'origin',
+        ];
+        foreach ($ptAliases as $legacy => $canonical) {
+            if (array_key_exists($legacy, $attributes) && ! array_key_exists($canonical, $attributes)) {
+                $attributes[$canonical] = $attributes[$legacy];
+            }
+            unset($attributes[$legacy]);
         }
 
-        if (array_key_exists('user_id', $attributes) && ! array_key_exists('criado_por_user_id', $attributes)) {
-            $attributes['criado_por_user_id'] = $attributes['user_id'];
+        if (array_key_exists('user_id', $attributes) && ! array_key_exists('assignee_user_id', $attributes)) {
+            $attributes['assignee_user_id'] = $attributes['user_id'];
+        }
+
+        if (array_key_exists('user_id', $attributes) && ! array_key_exists('created_by_user_id', $attributes)) {
+            $attributes['created_by_user_id'] = $attributes['user_id'];
         }
 
         unset($attributes['user_id']);

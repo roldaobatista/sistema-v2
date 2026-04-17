@@ -16,7 +16,7 @@ class AgendaTemplateFactory extends Factory
         return [
             'tenant_id' => Tenant::factory(),
             'nome' => fake()->words(3, true),
-            'descricao' => fake()->sentence(),
+            'description' => fake()->sentence(),
             'ativo' => true,
             'created_by' => User::factory(),
         ];

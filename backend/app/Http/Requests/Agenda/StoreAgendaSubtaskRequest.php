@@ -21,7 +21,7 @@ class StoreAgendaSubtaskRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'titulo' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'ordem' => 'nullable|integer|min:0',
         ];
     }
@@ -29,7 +29,7 @@ class StoreAgendaSubtaskRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'titulo.required' => 'O título da subtarefa é obrigatório.',
+            'title.required' => 'O título da subtarefa é obrigatório.',
         ];
     }
 }
