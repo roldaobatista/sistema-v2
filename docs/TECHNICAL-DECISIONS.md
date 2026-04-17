@@ -318,3 +318,56 @@ Antes de incluir, **investigar o call-site**: se for inserção via `Model::crea
 
 ---
 
+### 14.7 Polymorphic relationships sem FK (dívida aceita) (Wave 4 — DATA-008)
+
+**Decisão (2026-04-17):** 12+ tabelas usam o helper `morphs()`/`nullableMorphs()` do Laravel (`audit_logs`, `notifications`, `notification_logs`, `price_histories`, `personal_access_tokens`, `subscriptions`, `media`, `comments`, `attachments`, `reactions`, `taggables`, `votes`, etc.). Polymorphic associations não suportam FK no banco — a integridade referencial é mantida apenas pelo ORM (Eloquent). Se o registro pai for hard-deletado fora do contexto Eloquent (`DELETE` raw, truncate, drop), os registros polymorphic ficam órfãos.
+
+**Por que NÃO migrar para discriminator + FK explícita agora:**
+- Refatorar 12+ tabelas + todas as queries que tocam essas relações = trabalho enorme com risco de regressão alto.
+- Discriminator pattern (uma FK nullable por possível tipo pai) explode esquema quando há muitos tipos polimórficos (audit_logs cobre dezenas de models).
+- O risco real é baixo no Kalibrium ERP:
+  - Sistema usa **soft delete predominantemente** (cascade não dispara em `deleted_at`).
+  - Hard delete via `forceDelete()` é raro e isolado (testes, GDPR purge).
+  - Não há `TRUNCATE` em produção.
+
+**Mitigações já em vigor:**
+- Helper `morphs()`/`nullableMorphs()` cria índice composto `(type, id)` automaticamente — queries `WHERE auditable_type = X AND auditable_id = Y` são performantes.
+- Eloquent observers cuidam de cascade-delete em soft-delete.
+- Models polimórficos como `AuditLog` registram a classe completa (`App\Models\WorkOrder`), permitindo detecção de órfãos a posteriori.
+
+**Mitigação futura (não implementada nesta wave):** `CleanupPolymorphicOrphansJob` semanal que itera tabelas polimórficas registradas, agrupa por `*_type`, valida existência do `*_id` no `parentTable` e remove órfãos. Schedule sugerido: `weekly()->sundays()->at('03:00')`. Implementar quando houver evidência empírica de órfãos em produção (consulta diagnóstica trimestral).
+
+**Risco aceito:** registros polimórficos podem ficar órfãos se um pai for hard-deletado fora do Eloquent. Impacto: relatórios de auditoria/notificações com referências quebradas. Detecção: query trimestral `SELECT DISTINCT auditable_type FROM audit_logs WHERE NOT EXISTS (...)`. Severidade: baixa (cosmético, não compromete operação).
+
+---
+
+### 14.8 Timezone explícito em conexões MySQL/MariaDB (Wave 4 — DATA-011)
+
+**Decisão (2026-04-17):** as conexões `mysql` e `mariadb` em `config/database.php` agora declaram `'timezone' => env('DB_TIMEZONE', '-03:00')`. Antes, sem `timezone` explícito, o driver herdava o timezone do servidor MySQL — que pode divergir do `APP_TIMEZONE` do Laravel e causar drift em `CURRENT_TIMESTAMP`, defaults de coluna e funções de data executadas no banco (`NOW()`, `CURDATE()`, etc.).
+
+**Valor padrão (-03:00):** alinhado com `APP_TIMEZONE=America/Sao_Paulo` do `.env.example`. Brasil não observa horário de verão desde 2019 — offset fixo é seguro e independe das tz tables (`mysql.time_zone_name`) estarem populadas no servidor.
+
+**Override por ambiente:** `DB_TIMEZONE=+00:00` para deployments que padronizem UTC no banco (recomendado se app multi-região no futuro).
+
+**Por que offset numérico em vez de nome de zona:** `'timezone' => 'America/Sao_Paulo'` exige que o servidor MySQL tenha as named timezones carregadas (`mysql_tzinfo_to_sql`). Em containers oficiais MySQL e Docker isso nem sempre vem por default — usar offset evita falha silenciosa de `SET time_zone = ?` no boot da conexão.
+
+**Risco mitigado:** drift entre `created_at` gravado pelo Eloquent (em PHP, com APP_TIMEZONE) e `CURRENT_TIMESTAMP` default de coluna (em MySQL, com timezone do servidor). Após esta mudança, ambos usam o mesmo offset.
+
+---
+
+### 14.9 Gate de schema dump no CI (Wave 4 — DATA-014)
+
+**Decisão (2026-04-17):** o job `backend-tests` em `.github/workflows/ci.yml` ganhou um step "Validate SQLite schema dump is in sync with migrations" que roda `generate_sqlite_schema_from_artisan.php` e falha o build se `git diff` detectar diferença em `database/schema/sqlite-schema.sql`.
+
+**Problema resolvido:** o dump `sqlite-schema.sql` é a fundação da suite de testes (carrega 8720 cases em <5min via SQLite in-memory). Sem gate, um PR poderia adicionar migration sem regenerar o dump, e a suite local passava (porque rodava migrate fresh) enquanto o dump no repo ficava stale — quebrando o ambiente do próximo dev que clonasse o repo.
+
+**Implementação:**
+1. Step posicionado **após** `php artisan migrate` e **antes** de `vendor/bin/pest`.
+2. Usa `generate_sqlite_schema_from_artisan.php` (Wave 1E) — não depende de MySQL/Docker, funciona em runner Linux limpo.
+3. Falha com mensagem instrutiva: `"Rode localmente: cd backend && php generate_sqlite_schema_from_artisan.php, depois commite."`
+4. Apenas no workflow `ci.yml` (que valida backend); demais workflows (deploy, security, dast, performance, nightly) não rodam testes backend, então não precisam do gate.
+
+**Trade-off:** adiciona ~30-60s ao CI backend (regeneração do dump). Aceito porque previne classe inteira de bugs ("migration nova não está no schema dump → testes locais quebram após pull").
+
+---
+

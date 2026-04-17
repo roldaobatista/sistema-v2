@@ -57,6 +57,10 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // Timezone da sessão MySQL. Alinhado com APP_TIMEZONE (America/Sao_Paulo).
+            // Usamos offset fixo (-03:00) em vez de nome de zona para não depender
+            // das tz tables populadas no servidor MySQL. Brasil não usa DST desde 2019.
+            'timezone' => env('DB_TIMEZONE', '-03:00'),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
@@ -77,6 +81,8 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // Timezone da sessão MariaDB. Ver comentário na conexão 'mysql'.
+            'timezone' => env('DB_TIMEZONE', '-03:00'),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],

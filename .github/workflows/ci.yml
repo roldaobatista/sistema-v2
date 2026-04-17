@@ -136,6 +136,23 @@ jobs:
         working-directory: backend
         run: php artisan migrate --no-interaction --force
 
+      - name: Validate SQLite schema dump is in sync with migrations
+        working-directory: backend
+        run: |
+          set -e
+          # Regenera o dump usando o script artisan-based (não requer MySQL).
+          php generate_sqlite_schema_from_artisan.php > /tmp/schema_gen.log 2>&1 || {
+            echo "::error::Falha ao regenerar schema dump. Log:"
+            cat /tmp/schema_gen.log
+            exit 1
+          }
+          if ! git diff --exit-code -- database/schema/sqlite-schema.sql; then
+            echo "::error::Schema dump (database/schema/sqlite-schema.sql) está fora de sincronia com as migrations."
+            echo "::error::Rode localmente: cd backend && php generate_sqlite_schema_from_artisan.php, depois commite."
+            exit 1
+          fi
+          echo "Schema dump in sync."
+
       - name: Run Backend Tests
         working-directory: backend
         run: vendor/bin/pest --parallel --processes=16 --no-coverage
