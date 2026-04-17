@@ -237,5 +237,51 @@ Registrar aqui escolhas que foram consideradas e descartadas, com motivo — evi
 
 Tabelas filhas (`*_items`, `*_suppliers`, `*_attachments`, `*_approvals`, `*_messages`, `*_stops`, `returned_used_item_dispositions`, `product_kits`, `onboarding_steps`) cujo parent já possui `BelongsToTenant`. O acesso DEVE ocorrer SEMPRE via relacionamento Eloquent do parent — NUNCA via query direta na tabela filha sem join com parent. Caso contrário, considerar promoção para Categoria 1 em wave futura.
 
+### 14.5 Pivots M2M e tabelas com inserção bypass — `tenant_id` NULLABLE (Wave 2B-fix / SEC-015)
+
+**Decisão (2026-04-17):** após Wave 2B aplicar `NOT NULL` em 66 tabelas (migration `2026_04_17_150000_backfill_tenant_id_and_make_not_null`), a suite de testes regrediu em **52 cenários** com `QueryException: NOT NULL constraint failed: <tabela>.tenant_id`. Migration corretiva `2026_04_17_160000_revert_tenant_id_not_null_on_pivots` reverte `tenant_id` para NULLABLE em 11 tabelas cujo caminho de inserção atual **bypassa o auto-fill** do trait `BelongsToTenant`.
+
+**Causa raiz arquitetural:**
+
+1. **Pivots M2M via `belongsToMany`** — `attach()`, `sync()`, `detach()` chamam `newPivotStatement()->insert()` (Query Builder direto). O evento `creating` do Eloquent **não dispara** nesse caminho, então o trait não popula `tenant_id`.
+2. **`DB::table()->insert([...])` em controllers/services** — bypassa o Eloquent inteiramente (ex.: `StockAdvancedController::reorder` em `purchase_quotation_items`).
+3. **Seeders e factories legadas** — algumas semeiam linhas sem contexto de tenant (ex.: `DatabaseSeeder` populando `cameras` de exemplo; `InmetroInstrumentFactory` em cenários de scraping).
+
+**Tabelas com `tenant_id` NULLABLE pós Wave 2B-fix:**
+
+| Tabela | Categoria | Caminho bypass |
+|---|---|---|
+| `work_order_technicians` | Pivot M2M | `WorkOrder::technicians()->attach()` |
+| `work_order_equipments` | Pivot M2M | `WorkOrder::equipments()->attach()` |
+| `equipment_model_product` | Pivot M2M | `EquipmentModel::products()->sync()` |
+| `email_email_tag` | Pivot M2M | `Email::tags()->attach()` |
+| `quote_quote_tag` | Pivot M2M | `Quote::tags()->sync()` |
+| `service_call_equipments` | Pivot M2M | `ServiceCall::equipments()->attach()` |
+| `service_skills` | Pivot M2M | `Service::skills()->sync()` |
+| `calibration_standard_weight` | Pivot M2M | `EquipmentCalibration::standardWeights()->sync()` |
+| `purchase_quotation_items` | DB direto | `DB::table('purchase_quotation_items')->insert()` em StockAdvancedController |
+| `cameras` | Seeder | DatabaseSeeder de exemplo cria cameras sem tenant |
+| `inmetro_instruments` | Factory | Factory de scraping passa `tenant_id` explícito como NULL |
+| `inventory_items` | Seeder | `InventoryReferenceSeeder` usa `upsertRow` (DB direto) sem tenant |
+
+**Isolamento de tenant — por que continua seguro:**
+
+- **Pivots M2M:** o isolamento é garantido pelo **global scope do parent**. Ex.: `Quote::with('tags')` aplica `WHERE quotes.tenant_id = X` antes do JOIN com `quote_quote_tag`. A coluna `tenant_id` no pivot é **redundante para isolamento** — serve apenas a queries analíticas diretas no pivot (raras).
+- **Tabelas DB-direto / seeder / factory:** acesso via Eloquent (controllers de produção) **continua aplicando** o global scope do trait. Apenas o caminho de **escrita** específico é o que bypassa.
+
+**Dívida arquitetural registrada como SEC-015:**
+
+Fix definitivo (sair de NULLABLE e voltar a NOT NULL com auto-fill garantido) requer uma destas abordagens:
+
+1. **Override de `newPivot()` nos parent models** OU classe `TenantAwarePivot extends Illuminate\Database\Eloquent\Relations\Pivot` aplicada em cada `belongsToMany(...)->using(TenantAwarePivot::class)`.
+2. **Hook global no Query Builder** (`DB::listen` ou macro) que intercepta INSERT em tabelas registradas e injeta `tenant_id` quando ausente.
+3. **Refator dos call-sites bypass** (substituir `DB::table()->insert()` por `Model::create()`; corrigir seeders e factories).
+
+Qualquer uma das três encerra a dívida. Tratamento postergado para wave futura por custo (3-4h) versus benefício (defesa em profundidade — isolamento já garantido pelo global scope do parent).
+
+**Critério para adicionar nova tabela à lista NULLABLE:**
+
+Antes de incluir, **investigar o call-site**: se for inserção via `Model::create()` ou `relation()->create()`, o trait dispara — o problema é outro (provavelmente `tenant_id` ausente no contexto do request). Apenas tabelas com bypass real entram nesta lista.
+
 ---
 
