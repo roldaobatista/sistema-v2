@@ -11,12 +11,14 @@ class JourneyEntryFactory extends Factory
 {
     protected $model = JourneyEntry::class;
 
+    private static int $dateOffset = 0;
+
     public function definition(): array
     {
         return [
             'tenant_id' => Tenant::factory(),
             'user_id' => User::factory(),
-            'date' => $this->faker->date(),
+            'date' => now()->subDays(self::$dateOffset++)->toDateString(),
             'journey_rule_id' => null,
             // Campos legados (horas decimais)
             'scheduled_hours' => 8.00,
