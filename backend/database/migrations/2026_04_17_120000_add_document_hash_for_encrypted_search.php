@@ -81,34 +81,9 @@ return new class extends Migration
                 DB::statement(sprintf('ALTER TABLE `%s` MODIFY `%s` TEXT NULL', $table, $cfg['source']));
             }
 
-            // 4) Backfill *_hash a partir do valor atual da coluna source.
-            //    Pré-deploy do cast encrypted: dados ainda em plain text — hash do valor cru.
-            //    Pós-deploy: caso a coluna já contenha payload encrypted, decrypt via app
-            //    é responsabilidade de um job dedicado (fora desta migration).
-            DB::table($table)
-                ->whereNotNull($cfg['source'])
-                ->whereNull($cfg['hash'])
-                ->orderBy('id')
-                ->chunkById(500, function ($rows) use ($table, $cfg): void {
-                    foreach ($rows as $row) {
-                        $raw = (string) $row->{$cfg['source']};
-                        if ($raw === '') {
-                            continue;
-                        }
-
-                        // Heurística simples: ignora payloads claramente encrypted
-                        // (Crypt::encryptString gera base64 longo iniciando por "ey").
-                        if (strlen($raw) > 100 && preg_match('/^[A-Za-z0-9+\/=]+$/', $raw)) {
-                            continue;
-                        }
-
-                        DB::table($table)
-                            ->where('id', $row->id)
-                            ->update([
-                                $cfg['hash'] => hash_hmac('sha256', $raw, (string) config('app.key')),
-                            ]);
-                    }
-                });
+            // 4) Backfill executado fora da migration (assíncrono via Job).
+            //    Após deploy em produção, rodar: php artisan kalibrium:backfill-document-hash
+            //    Job: BackfillDocumentHashJob (em fila), Command: BackfillDocumentHashCommand
         }
     }
 

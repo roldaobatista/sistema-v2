@@ -78,7 +78,7 @@ class Flow012ClientePfTest extends TestCase
             'id' => $id,
             'name' => 'Maria Silva Santos',
             'type' => 'PF',
-            'document_hash' => Customer::hashSearchable('document', '529.982.247-25'),
+            'document_hash' => Customer::hashSearchable('529.982.247-25', digitsOnly: true),
         ]);
     }
 }

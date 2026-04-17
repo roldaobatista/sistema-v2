@@ -710,7 +710,7 @@ class ImportService
         return match ($entity) {
             Import::ENTITY_CUSTOMERS => ! empty($data['document'])
                 ? Customer::where('tenant_id', $tenantId)
-                    ->where('document_hash', Customer::hashSearchable('document', preg_replace('/\D/', '', $data['document'])))
+                    ->where('document_hash', Customer::hashSearchable($data['document'], digitsOnly: true))
                     ->first()
                 : null,
             Import::ENTITY_PRODUCTS => ! empty($data['code'])
@@ -724,7 +724,7 @@ class ImportService
                 : null,
             Import::ENTITY_SUPPLIERS => ! empty($data['document'])
                 ? Supplier::where('tenant_id', $tenantId)
-                    ->where('document_hash', Supplier::hashSearchable('document', preg_replace('/\D/', '', $data['document'])))
+                    ->where('document_hash', Supplier::hashSearchable($data['document'], digitsOnly: true))
                     ->first()
                 : null,
             default => null,
@@ -867,7 +867,7 @@ class ImportService
         if ($entity === Import::ENTITY_EQUIPMENTS && ! empty($data['customer_document'])) {
             $doc = preg_replace('/\D/', '', $data['customer_document']);
             $customer = Customer::where('tenant_id', $tenantId)
-                ->where('document_hash', Customer::hashSearchable('document', $doc))
+                ->where('document_hash', Customer::hashSearchable($doc, digitsOnly: true))
                 ->first();
             if ($customer) {
                 $data['customer_id'] = $customer->id;

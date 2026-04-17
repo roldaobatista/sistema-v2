@@ -106,11 +106,19 @@ class User extends Authenticatable
         'dependents_count',
     ];
 
+    /**
+     * SEC-021 (Audit Camada 1, Wave 1D): `cpf_hash` é hash determinístico
+     * (HMAC-SHA256 com APP_KEY) usado para busca em `cpf` encrypted. Expor
+     * publicamente facilita ataque de dicionário offline contra o CPF —
+     * domínio enumerável (~10^11). Ocultar de toArray()/toJson() preserva o
+     * benefício de busca interna sem vazamento da prova de existência do PII.
+     */
     protected $hidden = [
         'password',
         'remember_token',
         'google_calendar_token',
         'google_calendar_refresh_token',
+        'cpf_hash',
     ];
 
     protected function casts(): array

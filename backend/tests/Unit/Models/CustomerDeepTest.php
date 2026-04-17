@@ -96,7 +96,7 @@ class CustomerDeepTest extends TestCase
         // `document` é encrypted (cast `encrypted`) — busca por igualdade direta
         // não funciona (ciphertext difere a cada gravação por causa do IV).
         // Wave 1B: usar `document_hash` (HMAC-SHA256 determinístico).
-        $results = Customer::where('document_hash', Customer::hashSearchable('document', '12345678000199'))->get();
+        $results = Customer::where('document_hash', Customer::hashSearchable('12345678000199', digitsOnly: true))->get();
         $this->assertGreaterThanOrEqual(1, $results->count());
         $this->assertSame('12345678000199', $results->first()->document);
     }

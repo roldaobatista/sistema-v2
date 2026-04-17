@@ -38,7 +38,7 @@ class SupplierController extends Controller
                     ->orWhere('phone', 'like', "%{$search}%");
 
                 if (is_string($digitsOnlySearch) && in_array(strlen($digitsOnlySearch), [11, 14], true)) {
-                    $q->orWhere('document_hash', Supplier::hashSearchable('document', $digitsOnlySearch));
+                    $q->orWhere('document_hash', Supplier::hashSearchable($digitsOnlySearch, digitsOnly: true));
                 }
             });
         }

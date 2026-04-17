@@ -35,7 +35,11 @@ use Illuminate\Database\Eloquent\Model;
  *   }
  *
  * Para buscar:
- *   Customer::where('document_hash', Customer::hashSearchable('document', $cpf))->first();
+ *   // CPF/CNPJ (digitos apenas — normaliza máscara antes do hash):
+ *   Customer::where('document_hash', Customer::hashSearchable($cpf, digitsOnly: true))->first();
+ *
+ *   // Outros campos (sem normalização):
+ *   Customer::where('email_hash', Customer::hashSearchable($email))->first();
  */
 trait HasEncryptedSearchableField
 {
@@ -51,6 +55,10 @@ trait HasEncryptedSearchableField
 
     /**
      * Sobrescreve setAttribute para sincronizar colunas *_hash automaticamente.
+     *
+     * SEC-024 (Wave 1D): para sincronização interna usamos a lista
+     * `$encryptedDigitsOnlyFields` da própria instância — nomes de campos que
+     * representam CPF/CNPJ devem ser declarados ali (default: ['document', 'cpf']).
      */
     public function setAttribute($key, $value)
     {
@@ -58,9 +66,10 @@ trait HasEncryptedSearchableField
 
         if (isset($map[$key])) {
             $hashColumn = $map[$key];
+            $digitsOnly = in_array($key, $this->encryptedDigitsOnlyFields ?? [], true);
             // Setamos o hash usando o valor normalizado (raw) direto no attributes
             // array, bypassando mutator/cast da coluna *_hash (coluna simples).
-            $this->attributes[$hashColumn] = static::computeSearchableHash($key, $value, $this->encryptedDigitsOnlyFields ?? []);
+            $this->attributes[$hashColumn] = static::computeSearchableHash($value, $digitsOnly);
         }
 
         return parent::setAttribute($key, $value);
@@ -68,26 +77,33 @@ trait HasEncryptedSearchableField
 
     /**
      * Calcula o HMAC determinístico para busca por igualdade na coluna `*_hash`.
+     *
+     * SEC-024 (Wave 1D): assinatura parametrizada explicitamente por `$digitsOnly`
+     * em vez de inferir via lista hardcoded `['document', 'cpf']` no nome do campo.
+     * Isso elimina o acoplamento entre o trait genérico e nomes de campos
+     * específicos de domínio (CPF/CNPJ) — qualquer model pode opt-in para
+     * normalização passando `digitsOnly: true` no caller.
+     *
+     * Caller deve passar `digitsOnly: true` para CPF/CNPJ (valor pode vir com
+     * máscara `.`, `-`, `/`) e `false` (default) para campos onde o valor é
+     * armazenado/buscado exatamente como entra (ex: e-mail, código alfanumérico).
      */
-    public static function hashSearchable(string $field, ?string $value): ?string
+    public static function hashSearchable(string $value, bool $digitsOnly = false): ?string
     {
-        // Usa as configurações default da trait — ok para casos comuns.
-        return static::computeSearchableHash($field, $value, ['document', 'cpf']);
+        return static::computeSearchableHash($value, $digitsOnly);
     }
 
     /**
      * Lógica central: normaliza (se aplicável) e calcula HMAC-SHA256 com APP_KEY.
-     *
-     * @param  array<int, string>  $digitsOnlyFields
      */
-    protected static function computeSearchableHash(string $field, mixed $value, array $digitsOnlyFields): ?string
+    protected static function computeSearchableHash(mixed $value, bool $digitsOnly): ?string
     {
         if ($value === null || $value === '') {
             return null;
         }
 
         $value = (string) $value;
-        if (in_array($field, $digitsOnlyFields, true)) {
+        if ($digitsOnly) {
             $value = preg_replace('/\D+/', '', $value) ?? '';
         }
 

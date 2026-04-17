@@ -116,6 +116,19 @@ class Customer extends Model
         'tags', 'rating',
     ];
 
+    /**
+     * SEC-021 (Audit Camada 1, Wave 1D): `document_hash` é hash determinístico
+     * (HMAC-SHA256 com APP_KEY) usado para busca em coluna encrypted. Expor em
+     * payloads JSON viabiliza ataque de dicionário offline contra CPF/CNPJ —
+     * domínio enumerável (~10^11). Ocultar de toArray()/toJson() preserva o
+     * benefício de busca interna sem vazamento da prova de existência do PII.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'document_hash',
+    ];
+
     private static array $brazilianStates = [
         'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS',
         'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC',

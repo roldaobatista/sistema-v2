@@ -69,7 +69,7 @@ class StoreCustomerRequest extends FormRequest
                     if (! is_string($value) || $value === '') {
                         return;
                     }
-                    $hash = Customer::hashSearchable('document', $value);
+                    $hash = Customer::hashSearchable($value, digitsOnly: true);
                     $exists = Customer::query()
                         ->withoutGlobalScope('tenant')
                         ->where('tenant_id', $tenantId)

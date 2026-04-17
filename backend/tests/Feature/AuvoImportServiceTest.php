@@ -162,7 +162,7 @@ class AuvoImportServiceTest extends TestCase
         // (HMAC-SHA256 determinístico) e nome.
         $this->assertDatabaseHas('customers', [
             'tenant_id' => $this->tenant->id,
-            'document_hash' => Customer::hashSearchable('document', '12345678000190'),
+            'document_hash' => Customer::hashSearchable('12345678000190', digitsOnly: true),
             'name' => 'Existing Customer',
         ]);
     }

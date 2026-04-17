@@ -34,6 +34,19 @@ class Supplier extends Model
         'notes', 'is_active',
     ];
 
+    /**
+     * SEC-021 (Audit Camada 1, Wave 1D): `document_hash` é hash determinístico
+     * (HMAC-SHA256 com APP_KEY) usado para busca em coluna encrypted. Expor
+     * publicamente facilita ataque de dicionário offline contra CPF/CNPJ —
+     * domínio enumerável. Ocultar de toArray()/toJson() preserva o benefício
+     * de busca interna sem vazamento da prova de existência do PII.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'document_hash',
+    ];
+
     protected function casts(): array
     {
         return [

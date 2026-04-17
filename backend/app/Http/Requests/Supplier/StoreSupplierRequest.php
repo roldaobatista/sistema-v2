@@ -55,7 +55,7 @@ class StoreSupplierRequest extends FormRequest
                     if (! is_string($value) || $value === '') {
                         return;
                     }
-                    $hash = Supplier::hashSearchable('document', $value);
+                    $hash = Supplier::hashSearchable($value, digitsOnly: true);
                     $exists = Supplier::query()
                         ->withoutGlobalScope('tenant')
                         ->where('tenant_id', $tenantId)

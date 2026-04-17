@@ -64,7 +64,7 @@ class CustomerController extends Controller
                 }
 
                 if (in_array(strlen($digitsOnlySearch), [11, 14], true)) {
-                    $q->orWhere('document_hash', Customer::hashSearchable('document', $digitsOnlySearch));
+                    $q->orWhere('document_hash', Customer::hashSearchable($digitsOnlySearch, digitsOnly: true));
                 }
 
                 // Demais colunas normalizáveis (não encrypted)

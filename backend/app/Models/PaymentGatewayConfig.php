@@ -27,8 +27,13 @@ class PaymentGatewayConfig extends Model
 {
     use BelongsToTenant, HasFactory;
 
+    /**
+     * PROD-015 (Wave 1D): `tenant_id` NÃO entra em `$fillable` — é atribuído
+     * automaticamente pelo trait `BelongsToTenant` (override de `save()`).
+     * Permitir mass-assignment de tenant_id permitiria forjar tenant via
+     * payload — viola H1 do Iron Protocol.
+     */
     protected $fillable = [
-        'tenant_id',
         'gateway',
         'api_key',
         'api_secret',

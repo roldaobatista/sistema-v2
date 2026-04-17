@@ -84,7 +84,7 @@ class Flow011ClientePjTest extends TestCase
             'id' => $id,
             'name' => 'Metalurgica Rossi',
             'type' => 'PJ',
-            'document_hash' => Customer::hashSearchable('document', '33.000.167/0001-01'),
+            'document_hash' => Customer::hashSearchable('33.000.167/0001-01', digitsOnly: true),
         ]);
         $this->assertDatabaseHas('customer_contacts', [
             'customer_id' => $id,

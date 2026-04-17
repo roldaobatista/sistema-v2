@@ -43,6 +43,18 @@ class EmployeeDependent extends Model
         'end_date',
     ];
 
+    /**
+     * SEC-021 (Audit Camada 1, Wave 1D): `cpf_hash` é hash determinístico
+     * (HMAC-SHA256 com APP_KEY) usado para busca em `cpf` encrypted. Expor
+     * publicamente facilita ataque de dicionário offline contra o CPF.
+     * Ocultar de toArray()/toJson() preserva busca interna sem vazamento.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'cpf_hash',
+    ];
+
     protected function casts(): array
     {
         return [

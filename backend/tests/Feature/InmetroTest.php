@@ -177,7 +177,7 @@ class InmetroTest extends TestCase
 
         // Wave 1B: `customers.document` é encrypted — comparar via `document_hash`.
         $this->assertDatabaseHas('customers', [
-            'document_hash' => Customer::hashSearchable('document', $owner->document),
+            'document_hash' => Customer::hashSearchable($owner->document, digitsOnly: true),
         ]);
 
         $this->assertDatabaseHas('inmetro_owners', [

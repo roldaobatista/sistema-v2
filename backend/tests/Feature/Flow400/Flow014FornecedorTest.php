@@ -75,7 +75,7 @@ class Flow014FornecedorTest extends TestCase
             'id' => $id,
             'name' => 'Distribuidora de Metais ABC',
             'type' => 'PJ',
-            'document_hash' => Supplier::hashSearchable('document', '44.332.211/0001-55'),
+            'document_hash' => Supplier::hashSearchable('44.332.211/0001-55', digitsOnly: true),
         ]);
     }
 }
