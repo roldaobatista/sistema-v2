@@ -46,12 +46,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class AccountPayable extends Model
 {
-    use Auditable, BelongsToTenant, Concerns\SetsCreatedBy, HasFactory, SoftDeletes, SyncsWithAgenda;
+    use Auditable, BelongsToTenant, Concerns\HasAuditUserFields, Concerns\SetsCreatedBy, HasFactory, SoftDeletes, SyncsWithAgenda;
 
     protected $table = 'accounts_payable';
 
     protected $fillable = [
-        'tenant_id', 'created_by', 'supplier_id', 'category_id',
+        'tenant_id', 'created_by', 'updated_by', 'deleted_by',
+        'supplier_id', 'category_id',
         'chart_of_account_id', 'cost_center_id', 'work_order_id',
         'description', 'amount', 'amount_paid', 'due_date', 'paid_at',
         'penalty_amount', 'interest_amount', 'discount_amount',

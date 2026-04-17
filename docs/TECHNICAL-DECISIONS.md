@@ -285,3 +285,36 @@ Antes de incluir, **investigar o call-site**: se for inserção via `Model::crea
 
 ---
 
+### 14.6 Client Portal Hardening — estrutura pronta, lógica pendente (Wave 3 — SEC-015)
+
+**Decisão (2026-04-17):** a tabela `client_portal_users` recebeu, na migration `2026_04_17_200000_add_hardening_to_client_portal_users`, 8 colunas de hardening (lockout, 2FA, password history) e o model `ClientPortalUser` foi atualizado com os respectivos `$fillable`, `$casts` (`encrypted` para 2FA) e `$hidden`. **A lógica funcional de ativação não foi implementada nesta wave.**
+
+**O que está pronto (estrutura):**
+
+| Coluna | Tipo | Propósito |
+|---|---|---|
+| `failed_login_attempts` | `unsignedInteger` default 0 | contador de tentativas inválidas consecutivas |
+| `locked_until` | `timestamp` nullable | janela de lockout temporária |
+| `password_changed_at` | `timestamp` nullable | última troca de senha (para política de expiração) |
+| `password_history` | `json` nullable | últimas N senhas hashadas (para evitar reuso) |
+| `two_factor_enabled` | `boolean` default false | flag de 2FA ativo |
+| `two_factor_secret` | `text` nullable, `encrypted` cast | segredo TOTP (cifrado em repouso) |
+| `two_factor_recovery_codes` | `json` nullable, `encrypted` cast | códigos de recuperação (cifrados) |
+| `two_factor_confirmed_at` | `timestamp` nullable | confirmação efetiva do enrollment 2FA |
+
+`two_factor_secret`, `two_factor_recovery_codes` e `password_history` também entraram em `$hidden` para não vazar em respostas/serialização.
+
+**O que NÃO está implementado (lógica funcional):**
+
+- Middleware de throttle/lockout no login do portal (`POST /api/v1/portal/auth/login`).
+- Reset de `failed_login_attempts` no login bem-sucedido.
+- Fluxo de enrollment 2FA (gerar segredo, exibir QR, confirmar TOTP).
+- Validação de password reuse no fluxo `change-password`.
+- Política de expiração baseada em `password_changed_at`.
+
+**Risco aceito:** estrutura preparada mas sem ativação imediata. Implementação efetiva fica para sprint dedicada de portal security. Não há regressão funcional — colunas opcionais com defaults seguros (0 / null / false).
+
+**Critério para encerrar:** todos os 5 itens acima implementados, com testes Feature cobrindo lockout após N tentativas, fluxo 2FA round-trip e bloqueio de senha repetida.
+
+---
+

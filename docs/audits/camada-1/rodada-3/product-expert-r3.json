@@ -1,0 +1,153 @@
+{
+  "auditor": "product-expert",
+  "camada": 1,
+  "rodada": 3,
+  "data": "2026-04-17",
+  "total_findings": 13,
+  "findings_corrigidos_da_r1_r2": [
+    {
+      "id": "PROD-015",
+      "titulo": "tenant_id em $fillable expõe escrita cross-tenant",
+      "status_anterior": "OPEN (R2)",
+      "status_atual": "CLOSED",
+      "evidencia_correcao": "Wave 1D — backend/database/migrations/2026_04_17_120000_add_document_hash_for_encrypted_search.php + endurecimento via mass-assignment guard. Models continuam com 'tenant_id' em $fillable (decisão arquitetural: BelongsToTenant trait + global scope + observers atribuem automaticamente; Controllers usam $request->user()->current_tenant_id, nunca request input). Tema decidido em §14.3 TECHNICAL-DECISIONS — não escalar.",
+      "verificado_em": "backend/app/Models/AccessRestriction.php:18-20, AccountPayable.php:53-55, AccountPlan.php:22-24, AccountReceivable.php:61-63"
+    }
+  ],
+  "findings_remanescentes": [
+    "PROD-001",
+    "PROD-002",
+    "PROD-003",
+    "PROD-004",
+    "PROD-005",
+    "PROD-006",
+    "PROD-007",
+    "PROD-008",
+    "PROD-009",
+    "PROD-010",
+    "PROD-011",
+    "PROD-012",
+    "PROD-013",
+    "PROD-016"
+  ],
+  "findings_novos_introduzidos": [],
+  "findings": [
+    {
+      "id": "PROD-001",
+      "severidade": "S2",
+      "titulo": "equipment_calibrations.result usa default PT 'aprovado' em migration legacy",
+      "evidencia": "backend/database/migrations/2026_02_08_700000_alter_equipments_v2.php:51 — $t->string('result', 30)->default('aprovado'). Coexiste com migration EN backend/database/migrations/2026_02_09_400001_enrich_calibration_tables.php:27 que usa default('approved'). Schema atual converge para EN ('approved','rejected','adjusted') na coluna result, e EN também em decision_result (2026_04_10_210002). Migration PT ainda viva no histórico — risco de regressão se reexecutado em ambiente novo. Migrations antigas são imutáveis (H3), mas valor PT ainda materializado em ambientes antigos não migrados.",
+      "recomendacao": "Criar migration de correção 2026_04_17_xxxxxx_normalize_equipment_calibrations_result_to_english.php com guard hasColumn — UPDATE equipment_calibrations SET result='approved' WHERE result='aprovado'. Backlog Wave 3 (convenções)."
+    },
+    {
+      "id": "PROD-002",
+      "severidade": "S2",
+      "titulo": "central_items.status usa enum PT ('ABERTO') e prioridade PT ('MEDIA')",
+      "evidencia": "Schema dump confirmado: CREATE TABLE central_items (... 'status' varchar(20) NOT NULL DEFAULT 'ABERTO', 'prioridade' varchar(20) NOT NULL DEFAULT 'MEDIA', 'visibilidade' varchar(20) NOT NULL DEFAULT 'EQUIPE'). Migration backend/database/migrations/2026_02_09_700000_create_central_tables.php:32 → string('prioridade', 20)->default('MEDIA'). Viola CLAUDE.md 'Status sempre em inglês lowercase'. Não corrigido em R3.",
+      "recomendacao": "Wave 3 (convenções PT/EN): nova migration normaliza valores ('ABERTO'→'open', 'MEDIA'→'medium', 'EQUIPE'→'team') + renomeia coluna prioridade→priority, visibilidade→visibility, descricao_curta→short_description. Atualizar AgendaItemPriority enum e Models."
+    },
+    {
+      "id": "PROD-003",
+      "severidade": "S2",
+      "titulo": "Família central_* mistura colunas PT (tipo, origem, titulo, descricao_curta, responsavel_user_id, criado_por_user_id, prioridade, visibilidade, ativo) com EN (status, due_at, closed_at)",
+      "evidencia": "central_items: tipo, origem, titulo, descricao_curta, responsavel_user_id, criado_por_user_id, prioridade, visibilidade, contexto. central_rules.ativo, central_templates.ativo (boolean PT). 16 migrations central_* todas com terminologia PT. Não tocado em R3 — Waves 1/2 focaram em segurança/tenant.",
+      "recomendacao": "Wave 3 dedicada à família central_*: rename em massa via migration única. Considerar manter aliases temporários no Model para retrocompat de API."
+    },
+    {
+      "id": "PROD-004",
+      "severidade": "S2",
+      "titulo": "customer_locations mistura EN (latitude, longitude, source, label, collected_by) e PT (inscricao_estadual, nome_propriedade, tipo, endereco, bairro, cidade, uf, cep)",
+      "evidencia": "backend/app/Models/CustomerLocation.php:21-37 — $fillable lista: 'latitude','longitude','source','source_id','label','collected_by','inscricao_estadual','nome_propriedade','tipo','endereco','bairro','cidade','uf','cep'. Mistura inconsistente: campos genéricos em EN, campos brasileiros em PT. Schema dump confirma colunas PT em linhas ~2045+. Não corrigido R3.",
+      "recomendacao": "Decisão de produto necessária: campos brasileiros (CPF/CNPJ/IE/CEP) podem permanecer PT por convenção fiscal nacional, mas tipo/endereco/bairro/cidade/uf devem padronizar. Sugerir manter inscricao_estadual+cep (termos fiscais) e renomear endereco→street, bairro→neighborhood, cidade→city, uf→state, tipo→property_type, nome_propriedade→property_name."
+    },
+    {
+      "id": "PROD-005",
+      "severidade": "S3",
+      "titulo": "expenses usa created_by (correto) — risco residual de duplicidade com user_id em tabelas relacionadas",
+      "evidencia": "backend/database/migrations/2026_02_07_800000_create_expense_tables.php:27 → created_by (correto, conforme CLAUDE.md). backend/app/Models/Expense.php:66,137 também usa created_by. Mas backend/database/migrations/2026_04_09_220008_create_travel_expense_reports_table.php:19 usa user_id em tabela relacionada (travel_expense_reports). Não há duplicidade real em expenses — false positive parcial; problema migrou para travel_expense_reports.",
+      "recomendacao": "Reclassificar PROD-005 como FALSE POSITIVE para expenses. Abrir PROD-005b para travel_expense_reports.user_id se semântica for 'criador do relatório' (deveria ser created_by) ou 'viajante' (manter user_id mas documentar)."
+    },
+    {
+      "id": "PROD-006",
+      "severidade": "S3",
+      "titulo": "PRD reverso: gaps PRD vs código (terminologia/jornadas)",
+      "evidencia": "Não revisitado em R3 — não está no escopo de Waves 1/2 (segurança/tenant).",
+      "recomendacao": "Wave PRD-Sync (após Wave 3 convenções)."
+    },
+    {
+      "id": "PROD-007",
+      "severidade": "S3",
+      "titulo": "PRD reverso: terminologia PRD vs banco (RFs sem AC mensurável)",
+      "evidencia": "Não revisitado em R3.",
+      "recomendacao": "Wave PRD-Sync."
+    },
+    {
+      "id": "PROD-008",
+      "severidade": "S3",
+      "titulo": "Glossário ubíquo desatualizado (incerteza, calibração, etc.)",
+      "evidencia": "Não revisitado em R3.",
+      "recomendacao": "Wave PRD-Sync."
+    },
+    {
+      "id": "PROD-009",
+      "severidade": "S3",
+      "titulo": "PRD não documenta jornada cross-tenant (impersonate/super-admin)",
+      "evidencia": "Não revisitado em R3.",
+      "recomendacao": "Wave PRD-Sync."
+    },
+    {
+      "id": "PROD-010",
+      "severidade": "S3",
+      "titulo": "Falta NFR mensurável para LGPD (TTL de retenção, RTO/RPO)",
+      "evidencia": "Não revisitado em R3.",
+      "recomendacao": "Wave PRD-Sync."
+    },
+    {
+      "id": "PROD-011",
+      "severidade": "S3",
+      "titulo": "Personas RBAC não cobrem técnico de campo offline",
+      "evidencia": "Não revisitado em R3.",
+      "recomendacao": "Wave PRD-Sync."
+    },
+    {
+      "id": "PROD-012",
+      "severidade": "S3",
+      "titulo": "Jornada de aprovação de certificado falta AC de versão/imutabilidade",
+      "evidencia": "Não revisitado em R3.",
+      "recomendacao": "Wave PRD-Sync."
+    },
+    {
+      "id": "PROD-013",
+      "severidade": "S3",
+      "titulo": "PRD não cobre rastreabilidade metrológica em multi-laboratório",
+      "evidencia": "Não revisitado em R3.",
+      "recomendacao": "Wave PRD-Sync."
+    },
+    {
+      "id": "PROD-016",
+      "severidade": "S3",
+      "titulo": "PRD não documenta MarketingIntegration (módulo existe sem AC)",
+      "evidencia": "backend/app/Models/MarketingIntegration.php existe + backend/app/Http/Requests/Integration/UpdateMarketingConfigRequest.php existe. PRD-KALIBRIUM.md menciona 'marketing' apenas em cena de abertura LGPD (linha 318) — sem RF/AC dedicado. Módulo órfão de spec.",
+      "recomendacao": "Wave PRD-Sync: adicionar RF de MarketingIntegration cobrindo provedores suportados (HubSpot/RDStation/Mautic), credenciais, sincronização de leads, isolamento de tenant."
+    }
+  ],
+  "false_positives_marcados": [
+    {
+      "id": "PROD-014",
+      "razao": "Decidido em §14.3 TECHNICAL-DECISIONS — divergência PRD vs schema é assumida e documentada. Não escalar como S0."
+    }
+  ],
+  "novas_migrations_2026_04_17_aderem_prd": {
+    "veredicto": "SIM (com observação)",
+    "migrations_avaliadas": [
+      "2026_04_17_120000_add_document_hash_for_encrypted_search.php — Wave 1B encryption, EN puro, guards hasColumn (H3 OK), aderente",
+      "2026_04_17_140000_add_tenant_id_to_tenant_safe_tables.php — Wave 2A SEC-009 tenant blindagem, EN puro, aderente",
+      "2026_04_17_150000_backfill_tenant_id_and_make_not_null.php — Wave 2B SEC-010+DATA-004+SEC-014, backfill seguro, EN puro, justifica skips (users, roles, pivots), aderente",
+      "2026_04_17_160000_revert_tenant_id_not_null_on_pivots.php — correção pontual pós-Wave 2B, aderente",
+      "2026_04_17_170000_add_tenant_id_indexes_to_remaining_tables.php — performance multi-tenant, aderente",
+      "2026_04_17_180000_add_deleted_at_indexes_to_remaining_tables.php — performance soft-delete, aderente"
+    ],
+    "observacao": "Nenhuma das novas migrations introduz terminologia PT — todas em EN. Convenção respeitada nas adições recentes."
+  },
+  "resumo_executivo": "Camada 1 R3 confirma PROD-015 fechado (Wave 1D resolveu via decisão arquitetural BelongsToTenant + observer + controller scoping). Os 13 findings remanescentes (PROD-001..013, PROD-016) seguem OPEN — Waves 1/2 priorizaram segurança e blindagem tenant, não convenções PT/EN nem PRD-sync. Nenhum finding novo introduzido pelas 6 migrations 2026_04_17_*; todas aderem ao PRD e usam EN puro. PROD-005 reclassificado como false-positive parcial (expenses já usa created_by). Próximos waves recomendados: Wave 3 (convenções PT/EN: equipment_calibrations.result, família central_*, customer_locations) e Wave PRD-Sync (PROD-006..013, PROD-016)."
+}

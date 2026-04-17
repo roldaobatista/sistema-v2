@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (generated via artisan migrate)
--- Generated: 2026-04-17 19:59:07
+-- Generated: 2026-04-17 20:16:37
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -96,66 +96,6 @@ CREATE TABLE "account_receivable_installments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 , "psp_external_id" varchar, "psp_status" varchar, "psp_boleto_url" text, "psp_boleto_barcode" varchar, "psp_pix_qr_code" text, "psp_pix_copy_paste" text);
-
-CREATE TABLE "accounts_payable" (
- "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "tenant_id" integer NOT NULL,
- "created_by" integer DEFAULT NULL,
- "supplier" varchar(255) DEFAULT NULL,
- "category" varchar(50) DEFAULT NULL,
- "description" varchar(255) NOT NULL,
- "amount" numeric NOT NULL,
- "amount_paid" numeric NOT NULL DEFAULT '0.00',
- "due_date" date NOT NULL,
- "paid_at" date DEFAULT NULL,
- "status" varchar(20) NOT NULL DEFAULT 'pending',
- "payment_method" varchar(30) DEFAULT NULL,
- "notes" text,
- "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL,
- "deleted_at" datetime NULL DEFAULT NULL,
- "category_id" integer DEFAULT NULL,
- "supplier_id" integer DEFAULT NULL,
- "chart_of_account_id" integer DEFAULT NULL,
- "cost_center_id" integer DEFAULT NULL,
- "penalty_amount" numeric NOT NULL DEFAULT '0.00',
- "interest_amount" numeric NOT NULL DEFAULT '0.00',
- "discount_amount" numeric NOT NULL DEFAULT '0.00',
- "work_order_id" integer DEFAULT NULL
-);
-
-CREATE TABLE "accounts_receivable" (
- "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "tenant_id" integer NOT NULL,
- "customer_id" integer NOT NULL,
- "work_order_id" integer DEFAULT NULL,
- "quote_id" integer DEFAULT NULL,
- "origin_type" varchar(30) DEFAULT NULL,
- "invoice_id" integer DEFAULT NULL,
- "created_by" integer DEFAULT NULL,
- "description" varchar(255) NOT NULL,
- "amount" numeric NOT NULL,
- "amount_paid" numeric NOT NULL DEFAULT '0.00',
- "due_date" date NOT NULL,
- "paid_at" date DEFAULT NULL,
- "status" varchar(20) NOT NULL DEFAULT 'pending',
- "payment_method" varchar(30) DEFAULT NULL,
- "notes" text,
- "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL,
- "deleted_at" datetime NULL DEFAULT NULL,
- "chart_of_account_id" integer DEFAULT NULL,
- "collection_rule_id" integer DEFAULT NULL,
- "last_collection_action_at" datetime NULL DEFAULT NULL,
- "days_overdue" int NOT NULL DEFAULT '0',
- "nosso_numero" varchar(30) DEFAULT NULL,
- "numero_documento" varchar(30) DEFAULT NULL,
- "penalty_amount" numeric NOT NULL DEFAULT '0.00',
- "interest_amount" numeric NOT NULL DEFAULT '0.00',
- "discount_amount" numeric NOT NULL DEFAULT '0.00',
- "cost_center_id" integer DEFAULT NULL,
- "reference_id" integer DEFAULT NULL
-);
 
 CREATE TABLE "admissions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -859,7 +799,7 @@ CREATE TABLE "client_portal_users" (
  "remember_token" varchar(100) DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
-);
+, "failed_login_attempts" integer not null default '0', "locked_until" datetime, "password_changed_at" datetime, "password_history" text, "two_factor_enabled" tinyint(1) not null default '0', "two_factor_secret" text, "two_factor_recovery_codes" text, "two_factor_confirmed_at" datetime);
 
 CREATE UNIQUE INDEX "client_portal_users_tenant_id_email_unique" ON "client_portal_users" ("tenant_id","email");
 
@@ -7359,8 +7299,6 @@ CREATE INDEX "account_plans_tenant_id_idx" on "account_plans" ("tenant_id");
 
 CREATE INDEX "account_receivable_installments_tenant_id_idx" on "account_receivable_installments" ("tenant_id");
 
-CREATE INDEX "accounts_receivable_tenant_id_idx" on "accounts_receivable" ("tenant_id");
-
 CREATE INDEX "admissions_tenant_id_idx" on "admissions" ("tenant_id");
 
 CREATE INDEX "analytics_datasets_tenant_id_idx" on "analytics_datasets" ("tenant_id");
@@ -7935,10 +7873,6 @@ CREATE INDEX "account_payable_categories_deleted_at_idx" on "account_payable_cat
 
 CREATE INDEX "account_receivable_categories_deleted_at_idx" on "account_receivable_categories" ("deleted_at");
 
-CREATE INDEX "accounts_payable_deleted_at_idx" on "accounts_payable" ("deleted_at");
-
-CREATE INDEX "accounts_receivable_deleted_at_idx" on "accounts_receivable" ("deleted_at");
-
 CREATE INDEX "asset_records_deleted_at_idx" on "asset_records" ("deleted_at");
 
 CREATE INDEX "auto_assignment_rules_deleted_at_idx" on "auto_assignment_rules" ("deleted_at");
@@ -8157,8 +8091,6 @@ CREATE INDEX "work_order_templates_deleted_at_idx" on "work_order_templates" ("d
 
 CREATE INDEX "work_orders_deleted_at_idx" on "work_orders" ("deleted_at");
 
-CREATE INDEX "accounts_payable_tenant_id_idx" on "accounts_payable" ("tenant_id");
-
 CREATE INDEX "audit_logs_tenant_id_idx" on "audit_logs" ("tenant_id");
 
 CREATE INDEX "calibration_standard_weight_tenant_id_idx" on "calibration_standard_weight" ("tenant_id");
@@ -8260,6 +8192,18 @@ CREATE INDEX "work_order_status_history_tenant_id_idx" on "work_order_status_his
 CREATE INDEX "work_order_technicians_tenant_id_idx" on "work_order_technicians" ("tenant_id");
 
 CREATE INDEX "work_schedules_tenant_id_idx" on "work_schedules" ("tenant_id");
+
+CREATE TABLE "accounts_payable" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "created_by" integer default (NULL), "supplier" varchar(255) default (NULL), "category" varchar(50) default (NULL), "description" varchar(255) not null, "amount" numeric not null, "amount_paid" numeric not null default ('0.00'), "due_date" date not null, "paid_at" date default (NULL), "status" varchar(20) not null default ('pending'), "payment_method" varchar(30) default (NULL), "notes" text, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL), "category_id" integer default (NULL), "supplier_id" integer default (NULL), "chart_of_account_id" integer default (NULL), "cost_center_id" integer default (NULL), "penalty_amount" numeric not null default ('0.00'), "interest_amount" numeric not null default ('0.00'), "discount_amount" numeric not null default ('0.00'), "work_order_id" integer default (NULL), "updated_by" integer, "deleted_by" integer, foreign key("updated_by") references "users"("id") on delete set null, foreign key("deleted_by") references "users"("id") on delete set null);
+
+CREATE INDEX "accounts_payable_deleted_at_idx" on "accounts_payable" ("deleted_at");
+
+CREATE INDEX "accounts_payable_tenant_id_idx" on "accounts_payable" ("tenant_id");
+
+CREATE TABLE "accounts_receivable" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "customer_id" integer not null, "work_order_id" integer default (NULL), "quote_id" integer default (NULL), "origin_type" varchar(30) default (NULL), "invoice_id" integer default (NULL), "created_by" integer default (NULL), "description" varchar(255) not null, "amount" numeric not null, "amount_paid" numeric not null default ('0.00'), "due_date" date not null, "paid_at" date default (NULL), "status" varchar(20) not null default ('pending'), "payment_method" varchar(30) default (NULL), "notes" text, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL), "chart_of_account_id" integer default (NULL), "collection_rule_id" integer default (NULL), "last_collection_action_at" datetime default (NULL), "days_overdue" int not null default ('0'), "nosso_numero" varchar(30) default (NULL), "numero_documento" varchar(30) default (NULL), "penalty_amount" numeric not null default ('0.00'), "interest_amount" numeric not null default ('0.00'), "discount_amount" numeric not null default ('0.00'), "cost_center_id" integer default (NULL), "reference_id" integer default (NULL), "updated_by" integer, "deleted_by" integer, foreign key("updated_by") references "users"("id") on delete set null, foreign key("deleted_by") references "users"("id") on delete set null);
+
+CREATE INDEX "accounts_receivable_deleted_at_idx" on "accounts_receivable" ("deleted_at");
+
+CREATE INDEX "accounts_receivable_tenant_id_idx" on "accounts_receivable" ("tenant_id");
 
 -- Migration records
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (1, '0001_01_01_000000_create_users_table', 1);
@@ -8719,3 +8663,5 @@ INSERT INTO "migrations" ("id", "migration", "batch") VALUES (454, '2026_04_17_1
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (455, '2026_04_17_170000_add_tenant_id_indexes_to_remaining_tables', 11);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (456, '2026_04_17_180000_add_deleted_at_indexes_to_remaining_tables', 12);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (457, '2026_04_17_190000_add_tenant_id_indexes_wave2e', 13);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (458, '2026_04_17_200000_add_hardening_to_client_portal_users', 14);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (459, '2026_04_17_210000_add_updated_by_deleted_by_to_financial_tables', 14);
