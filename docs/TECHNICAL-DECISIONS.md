@@ -169,3 +169,46 @@ Registrar aqui escolhas que foram consideradas e descartadas, com motivo — evi
 
 **Última atualização:** 2026-04-10
 **Mantido por:** time de engenharia (qualquer dev atualiza ao tomar decisão arquitetural nova).
+
+---
+
+## 14. Decisões da Auditoria 2026-04-17 (Camada 1 — Schema)
+
+### 14.1 Padrão arquitetural multi-tenant (S0-1 / DATA-015)
+
+**Decisão:** Padrão único, sem ambiguidade.
+- **Leitura:** sempre via trait `BelongsToTenant` (global scope automático). Proibido `where('tenant_id', ...)` manual.
+- **Escrita:** sempre via observer `creating` aplicado pelo trait `BelongsToTenant`, que injeta `tenant_id = $request->user()->current_tenant_id`. Proibido atribuir `tenant_id` manualmente em controllers/services.
+- **Consequência:** os 7 models que hoje fazem acesso manual ao `current_tenant_id` (`AgendaItem`, `AuditLog`, `Equipment` e 4 outros) DEVEM ser refatorados para o padrão único.
+- **Exceção:** apenas para queries de plataforma (super-admin, cross-tenant analytics) — exige `withoutGlobalScope(BelongsToTenant::class)` com justificativa explícita por escrito no PR.
+
+### 14.2 LGPD — Base legal e medidas técnicas (S0-2 / SEC-008)
+
+**Decisão:** Operar sob base legal **"execução de contrato"** (LGPD art.7 V) — dispensa consentimento explícito por ser cliente B2B contratado.
+
+**Medidas técnicas obrigatórias (paralelas à correção de S1/S2):**
+- `encrypted` cast em colunas com PII sensível (CPF/CNPJ → DATA-009 / SEC-007)
+- `encrypted` cast em colunas com secrets (api_key, api_secret, client_secret, webhook secret → SEC-001..006)
+- Hash em backup_codes 2FA (SEC-020)
+- Backfill `tenant_id` NOT NULL em `audit_logs` (SEC-014, DATA-004)
+- Logs de acesso a PII (futuro — registrar em changelog se prioritário)
+
+**O que NÃO fazer agora (declarado como dívida futura):**
+- Tabela `lgpd_consents` (não necessária sob art.7 V)
+- Endpoint `/api/lgpd/forget` (anonimização) — implementar quando primeiro pedido de "direito ao esquecimento" chegar
+- Política formal de retenção (data_retention_policies) — operar com retenção indefinida até decisão de produto
+
+**Risco aceito:** se um cliente solicitar formalmente direito ao esquecimento (LGPD art.18), terá que ser tratado manualmente até endpoint existir.
+
+### 14.3 PRD vs schema — domain discovery em paralelo (S0-3 / PROD-014)
+
+**Decisão:** PRD evolui em paralelo, NÃO bloqueia camadas técnicas.
+- A estabilização bottom-up segue camadas 1-10 com base no código atual (450 tabelas).
+- `product-expert` mantém auditoria de aderência por camada com base nos módulos JÁ documentados no PRD.
+- Para módulos não-documentados (gamification, telescope, on_call, jornadas, sensor_readings, scale_readings, capa, rr_studies, surveys, tv_dashboard), o `product-expert` reporta como S3 (gap reverso), nunca como bloqueador.
+- Atualização do PRD para cobrir esses módulos é **trabalho separado** (futuro, sem prazo definido nesta sprint).
+
+**Consequência operacional:** o `product-expert` NÃO bloqueia camadas porque PRD está incompleto. Apenas reporta gap.
+
+---
+

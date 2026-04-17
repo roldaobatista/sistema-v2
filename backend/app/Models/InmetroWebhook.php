@@ -25,8 +25,11 @@ class InmetroWebhook extends Model
         return [
             'is_active' => 'boolean',
             'last_triggered_at' => 'datetime',
+            'secret' => 'encrypted',
         ];
     }
+
+    protected $hidden = ['secret'];
 
     public function scopeActive($query)
     {

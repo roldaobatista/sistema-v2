@@ -258,7 +258,7 @@ class ImportAuvoQuotes extends Command
             $existing = null;
             if ($doc) {
                 $existing = Customer::where('tenant_id', $this->tenantId)
-                    ->where('document', $doc)
+                    ->where('document_hash', Customer::hashSearchable('document', $doc))
                     ->first();
             }
             if (! $existing) {

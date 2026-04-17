@@ -62,9 +62,24 @@ class StoreCustomerRequest extends FormRequest
             'document' => [
                 'nullable', 'string', 'max:20',
                 new CpfCnpj,
-                Rule::unique('customers', 'document')
-                    ->where('tenant_id', $tenantId)
-                    ->whereNull('deleted_at'),
+                // `document` é encrypted (cast `encrypted`) — busca por igualdade
+                // direta não funciona. Wave 1B: validar unicidade via `document_hash`
+                // (HMAC-SHA256 determinístico) computado a partir do raw.
+                function (string $attribute, mixed $value, \Closure $fail) use ($tenantId): void {
+                    if (! is_string($value) || $value === '') {
+                        return;
+                    }
+                    $hash = Customer::hashSearchable('document', $value);
+                    $exists = Customer::query()
+                        ->withoutGlobalScope('tenant')
+                        ->where('tenant_id', $tenantId)
+                        ->whereNull('deleted_at')
+                        ->where('document_hash', $hash)
+                        ->exists();
+                    if ($exists) {
+                        $fail('já existe um cliente com este documento.');
+                    }
+                },
             ],
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',

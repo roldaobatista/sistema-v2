@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\HasEncryptedSearchableField;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -40,13 +41,22 @@ use Spatie\Permission\Traits\HasRoles;
  */
 class User extends Authenticatable
 {
-    use Auditable, HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+    use Auditable, HasApiTokens, HasEncryptedSearchableField, HasFactory, Notifiable, SoftDeletes;
     use HasRoles {
         hasPermissionTo as spatieHasPermissionTo;
         assignRole as spatieAssignRole;
     }
 
     protected string $guard_name = 'web';
+
+    /**
+     * Campos encrypted que precisam de coluna *_hash para busca determinística.
+     *
+     * @var array<string, string>
+     */
+    protected array $encryptedSearchableFields = [
+        'cpf' => 'cpf_hash',
+    ];
 
     protected $fillable = [
         'name',
@@ -70,6 +80,7 @@ class User extends Authenticatable
         // Labor compliance fields
         'pis_number',
         'cpf',
+        'cpf_hash',
         'ctps_number',
         'ctps_series',
         'admission_date',
@@ -121,6 +132,7 @@ class User extends Authenticatable
             'birth_date' => 'date',
             'salary' => 'decimal:2',
             'dependents_count' => 'integer',
+            'cpf' => 'encrypted',
         ];
     }
 

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\HasEncryptedSearchableField;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -13,10 +14,19 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Supplier extends Model
 {
-    use Auditable, BelongsToTenant, \Illuminate\Database\Eloquent\Factories\HasFactory, SoftDeletes;
+    use Auditable, BelongsToTenant, HasEncryptedSearchableField, \Illuminate\Database\Eloquent\Factories\HasFactory, SoftDeletes;
+
+    /**
+     * Campos encrypted que precisam de coluna *_hash para busca determinística.
+     *
+     * @var array<string, string>
+     */
+    protected array $encryptedSearchableFields = [
+        'document' => 'document_hash',
+    ];
 
     protected $fillable = [
-        'tenant_id', 'type', 'name', 'document', 'trade_name',
+        'tenant_id', 'type', 'name', 'document', 'document_hash', 'trade_name',
         'email', 'phone', 'phone2',
         'address_zip', 'address_street', 'address_number',
         'address_complement', 'address_neighborhood',
@@ -26,7 +36,10 @@ class Supplier extends Model
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return [
+            'is_active' => 'boolean',
+            'document' => 'encrypted',
+        ];
     }
 
     public function accountsPayable(): HasMany

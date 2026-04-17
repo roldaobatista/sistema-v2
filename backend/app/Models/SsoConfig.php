@@ -26,6 +26,7 @@ class SsoConfig extends Model
         return [
             'is_enabled' => 'boolean',
             'auto_create_users' => 'boolean',
+            'client_secret' => 'encrypted',
         ];
 
     }

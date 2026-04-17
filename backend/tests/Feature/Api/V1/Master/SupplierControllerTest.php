@@ -79,7 +79,10 @@ class SupplierControllerTest extends TestCase
             'document' => '12.345.678/0001-90',
         ]);
 
-        $response = $this->getJson('/api/v1/suppliers?search=12.345');
+        // Wave 1B: `document` é encrypted (cast `encrypted`). Busca parcial por
+        // documento (LIKE) é impossível com encryption-at-rest. A busca exata
+        // por CPF/CNPJ completo é resolvida via `document_hash` (HMAC-SHA256).
+        $response = $this->getJson('/api/v1/suppliers?search=12345678000190');
 
         $response->assertOk();
         $names = collect($response->json('data'))->pluck('name');

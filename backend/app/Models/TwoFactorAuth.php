@@ -29,11 +29,14 @@ class TwoFactorAuth extends Model
         return [
             'is_enabled' => 'boolean',
             'verified_at' => 'datetime',
+            'secret' => 'encrypted',
+            // backup_codes stored as array of bcrypt hashes (single-use, validated via Hash::check)
+            'backup_codes' => 'array',
         ];
 
     }
 
-    protected $hidden = ['secret'];
+    protected $hidden = ['secret', 'backup_codes'];
 
     public function user(): BelongsTo
     {

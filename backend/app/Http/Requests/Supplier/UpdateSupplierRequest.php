@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Supplier;
 
+use App\Models\Supplier;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateSupplierRequest extends FormRequest
 {
@@ -50,10 +50,23 @@ class UpdateSupplierRequest extends FormRequest
             'name' => 'sometimes|string|max:255',
             'document' => [
                 'nullable', 'string', 'max:20',
-                Rule::unique('suppliers', 'document')
-                    ->where('tenant_id', $supplier->tenant_id)
-                    ->whereNull('deleted_at')
-                    ->ignore($supplier->id),
+                // `document` é encrypted (cast `encrypted`) — Wave 1B usa `document_hash`.
+                function (string $attribute, mixed $value, \Closure $fail) use ($supplier): void {
+                    if (! is_string($value) || $value === '') {
+                        return;
+                    }
+                    $hash = Supplier::hashSearchable('document', $value);
+                    $exists = Supplier::query()
+                        ->withoutGlobalScope('tenant')
+                        ->where('tenant_id', $supplier->tenant_id)
+                        ->whereNull('deleted_at')
+                        ->where('document_hash', $hash)
+                        ->where('id', '!=', $supplier->id)
+                        ->exists();
+                    if ($exists) {
+                        $fail('já existe um fornecedor com este documento.');
+                    }
+                },
             ],
             'trade_name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',

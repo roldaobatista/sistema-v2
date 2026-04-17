@@ -3,6 +3,7 @@
 namespace Tests\Feature\Flow400;
 
 use App\Models\Branch;
+use App\Models\Customer;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
@@ -71,12 +72,13 @@ class Flow012ClientePfTest extends TestCase
         $id = $res->json('data.id');
         $this->assertArrayHasKey('id', $res->json('data'));
 
-        // Fluxo completo: persistência no banco
+        // Fluxo completo: persistência no banco.
+        // Wave 1B: `customers.document` é encrypted — comparar via `document_hash`.
         $this->assertDatabaseHas('customers', [
             'id' => $id,
             'name' => 'Maria Silva Santos',
             'type' => 'PF',
-            'document' => '529.982.247-25',
+            'document_hash' => Customer::hashSearchable('document', '529.982.247-25'),
         ]);
     }
 }

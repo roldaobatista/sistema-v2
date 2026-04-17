@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\HasEncryptedSearchableField;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -83,10 +84,19 @@ use Illuminate\Support\Carbon;
  */
 class Customer extends Model
 {
-    use Auditable, BelongsToTenant, HasFactory, Notifiable, SoftDeletes;
+    use Auditable, BelongsToTenant, HasEncryptedSearchableField, HasFactory, Notifiable, SoftDeletes;
+
+    /**
+     * Campos encrypted que precisam de coluna *_hash para busca determinística.
+     *
+     * @var array<string, string>
+     */
+    protected array $encryptedSearchableFields = [
+        'document' => 'document_hash',
+    ];
 
     protected $fillable = [
-        'tenant_id', 'type', 'name', 'trade_name', 'document', 'asaas_id', 'email',
+        'tenant_id', 'type', 'name', 'trade_name', 'document', 'document_hash', 'asaas_id', 'email',
         'phone', 'phone2', 'notes', 'is_active',
         'address_zip', 'address_street', 'address_number',
         'address_complement', 'address_neighborhood',
@@ -170,6 +180,7 @@ class Customer extends Model
             'enrichment_data' => 'array',
             'latitude' => 'float',
             'longitude' => 'float',
+            'document' => 'encrypted',
         ];
     }
 

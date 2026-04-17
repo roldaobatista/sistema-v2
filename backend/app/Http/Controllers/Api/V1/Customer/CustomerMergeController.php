@@ -159,16 +159,17 @@ class CustomerMergeController extends Controller
         $duplicates = [];
 
         if ($type === 'document') {
-            $normalizedDoc = "REPLACE(REPLACE(REPLACE(REPLACE(document, '.', ''), '/', ''), '-', ''), ' ', '')";
+            // `document` é encrypted (cast `encrypted`) — agrupar por `document_hash`
+            // (HMAC-SHA256 determinístico) para detectar duplicatas reais.
             $duplicates = Customer::select(
-                DB::raw("{$normalizedDoc} as document_normalized"),
+                DB::raw('document_hash as document_normalized'),
                 DB::raw('count(*) as count'),
                 DB::raw("{$concatExpr} as ids")
             )
                 ->where('tenant_id', $this->tenantId())
-                ->whereNotNull('document')
-                ->where('document', '!=', '')
-                ->groupBy(DB::raw($normalizedDoc))
+                ->whereNotNull('document_hash')
+                ->where('document_hash', '!=', '')
+                ->groupBy('document_hash')
                 ->having('count', '>', 1)
                 ->limit(20)
                 ->get();

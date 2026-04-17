@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Supplier;
 
+use App\Models\Supplier;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreSupplierRequest extends FormRequest
 {
@@ -49,9 +49,23 @@ class StoreSupplierRequest extends FormRequest
             'name' => 'required|string|max:255',
             'document' => [
                 'nullable', 'string', 'max:20',
-                Rule::unique('suppliers', 'document')
-                    ->where('tenant_id', $tenantId)
-                    ->whereNull('deleted_at'),
+                // `document` é encrypted (cast `encrypted`) — Wave 1B usa `document_hash`
+                // (HMAC-SHA256 determinístico) para validar unicidade.
+                function (string $attribute, mixed $value, \Closure $fail) use ($tenantId): void {
+                    if (! is_string($value) || $value === '') {
+                        return;
+                    }
+                    $hash = Supplier::hashSearchable('document', $value);
+                    $exists = Supplier::query()
+                        ->withoutGlobalScope('tenant')
+                        ->where('tenant_id', $tenantId)
+                        ->whereNull('deleted_at')
+                        ->where('document_hash', $hash)
+                        ->exists();
+                    if ($exists) {
+                        $fail('já existe um fornecedor com este documento.');
+                    }
+                },
             ],
             'trade_name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
