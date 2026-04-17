@@ -17,6 +17,42 @@ class MaterialRequest extends Model
 {
     use BelongsToTenant, HasFactory, SoftDeletes;
 
+    public const STATUS_PENDING = 'pending';
+
+    public const STATUS_APPROVED = 'approved';
+
+    public const STATUS_PARTIALLY_FULFILLED = 'partially_fulfilled';
+
+    public const STATUS_FULFILLED = 'fulfilled';
+
+    public const STATUS_REJECTED = 'rejected';
+
+    public const STATUS_CANCELLED = 'cancelled';
+
+    public const STATUSES = [
+        self::STATUS_PENDING => 'Pending',
+        self::STATUS_APPROVED => 'Approved',
+        self::STATUS_PARTIALLY_FULFILLED => 'Partially fulfilled',
+        self::STATUS_FULFILLED => 'Fulfilled',
+        self::STATUS_REJECTED => 'Rejected',
+        self::STATUS_CANCELLED => 'Cancelled',
+    ];
+
+    public const PRIORITY_LOW = 'low';
+
+    public const PRIORITY_NORMAL = 'normal';
+
+    public const PRIORITY_HIGH = 'high';
+
+    public const PRIORITY_URGENT = 'urgent';
+
+    public const PRIORITIES = [
+        self::PRIORITY_LOW => 'Low',
+        self::PRIORITY_NORMAL => 'Normal',
+        self::PRIORITY_HIGH => 'High',
+        self::PRIORITY_URGENT => 'Urgent',
+    ];
+
     protected $fillable = [
         'tenant_id', 'reference', 'requester_id', 'work_order_id', 'warehouse_id',
         'status', 'priority', 'justification', 'rejection_reason', 'approved_by', 'approved_at',

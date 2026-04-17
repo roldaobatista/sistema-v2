@@ -111,10 +111,16 @@ class AgendaItemHistoryAndCommentRelationTest extends TestCase
     public function test_history_respeita_belongs_to_tenant_scope(): void
     {
         $outroTenant = Tenant::factory()->create();
+        $outroUser = User::factory()->create([
+            'tenant_id' => $outroTenant->id,
+            'current_tenant_id' => $outroTenant->id,
+        ]);
         $outroItem = AgendaItem::withoutGlobalScopes()->create([
             'tenant_id' => $outroTenant->id,
             'tipo' => 'TASK',
             'titulo' => 'Item de outro tenant',
+            'responsavel_user_id' => $outroUser->id,
+            'criado_por_user_id' => $outroUser->id,
             'status' => 'ABERTO',
             'prioridade' => 'MEDIA',
             'origem' => 'MANUAL',
@@ -193,10 +199,16 @@ class AgendaItemHistoryAndCommentRelationTest extends TestCase
     public function test_comment_respeita_belongs_to_tenant_scope(): void
     {
         $outroTenant = Tenant::factory()->create();
+        $outroUser = User::factory()->create([
+            'tenant_id' => $outroTenant->id,
+            'current_tenant_id' => $outroTenant->id,
+        ]);
         $outroItem = AgendaItem::withoutGlobalScopes()->create([
             'tenant_id' => $outroTenant->id,
             'tipo' => 'TASK',
             'titulo' => 'Item de outro tenant',
+            'responsavel_user_id' => $outroUser->id,
+            'criado_por_user_id' => $outroUser->id,
             'status' => 'ABERTO',
             'prioridade' => 'MEDIA',
             'origem' => 'MANUAL',
@@ -206,12 +218,14 @@ class AgendaItemHistoryAndCommentRelationTest extends TestCase
         AgendaItemComment::withoutGlobalScopes()->create([
             'tenant_id' => $outroTenant->id,
             'agenda_item_id' => $outroItem->id,
+            'user_id' => $outroUser->id,
             'body' => 'Comentario de outro tenant',
         ]);
 
         AgendaItemComment::create([
             'tenant_id' => $this->tenant->id,
             'agenda_item_id' => $this->item->id,
+            'user_id' => $this->user->id,
             'body' => 'Comentario do meu tenant',
         ]);
 

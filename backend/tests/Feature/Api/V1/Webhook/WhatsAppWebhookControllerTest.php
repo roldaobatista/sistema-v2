@@ -105,7 +105,7 @@ class WhatsAppWebhookControllerTest extends TestCase
             'customer_id' => $this->customer->id,
             'channel' => 'whatsapp',
             'direction' => 'inbound',
-            'status' => 'received',
+            'status' => CrmMessage::STATUS_DELIVERED,
             'body' => 'Olá, preciso de suporte!',
             'from_address' => '5511999887766',
             'external_id' => 'MSG_EXT_001',

@@ -37,6 +37,7 @@ Thumbs.db
 /scripts/debug_*.php
 *.sql.gz
 *.sql
+!/database/schema/sqlite-schema.sql
 /storage/framework/sessions/*
 !/storage/framework/sessions/.gitkeep
 /storage/framework/cache/data/*

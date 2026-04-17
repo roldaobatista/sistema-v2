@@ -38,6 +38,7 @@ class PaymentWebhookControllerTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'payable_type' => AccountReceivable::class,
             'payable_id' => 1,
+            'received_by' => $this->user->id,
             'amount' => 150.00,
             'payment_method' => 'pix',
             'payment_date' => now(),
@@ -100,6 +101,37 @@ class PaymentWebhookControllerTest extends TestCase
         ]);
 
         $response->assertStatus(404);
+    }
+
+    public function test_webhook_creates_missing_payment_with_receivable_creator_as_receiver(): void
+    {
+        $receivable = AccountReceivable::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'created_by' => $this->user->id,
+            'amount' => 275.50,
+        ]);
+
+        $response = $this->postJson('/api/v1/webhooks/payment', [
+            'event' => 'PAYMENT_CONFIRMED',
+            'payment' => [
+                'id' => 'PAY-AUTO-001',
+                'status' => 'CONFIRMED',
+                'value' => 275.50,
+                'billingType' => 'PIX',
+                'externalReference' => "AccountReceivable:{$receivable->id}",
+            ],
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('data.status', 'confirmed');
+
+        $this->assertDatabaseHas('payments', [
+            'external_id' => 'PAY-AUTO-001',
+            'payable_type' => AccountReceivable::class,
+            'payable_id' => $receivable->id,
+            'received_by' => $this->user->id,
+            'status' => 'confirmed',
+        ]);
     }
 
     public function test_webhook_idempotency_already_confirmed(): void

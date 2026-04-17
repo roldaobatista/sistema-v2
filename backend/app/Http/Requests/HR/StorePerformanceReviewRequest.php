@@ -52,7 +52,7 @@ class StorePerformanceReviewRequest extends FormRequest
             'cycle' => 'required_without_all:period,scores|string',
             'deadline' => 'nullable|date',
             'year' => 'required_without_all:period,scores|integer',
-            'type' => 'required_without_all:period,scores|in:180,360,manager,peer,self',
+            'type' => 'required_without_all:period,scores|in:360,manager,peer,self',
             'status' => 'nullable|string',
         ];
     }

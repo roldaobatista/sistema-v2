@@ -49,6 +49,10 @@ foreach ($migrations as $m) {
 }
 
 $schemaPath = __DIR__.'/database/schema/sqlite-schema.sql';
+$schemaDir = dirname($schemaPath);
+if (! is_dir($schemaDir)) {
+    mkdir($schemaDir, 0775, true);
+}
 file_put_contents($schemaPath, $output);
 
 // Verify: try loading into in-memory SQLite

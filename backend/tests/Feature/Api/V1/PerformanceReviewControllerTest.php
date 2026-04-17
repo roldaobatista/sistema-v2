@@ -54,7 +54,7 @@ class PerformanceReviewControllerTest extends TestCase
             'title' => 'Avaliação Q1',
             'cycle' => 'Q1',
             'year' => 2026,
-            'type' => 'annual',
+            'type' => 'manager',
             'status' => 'draft',
         ]);
     }
@@ -95,7 +95,7 @@ class PerformanceReviewControllerTest extends TestCase
             'title' => 'Foreign',
             'cycle' => 'Q1',
             'year' => 2026,
-            'type' => 'annual',
+            'type' => 'manager',
             'status' => 'draft',
         ]);
 
@@ -115,9 +115,62 @@ class PerformanceReviewControllerTest extends TestCase
             'title' => 'Cross-tenant',
             'cycle' => 'Q2',
             'year' => 2026,
+            'type' => 'manager',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['user_id']);
+    }
+
+    public function test_store_review_accepts_valid_review_type(): void
+    {
+        $response = $this->postJson('/api/v1/hr/performance-reviews', [
+            'user_id' => $this->user->id,
+            'reviewer_id' => $this->reviewer->id,
+            'title' => 'Manager review',
+            'cycle' => 'Q2',
+            'year' => 2026,
+            'type' => 'manager',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.type', 'manager');
+
+        $this->assertDatabaseHas('performance_reviews', [
+            'tenant_id' => $this->tenant->id,
+            'user_id' => $this->user->id,
+            'reviewer_id' => $this->reviewer->id,
+            'type' => 'manager',
+        ]);
+    }
+
+    public function test_store_review_rejects_annual_as_review_type(): void
+    {
+        $response = $this->postJson('/api/v1/hr/performance-reviews', [
+            'user_id' => $this->user->id,
+            'reviewer_id' => $this->reviewer->id,
+            'title' => 'Annual cycle review',
+            'cycle' => 'annual',
+            'year' => 2026,
             'type' => 'annual',
         ]);
 
-        $response->assertStatus(422);
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['type']);
+    }
+
+    public function test_store_review_rejects_unsupported_180_review_type(): void
+    {
+        $response = $this->postJson('/api/v1/hr/performance-reviews', [
+            'user_id' => $this->user->id,
+            'reviewer_id' => $this->reviewer->id,
+            'title' => 'Unsupported review type',
+            'cycle' => 'Q3',
+            'year' => 2026,
+            'type' => '180',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['type']);
     }
 }

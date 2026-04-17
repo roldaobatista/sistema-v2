@@ -46,6 +46,7 @@ class AgendaControllerTest extends TestCase
             'origem' => 'MANUAL',
             'titulo' => $titulo,
             'descricao_curta' => 'Descrição',
+            'responsavel_user_id' => $this->user->id,
             'prioridade' => 'medium',
             'visibilidade' => 'team',
             'criado_por_user_id' => $this->user->id,

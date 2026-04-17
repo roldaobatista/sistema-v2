@@ -667,7 +667,7 @@ class BankReconciliationService
             ->orderBy('id')
             ->get();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.bank-reconciliation', [
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.bank-reconciliation', [
             'statement' => $statement,
             'entries' => $entries,
         ]);

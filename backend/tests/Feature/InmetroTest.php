@@ -11,6 +11,7 @@ use App\Models\InmetroLocation;
 use App\Models\InmetroOwner;
 use App\Models\Tenant;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
@@ -102,13 +103,20 @@ class InmetroTest extends TestCase
 
     public function test_owner_enrichment_flow()
     {
+        Cache::forget('opencnpj_12345678000195');
+        Cache::forget('brasilapi_cnpj_12345678000195');
+
         $owner = InmetroOwner::factory()->create([
             'tenant_id' => $this->tenant->id,
             'document' => '12345678000195',
         ]);
 
         Http::fake([
+            'open.cnpja.com/*' => Http::response(null, 404),
+            'publica.cnpj.ws/*' => Http::response(null, 404),
             'brasilapi.com.br/*' => Http::response(['cnpj' => '12345678000195', 'razao_social' => 'Teste Ltda'], 200),
+            'receitaws.com.br/*' => Http::response(null, 404),
+            'api.duckduckgo.com/*' => Http::response([], 404),
         ]);
 
         $response = $this->postJson("/api/v1/inmetro/enrich/{$owner->id}");
@@ -119,6 +127,39 @@ class InmetroTest extends TestCase
         $this->assertDatabaseHas('inmetro_owners', [
             'id' => $owner->id,
             'name' => 'Teste Ltda', // Assuming logic updates name fallback
+        ]);
+    }
+
+    public function test_owner_enrichment_merges_brasilapi_name_when_primary_source_has_contact_only(): void
+    {
+        Cache::forget('opencnpj_12345678000196');
+        Cache::forget('brasilapi_cnpj_12345678000196');
+
+        $owner = InmetroOwner::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'document' => '12345678000196',
+            'name' => 'Nome Original',
+            'phone' => null,
+        ]);
+
+        Http::fake([
+            'open.cnpja.com/*' => Http::response(['ddd_telefone_1' => '6599999999'], 200),
+            'brasilapi.com.br/*' => Http::response([
+                'cnpj' => '12345678000196',
+                'razao_social' => 'Teste Ltda',
+            ], 200),
+            'receitaws.com.br/*' => Http::response(null, 404),
+        ]);
+
+        $response = $this->postJson("/api/v1/inmetro/enrich/{$owner->id}");
+
+        $response->assertOk()
+            ->assertJson(['success' => true]);
+
+        $this->assertDatabaseHas('inmetro_owners', [
+            'id' => $owner->id,
+            'name' => 'Teste Ltda',
+            'phone' => '6599999999',
         ]);
     }
 

@@ -31,7 +31,7 @@ class InmetroEnrichmentService
             }
 
             // 2. BrasilAPI (secondary — more data)
-            if (empty($enriched['data']['phone'])) {
+            if ($this->hasMissingCompanyEnrichmentData($enriched)) {
                 $result = $this->enrichFromBrasilApi($document);
                 if ($result) {
                     $enriched = $this->mergeEnrichment($enriched, $result, 'brasilapi');
@@ -39,7 +39,7 @@ class InmetroEnrichmentService
             }
 
             // 3. ReceitaWS (fallback)
-            if (empty($enriched['data']['phone']) && empty($enriched['data']['email'])) {
+            if ($this->hasMissingCompanyEnrichmentData($enriched)) {
                 $result = $this->enrichFromReceitaWs($document);
                 if ($result) {
                     $enriched = $this->mergeEnrichment($enriched, $result, 'receitaws');
@@ -590,5 +590,19 @@ class InmetroEnrichmentService
         }
 
         return $existing;
+    }
+
+    /**
+     * @param  array{data?: array<string, mixed>}  $enriched
+     */
+    private function hasMissingCompanyEnrichmentData(array $enriched): bool
+    {
+        foreach (['name', 'phone', 'email'] as $field) {
+            if (empty($enriched['data'][$field] ?? null)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

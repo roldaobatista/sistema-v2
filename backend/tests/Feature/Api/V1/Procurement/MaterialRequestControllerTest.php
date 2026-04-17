@@ -40,7 +40,7 @@ it('can list material requests with pagination', function () {
 it('can create a material request', function () {
     $payload = [
         'reference' => 'MR-TEST-001',
-        'status' => 'draft',
+        'status' => 'pending',
         'priority' => 'high',
         'justification' => 'Urgent need for materials',
     ];
@@ -114,7 +114,7 @@ it('fails validation when creating with invalid work_order_id', function () {
     $response = $this->postJson('/api/v1/procurement/material-requests', [
         'reference' => 'MR-INVALID',
         'work_order_id' => 99999,
-        'status' => 'draft',
+        'status' => 'pending',
     ]);
 
     $response->assertUnprocessable()
@@ -125,11 +125,22 @@ it('fails validation with invalid warehouse_id', function () {
     $response = $this->postJson('/api/v1/procurement/material-requests', [
         'reference' => 'MR-INVALID-WH',
         'warehouse_id' => 99999,
-        'status' => 'draft',
+        'status' => 'pending',
     ]);
 
     $response->assertUnprocessable()
         ->assertJsonValidationErrors(['warehouse_id']);
+});
+
+it('fails validation with unsupported status and priority', function () {
+    $response = $this->postJson('/api/v1/procurement/material-requests', [
+        'reference' => 'MR-INVALID-ENUM',
+        'status' => 'draft',
+        'priority' => 'critical',
+    ]);
+
+    $response->assertUnprocessable()
+        ->assertJsonValidationErrors(['status', 'priority']);
 });
 
 it('cannot access material request from another tenant', function () {
@@ -166,7 +177,7 @@ it('only lists material requests from own tenant', function () {
 it('assigns tenant_id and requester_id automatically on create', function () {
     $payload = [
         'reference' => 'MR-AUTO-001',
-        'status' => 'draft',
+        'status' => 'pending',
     ];
 
     $this->postJson('/api/v1/procurement/material-requests', $payload)->assertCreated();

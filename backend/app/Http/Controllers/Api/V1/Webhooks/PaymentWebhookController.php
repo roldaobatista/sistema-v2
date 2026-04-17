@@ -9,6 +9,7 @@ use App\Models\AccountReceivable;
 use App\Models\AccountReceivableInstallment;
 use App\Models\Payment;
 use App\Support\ApiResponse;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -54,6 +55,7 @@ class PaymentWebhookController extends Controller
 
         // 3. Find the payment
         $payment = Payment::where('external_id', $externalId)->first();
+        $paymentExistedBeforeWebhook = $payment !== null;
 
         // 4. Map status and handle confirmation
         $newStatus = $this->mapEventToStatus($event);
@@ -65,22 +67,36 @@ class PaymentWebhookController extends Controller
                 [$type, $id] = explode(':', $externalReference);
                 $payableClass = "App\\Models\\{$type}";
 
-                if (class_exists($payableClass)) {
+                if (class_exists($payableClass) && is_subclass_of($payableClass, Model::class)) {
                     $payable = $payableClass::find($id);
                     if ($payable) {
-                        $payment = Payment::create([
-                            'tenant_id' => $payable->tenant_id,
-                            'payable_type' => $payableClass,
-                            'payable_id' => $id,
-                            'amount' => $paymentData['value'] ?? 0,
-                            'payment_method' => strtolower($paymentData['billingType'] ?? 'pix'),
-                            'payment_date' => now(),
-                            'external_id' => $externalId,
-                            'status' => $newStatus,
-                            'paid_at' => now(),
-                            'gateway_provider' => 'asaas',
-                            'gateway_response' => $payload,
-                        ]);
+                        $receiverId = $this->resolveWebhookPaymentReceiver($payable);
+                        $tenantId = $this->resolveWebhookPaymentTenantId($payable);
+
+                        if ($receiverId && $tenantId) {
+                            $payment = Payment::create([
+                                'tenant_id' => $tenantId,
+                                'payable_type' => $payableClass,
+                                'payable_id' => $id,
+                                'received_by' => $receiverId,
+                                'amount' => $paymentData['value'] ?? 0,
+                                'payment_method' => strtolower($paymentData['billingType'] ?? 'pix'),
+                                'payment_date' => now(),
+                                'external_id' => $externalId,
+                                'status' => $newStatus,
+                                'paid_at' => now(),
+                                'gateway_provider' => 'asaas',
+                                'gateway_response' => $payload,
+                            ]);
+                        } else {
+                            Log::warning('PaymentWebhook: payable missing payment creation attributes', [
+                                'external_id' => $externalId,
+                                'payable_type' => $payableClass,
+                                'payable_id' => $id,
+                                'has_receiver' => $receiverId !== null,
+                                'has_tenant' => $tenantId !== null,
+                            ]);
+                        }
                     }
                 }
             } catch (\Exception $e) {
@@ -95,7 +111,7 @@ class PaymentWebhookController extends Controller
         }
 
         // 6. Idempotency: skip if already processed
-        if ($payment->status === 'confirmed' && $isConfirmed) {
+        if ($paymentExistedBeforeWebhook && $payment->status === 'confirmed' && $isConfirmed) {
             Log::info('PaymentWebhook: already processed (idempotent)', ['external_id' => $externalId]);
 
             return ApiResponse::data(['status' => 'already_processed']);
@@ -185,6 +201,30 @@ class PaymentWebhookController extends Controller
             'PAYMENT_UPDATED' => 'pending',
             default => 'pending',
         };
+    }
+
+    private function resolveWebhookPaymentReceiver(Model $payable): ?int
+    {
+        $createdBy = $payable->getAttribute('created_by');
+
+        if ($createdBy) {
+            return (int) $createdBy;
+        }
+
+        $authenticatedUserId = auth()->id();
+
+        return $authenticatedUserId ? (int) $authenticatedUserId : null;
+    }
+
+    private function resolveWebhookPaymentTenantId(Model $payable): ?int
+    {
+        $tenantId = $payable->getAttribute('tenant_id');
+
+        if (! $tenantId) {
+            return null;
+        }
+
+        return (int) $tenantId;
     }
 
     /**

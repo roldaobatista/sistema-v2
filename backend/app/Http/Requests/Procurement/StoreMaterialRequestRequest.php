@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Procurement;
 
+use App\Models\MaterialRequest;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,8 +27,8 @@ class StoreMaterialRequestRequest extends FormRequest
                 'nullable',
                 Rule::exists('warehouses', 'id')->where('tenant_id', $tenantId),
             ],
-            'status' => 'nullable|string|max:255',
-            'priority' => 'nullable|string|max:255',
+            'status' => ['nullable', 'string', Rule::in(array_keys(MaterialRequest::STATUSES))],
+            'priority' => ['nullable', 'string', Rule::in(array_keys(MaterialRequest::PRIORITIES))],
             'justification' => 'nullable|string',
         ];
     }

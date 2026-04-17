@@ -324,11 +324,11 @@ class WhatsAppWebhookController extends Controller
                 'user_id' => $lastOutbound?->user_id,
                 'channel' => CrmMessage::CHANNEL_WHATSAPP,
                 'direction' => CrmMessage::DIRECTION_INBOUND,
-                'status' => 'received',
+                'status' => CrmMessage::STATUS_DELIVERED,
                 'body' => $message,
                 'from_address' => $phone,
                 'external_id' => $externalId,
-                'sent_at' => now(),
+                'delivered_at' => now(),
             ]);
 
             // Timeline: registrar atividade no CRM

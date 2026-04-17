@@ -11,17 +11,30 @@ class EquipmentSchemaRegressionTest extends TestCase
         return dirname(__DIR__, 3).DIRECTORY_SEPARATOR.$filename;
     }
 
+    private function createTableSql(string $contents, string $table): string
+    {
+        $pattern = '/CREATE TABLE "'.preg_quote($table, '/').'"\s*\(.+?\);/s';
+
+        preg_match($pattern, $contents, $matches);
+
+        $this->assertNotEmpty($matches, "CREATE TABLE statement for {$table} must exist in schema dump");
+
+        return $matches[0];
+    }
+
     public function test_sqlite_schema_dump_uses_english_default_for_equipment_status(): void
     {
         $contents = file_get_contents($this->projectPath('backend'.DIRECTORY_SEPARATOR.'database'.DIRECTORY_SEPARATOR.'schema'.DIRECTORY_SEPARATOR.'sqlite-schema.sql'));
 
         $this->assertIsString($contents);
+        $equipmentTableSql = $this->createTableSql($contents, 'equipments');
+
         // Accept both native SQLite format default ('active') and MySQL-compatible DEFAULT 'active'
-        $hasNativeSqlite = str_contains($contents, '"status" varchar not null default (\'active\')');
-        $hasMysqlCompat = str_contains($contents, '"status" varchar(30) NOT NULL DEFAULT \'active\'');
+        $hasNativeSqlite = str_contains($equipmentTableSql, '"status" varchar not null default (\'active\')');
+        $hasMysqlCompat = str_contains($equipmentTableSql, '"status" varchar(30) NOT NULL DEFAULT \'active\'');
         $this->assertTrue($hasNativeSqlite || $hasMysqlCompat, 'Equipment status default must be "active" (English) in schema dump');
         // Ensure no Portuguese default for equipment status in CREATE TABLE
-        $this->assertDoesNotMatchRegularExpression('/DEFAULT\s+[\'"]ativo[\'"]/i', $contents);
+        $this->assertDoesNotMatchRegularExpression('/DEFAULT\s+\(?[\'"]ativo[\'"]\)?/i', $equipmentTableSql);
     }
 
     public function test_equipment_status_default_reconciliation_migration_is_guarded(): void

@@ -17,8 +17,8 @@ class MaterialRequestFactory extends Factory
             'tenant_id' => Tenant::factory(),
             'reference' => 'MR-'.$this->faker->unique()->randomNumber(5),
             'requester_id' => User::factory(),
-            'status' => 'draft',
-            'priority' => 'normal',
+            'status' => MaterialRequest::STATUS_PENDING,
+            'priority' => MaterialRequest::PRIORITY_NORMAL,
         ];
     }
 }
