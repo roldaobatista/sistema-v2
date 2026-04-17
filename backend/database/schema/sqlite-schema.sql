@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (generated via artisan migrate)
--- Generated: 2026-04-17 22:04:46
+-- Generated: 2026-04-17 22:13:45
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6945,7 +6945,7 @@ CREATE TABLE "travel_advances" ("id" integer primary key autoincrement not null,
 
 CREATE INDEX "travel_advances_tenant_id_travel_request_id_index" on "travel_advances" ("tenant_id", "travel_request_id");
 
-CREATE TABLE "travel_expense_reports" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "travel_request_id" integer not null, "user_id" integer not null, "total_expenses" numeric not null default '0', "total_advances" numeric not null default '0', "balance" numeric not null default '0', "status" varchar not null default 'draft', "approved_by" integer, "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id"), foreign key("travel_request_id") references "travel_requests"("id"), foreign key("user_id") references "users"("id"), foreign key("approved_by") references "users"("id"));
+CREATE TABLE "travel_expense_reports" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "travel_request_id" integer not null, "created_by" integer not null, "total_expenses" numeric not null default '0', "total_advances" numeric not null default '0', "balance" numeric not null default '0', "status" varchar not null default 'draft', "approved_by" integer, "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id"), foreign key("travel_request_id") references "travel_requests"("id"), foreign key("created_by") references "users"("id"), foreign key("approved_by") references "users"("id"));
 
 CREATE INDEX "travel_expense_reports_tenant_id_travel_request_id_index" on "travel_expense_reports" ("tenant_id", "travel_request_id");
 
@@ -8665,3 +8665,4 @@ INSERT INTO "migrations" ("id", "migration", "batch") VALUES (464, '2026_04_17_2
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (465, '2026_04_17_250000_normalize_calibration_result_to_english', 16);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (466, '2026_04_17_260000_drop_pt_columns_from_customer_locations', 17);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (467, '2026_04_17_270000_drop_user_id_from_expenses', 18);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (468, '2026_04_17_280000_rename_user_id_to_created_by_in_travel_expense_reports', 19);
