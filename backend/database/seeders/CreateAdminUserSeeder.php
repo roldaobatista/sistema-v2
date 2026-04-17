@@ -53,11 +53,18 @@ class CreateAdminUserSeeder extends Seeder
                 'current_tenant_id' => $tenant->id,
             ]
         );
+        $user->forceFill([
+            'name' => 'Administrador',
+            'password' => $adminPassword,
+            'is_active' => true,
+            'tenant_id' => $tenant->id,
+            'current_tenant_id' => $tenant->id,
+        ])->save();
         $user->tenants()->syncWithoutDetaching([$tenant->id => ['is_default' => true]]);
 
         setPermissionsTeamId($tenant->id);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
-        $user->assignRole($role);
+        $user->syncRoles([$role->name]);
 
         $this->command->info('Admin user: '.$adminEmail.' / configured SEED_ADMIN_PASSWORD or generated random password');
     }
