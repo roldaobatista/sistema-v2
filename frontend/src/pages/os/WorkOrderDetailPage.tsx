@@ -1900,7 +1900,7 @@ export function WorkOrderDetailPage() {
                                     <button key={cal.id} type="button" onClick={() => cal.certificate_number ? navigate(getCalibrationReadingsPath(cal.id)) : navigate(`/calibracao/wizard/${cal.equipment_id}/${cal.id}?os=${id}`)} className="w-full text-left flex items-center gap-2 rounded-lg border border-default p-2.5 hover:bg-surface-50 transition-colors">
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-medium text-surface-800">{cal.certificate_number || 'Rascunho'}</p>
-                                            <p className="text-xs text-surface-400">{cal.calibration_date ? new Date(cal.calibration_date).toLocaleDateString('pt-BR') : '—'} · {cal.result === 'aprovado' ? 'Aprovado' : cal.result === 'reprovado' ? 'Reprovado' : 'Ressalva'}</p>
+                                            <p className="text-xs text-surface-400">{cal.calibration_date ? new Date(cal.calibration_date).toLocaleDateString('pt-BR') : '—'} · {cal.result === 'approved' ? 'Aprovado' : cal.result === 'rejected' ? 'Reprovado' : 'Ressalva'}</p>
                                         </div>
                                         {cal.certificate_number ? <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" /> : <Clock className="h-4 w-4 text-amber-500 shrink-0" />}
                                     </button>

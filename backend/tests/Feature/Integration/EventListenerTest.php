@@ -739,7 +739,7 @@ test('GenerateCorrectiveQuoteOnCalibrationFailure creates quote on failed calibr
         'tenant_id' => $this->tenant->id,
         'equipment_id' => $equipment->id,
         'work_order_id' => $wo->id,
-        'result' => 'reprovado',
+        'result' => 'rejected',
         'calibration_date' => now(),
         'performed_by' => $this->user->id,
     ]);
@@ -765,7 +765,7 @@ test('GenerateCorrectiveQuoteOnCalibrationFailure does nothing on approved calib
         'tenant_id' => $this->tenant->id,
         'equipment_id' => $equipment->id,
         'work_order_id' => $wo->id,
-        'result' => 'aprovado',
+        'result' => 'approved',
         'calibration_date' => now(),
         'performed_by' => $this->user->id,
     ]);
@@ -790,7 +790,7 @@ test('CalibrationExpiring event carries calibration and days until expiry', func
         'equipment_id' => $equipment->id,
         'calibration_date' => now(),
         'performed_by' => $this->user->id,
-        'result' => 'aprovado',
+        'result' => 'approved',
     ]);
 
     $event = new CalibrationExpiring($calibration, 15);
@@ -815,7 +815,7 @@ test('HandleCalibrationExpiring creates notification and CRM activity', function
         'equipment_id' => $equipment->id,
         'calibration_date' => now(),
         'performed_by' => $this->user->id,
-        'result' => 'aprovado',
+        'result' => 'approved',
     ]);
 
     $event = new CalibrationExpiring($calibration, 30);

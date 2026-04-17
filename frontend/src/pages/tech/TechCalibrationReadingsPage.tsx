@@ -168,7 +168,7 @@ export default function TechCalibrationReadingsPage() {
             const { data: created } = await api.post(`/equipments/${equipmentId}/calibrations`, {
                 calibration_date: today,
                 calibration_type: 'interna',
-                result: 'aprovado_com_ressalva',
+                result: 'approved_with_restriction',
                 work_order_id: Number(id),
             })
             return created?.calibration?.id ?? null
@@ -222,7 +222,7 @@ export default function TechCalibrationReadingsPage() {
 
         // Offline: queue the calibration reading for later sync
         if (!offlineMut.isOnline) {
-            const resultValue = passed ? 'aprovado' : 'reprovado'
+            const resultValue = passed ? 'approved' : 'rejected'
             offlineMut.mutate({
                 mutations: [{
                     type: 'calibration_reading',
@@ -296,7 +296,7 @@ export default function TechCalibrationReadingsPage() {
             }
 
             // 3. Send calculated result to backend via wizard endpoint
-            const resultValue = passed ? 'aprovado' : 'reprovado'
+            const resultValue = passed ? 'approved' : 'rejected'
             try {
                 await api.put(`/calibration/${calibrationId}/wizard`, {
                     result: resultValue,

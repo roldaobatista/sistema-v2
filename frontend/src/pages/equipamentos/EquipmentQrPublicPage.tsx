@@ -68,7 +68,7 @@ export default function EquipmentQrPublicPage() {
     const isNearExpiry = cal?.next_due_date
         ? new Date(cal.next_due_date) < new Date(new Date().getTime() + 30 * 86400000) && !isExpired
         : false
-    const isRejected = cal?.result === 'reprovado'
+    const isRejected = cal?.result === 'rejected'
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-cyan-50 dark:from-surface-950 dark:to-surface-900 p-4">
@@ -129,7 +129,7 @@ export default function EquipmentQrPublicPage() {
                             <div className={`text-2xl font-bold ${
                                 isRejected || isExpired ? 'text-red-700' : isNearExpiry ? 'text-amber-700' : 'text-emerald-700'
                             }`}>
-                                {cal.result === 'aprovado' ? 'APROVADO' : cal.result === 'aprovado_com_ressalva' ? 'APROVADO COM RESSALVA' : 'REPROVADO'}
+                                {cal.result === 'approved' ? 'APROVADO' : cal.result === 'approved_with_restriction' ? 'APROVADO COM RESSALVA' : 'REPROVADO'}
                             </div>
                             <div className="text-xs text-surface-500 mt-1">
                                 Certificado: {cal.certificate_number}

@@ -356,7 +356,7 @@ export default function TechAssetScanPage() {
                             ) : (
                                 <div className="space-y-2">
                                     {(calibrations || []).map((cal) => {
-                                        const isPass = cal.result === 'aprovado' || cal.result === 'aprovado_com_ressalva'
+                                        const isPass = cal.result === 'approved' || cal.result === 'approved_with_restriction'
                                         return (
                                             <div key={cal.id} className="flex items-center justify-between py-1.5 border-b border-surface-100 last:border-0">
                                                 <div>

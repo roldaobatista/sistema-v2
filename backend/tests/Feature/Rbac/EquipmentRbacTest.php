@@ -186,7 +186,7 @@ test('user WITH equipments.equipment.create can add calibration', function () {
     $this->postJson("/api/v1/equipments/{$equipment->id}/calibrations", [
         'calibration_date' => now()->toDateString(),
         'calibration_type' => 'interna',
-        'result' => 'aprovado',
+        'result' => 'approved',
         'certificate_number' => 'CERT-001',
     ])->assertStatus(201);
 });

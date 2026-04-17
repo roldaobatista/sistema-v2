@@ -13,7 +13,7 @@ class GenerateCorrectiveQuoteOnCalibrationFailure
 {
     /**
      * Listens to CalibrationCompleted event.
-     * If the most recent calibration result is 'reprovado' (failed), automatically generates
+     * If the most recent calibration result is 'rejected' (failed), automatically generates
      * a corrective quote for the customer.
      */
     public function handle(CalibrationCompleted $event): void
@@ -33,7 +33,7 @@ class GenerateCorrectiveQuoteOnCalibrationFailure
         }
 
         // Only process failed calibrations
-        if (! in_array($calibration->result, ['reprovado', 'failed', 'rejected'])) {
+        if (! in_array($calibration->result, ['rejected', 'failed'])) {
             return;
         }
 

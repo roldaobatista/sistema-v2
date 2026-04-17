@@ -86,8 +86,8 @@ export const EquipmentHistory: React.FC<EquipmentHistoryProps> = ({ equipmentId 
 
                             <div className="flex flex-wrap items-center gap-2">
                                 {item.result && (
-                                    <Badge variant={item.result === 'aprovado' ? 'success' : 'danger'}>
-                                        {item.result === 'aprovado' ? 'Aprovado' : 'Reprovado'}
+                                    <Badge variant={item.result === 'approved' ? 'success' : 'danger'}>
+                                        {item.result === 'approved' ? 'Aprovado' : 'Reprovado'}
                                     </Badge>
                                 )}
 

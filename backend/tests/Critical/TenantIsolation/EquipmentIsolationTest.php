@@ -183,11 +183,11 @@ test('EquipmentCalibration model scope isolates by tenant', function () {
 
     EquipmentCalibration::withoutGlobalScopes()->create([
         'tenant_id' => $this->tenantA->id, 'equipment_id' => $eqA->id,
-        'calibration_date' => now(), 'result' => 'aprovado',
+        'calibration_date' => now(), 'result' => 'approved',
     ]);
     EquipmentCalibration::withoutGlobalScopes()->create([
         'tenant_id' => $this->tenantB->id, 'equipment_id' => $eqB->id,
-        'calibration_date' => now(), 'result' => 'reprovado',
+        'calibration_date' => now(), 'result' => 'rejected',
     ]);
 
     app()->instance('current_tenant_id', $this->tenantA->id);
@@ -211,11 +211,11 @@ test('CalibrationReading model scope isolates by tenant', function () {
 
     $calA = EquipmentCalibration::withoutGlobalScopes()->create([
         'tenant_id' => $this->tenantA->id, 'equipment_id' => $eqA->id,
-        'calibration_date' => now(), 'result' => 'aprovado',
+        'calibration_date' => now(), 'result' => 'approved',
     ]);
     $calB = EquipmentCalibration::withoutGlobalScopes()->create([
         'tenant_id' => $this->tenantB->id, 'equipment_id' => $eqB->id,
-        'calibration_date' => now(), 'result' => 'aprovado',
+        'calibration_date' => now(), 'result' => 'approved',
     ]);
 
     CalibrationReading::withoutGlobalScopes()->create([
