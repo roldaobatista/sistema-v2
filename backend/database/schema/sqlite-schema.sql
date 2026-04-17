@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (generated via artisan migrate)
--- Generated: 2026-04-17 22:13:45
+-- Generated: 2026-04-17 22:15:30
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -586,44 +586,6 @@ CREATE TABLE "central_item_history" (
  "created_at" datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 , "tenant_id" integer);
 
-CREATE TABLE "central_items" (
- "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "tenant_id" integer NOT NULL,
- "tipo" varchar(20) NOT NULL,
- "origem" varchar(20) NOT NULL DEFAULT 'MANUAL',
- "ref_tipo" varchar(100) DEFAULT NULL,
- "ref_id" integer DEFAULT NULL,
- "titulo" varchar(255) NOT NULL,
- "descricao_curta" text,
- "responsavel_user_id" integer DEFAULT NULL,
- "criado_por_user_id" integer DEFAULT NULL,
- "status" varchar(20) NOT NULL DEFAULT 'ABERTO',
- "prioridade" varchar(20) NOT NULL DEFAULT 'MEDIA',
- "visibilidade" varchar(20) NOT NULL DEFAULT 'EQUIPE',
- "due_at" datetime NULL DEFAULT NULL,
- "remind_at" datetime NULL DEFAULT NULL,
- "snooze_until" datetime NULL DEFAULT NULL,
- "sla_due_at" datetime NULL DEFAULT NULL,
- "closed_at" datetime NULL DEFAULT NULL,
- "closed_by" integer DEFAULT NULL,
- "contexto" text DEFAULT NULL,
- "tags" text DEFAULT NULL,
- "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL,
- "deleted_at" datetime NULL DEFAULT NULL,
- "remind_notified_at" datetime NULL DEFAULT NULL,
- "recurrence_pattern" varchar(30) DEFAULT NULL,
- "recurrence_interval" integer NOT NULL DEFAULT '1',
- "recurrence_next_at" datetime NULL DEFAULT NULL,
- "escalation_hours" integer DEFAULT NULL,
- "visibility_departments" text DEFAULT NULL,
- "visibility_users" text DEFAULT NULL,
- "user_id" integer DEFAULT NULL,
- "completed" tinyint DEFAULT NULL
-);
-
-CREATE UNIQUE INDEX "ci_ref_unique" ON "central_items" ("tenant_id","ref_tipo","ref_id");
-
 CREATE TABLE "central_notification_prefs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "user_id" integer NOT NULL,
@@ -673,25 +635,6 @@ CREATE TABLE "central_subtasks" (
  "ordem" integer NOT NULL DEFAULT '0',
  "completed_by" integer DEFAULT NULL,
  "completed_at" datetime NULL DEFAULT NULL,
- "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL
-);
-
-CREATE TABLE "central_templates" (
- "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "tenant_id" integer NOT NULL,
- "nome" varchar(150) NOT NULL,
- "descricao" text,
- "tipo" varchar(20) NOT NULL DEFAULT 'TAREFA',
- "prioridade" varchar(20) NOT NULL DEFAULT 'MEDIA',
- "visibilidade" varchar(20) NOT NULL DEFAULT 'EQUIPE',
- "categoria" varchar(60) DEFAULT NULL,
- "due_days" int DEFAULT NULL,
- "subtasks" text DEFAULT NULL,
- "default_watchers" text DEFAULT NULL,
- "tags" text DEFAULT NULL,
- "ativo" tinyint NOT NULL DEFAULT '1',
- "created_by" integer DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
@@ -7329,8 +7272,6 @@ CREATE INDEX "central_rules_tenant_id_idx" on "central_rules" ("tenant_id");
 
 CREATE INDEX "central_subtasks_tenant_id_idx" on "central_subtasks" ("tenant_id");
 
-CREATE INDEX "central_templates_tenant_id_idx" on "central_templates" ("tenant_id");
-
 CREATE INDEX "central_time_entries_tenant_id_idx" on "central_time_entries" ("tenant_id");
 
 CREATE INDEX "certificate_signatures_tenant_id_idx" on "certificate_signatures" ("tenant_id");
@@ -7881,8 +7822,6 @@ CREATE INDEX "calibration_types_deleted_at_idx" on "calibration_types" ("deleted
 
 CREATE INDEX "cancellation_reasons_deleted_at_idx" on "cancellation_reasons" ("deleted_at");
 
-CREATE INDEX "central_items_deleted_at_idx" on "central_items" ("deleted_at");
-
 CREATE INDEX "commission_events_deleted_at_idx" on "commission_events" ("deleted_at");
 
 CREATE INDEX "commission_rules_deleted_at_idx" on "commission_rules" ("deleted_at");
@@ -8198,6 +8137,16 @@ CREATE TABLE "equipment_calibrations" ("id" integer primary key autoincrement no
 CREATE INDEX "eq_cal_decision_result_idx" on "equipment_calibrations" ("tenant_id", "decision_result");
 
 CREATE UNIQUE INDEX "equipment_calibrations_verification_token_unique" on "equipment_calibrations" ("verification_token");
+
+CREATE TABLE "central_items" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "tipo" varchar(20) not null, "origem" varchar not null default 'manual', "ref_tipo" varchar(100) default (NULL), "ref_id" integer default (NULL), "titulo" varchar(255) not null, "descricao_curta" text, "responsavel_user_id" integer default (NULL), "criado_por_user_id" integer default (NULL), "status" varchar not null default 'open', "prioridade" varchar not null default 'medium', "visibilidade" varchar not null default 'team', "due_at" datetime default (NULL), "remind_at" datetime default (NULL), "snooze_until" datetime default (NULL), "sla_due_at" datetime default (NULL), "closed_at" datetime default (NULL), "closed_by" integer default (NULL), "contexto" text default (NULL), "tags" text default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL), "remind_notified_at" datetime default (NULL), "recurrence_pattern" varchar(30) default (NULL), "recurrence_interval" integer not null default ('1'), "recurrence_next_at" datetime default (NULL), "escalation_hours" integer default (NULL), "visibility_departments" text default (NULL), "visibility_users" text default (NULL), "user_id" integer default (NULL), "completed" tinyint default (NULL));
+
+CREATE INDEX "central_items_deleted_at_idx" on "central_items" ("deleted_at");
+
+CREATE UNIQUE INDEX "ci_ref_unique" on "central_items" ("tenant_id", "ref_tipo", "ref_id");
+
+CREATE TABLE "central_templates" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "nome" varchar(150) not null, "descricao" text, "tipo" varchar(20) not null default ('TAREFA'), "prioridade" varchar not null default 'medium', "visibilidade" varchar not null default 'team', "categoria" varchar(60) default (NULL), "due_days" int default (NULL), "subtasks" text default (NULL), "default_watchers" text default (NULL), "tags" text default (NULL), "ativo" tinyint not null default ('1'), "created_by" integer default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL));
+
+CREATE INDEX "central_templates_tenant_id_idx" on "central_templates" ("tenant_id");
 
 -- Migration records
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (1, '0001_01_01_000000_create_users_table', 1);
@@ -8666,3 +8615,4 @@ INSERT INTO "migrations" ("id", "migration", "batch") VALUES (465, '2026_04_17_2
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (466, '2026_04_17_260000_drop_pt_columns_from_customer_locations', 17);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (467, '2026_04_17_270000_drop_user_id_from_expenses', 18);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (468, '2026_04_17_280000_rename_user_id_to_created_by_in_travel_expense_reports', 19);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (469, '2026_04_17_290000_normalize_central_enums_defaults_to_english', 20);
