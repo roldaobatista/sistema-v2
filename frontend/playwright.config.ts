@@ -10,6 +10,10 @@ const e2eWorkers = Number.isInteger(parsedE2EWorkers) && parsedE2EWorkers > 0
   : 1;
 const apiPort = process.env.E2E_API_PORT || '8010';
 const frontendPort = process.env.E2E_FRONTEND_PORT || '3010';
+const backendDatabase = process.env.E2E_DB_DATABASE
+  || (process.env.DB_DATABASE && process.env.DB_DATABASE !== ':memory:'
+    ? process.env.DB_DATABASE
+    : resolve(__dirname, '../backend/database/database.sqlite'));
 const apiBase = process.env.E2E_API_BASE || `http://127.0.0.1:${apiPort}/api/v1`;
 const apiHealthUrl = process.env.E2E_API_HEALTH_URL || `http://127.0.0.1:${apiPort}/up`;
 const frontendUrl = process.env.E2E_FRONTEND_URL || process.env.PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${frontendPort}`;
@@ -24,6 +28,9 @@ process.env.E2E_FRONTEND_URL = frontendUrl;
 process.env.PLAYWRIGHT_BASE_URL = frontendUrl;
 process.env.VITE_PROXY_TARGET = process.env.VITE_PROXY_TARGET || new URL(apiBase).origin;
 process.env.VITE_API_URL = '';
+process.env.APP_ENV = process.env.APP_ENV || 'testing';
+process.env.DB_CONNECTION = process.env.DB_CONNECTION || 'sqlite';
+process.env.DB_DATABASE = backendDatabase;
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -82,8 +89,17 @@ export default defineConfig({
   /* Run local dev servers before starting the tests */
   webServer: [
     {
-      command: `"${phpBinary}" artisan serve --host=127.0.0.1 --port=${apiPort}`,
+      command: `"${phpBinary}" artisan serve --host=127.0.0.1 --port=${apiPort} --no-reload`,
       cwd: resolve(__dirname, '../backend'),
+      env: {
+        ...process.env,
+        APP_ENV: process.env.APP_ENV,
+        DB_CONNECTION: process.env.DB_CONNECTION,
+        DB_DATABASE: backendDatabase,
+        CACHE_STORE: process.env.CACHE_STORE || 'array',
+        QUEUE_CONNECTION: process.env.QUEUE_CONNECTION || 'sync',
+        SESSION_DRIVER: process.env.SESSION_DRIVER || 'array',
+      },
       url: apiHealthUrl,
       reuseExistingServer,
       timeout: 120 * 1000,
