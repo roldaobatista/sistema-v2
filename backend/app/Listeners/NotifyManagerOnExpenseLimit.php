@@ -37,7 +37,7 @@ class NotifyManagerOnExpenseLimit implements ShouldQueue
                     'message' => "Despesas de {$expense->category} atingiram {$pct}% do limite (R$ ".number_format($event->currentTotal, 2, ',', '.').' / R$ '.number_format($event->limit, 2, ',', '.').').',
                     'icon' => 'alert-triangle',
                     'color' => 'warning',
-                    'data' => ['expense_id' => $expense->id, 'user_id' => $expense->user_id],
+                    'data' => ['expense_id' => $expense->id, 'user_id' => $expense->created_by],
                 ]
             );
         } catch (\Throwable $e) {
