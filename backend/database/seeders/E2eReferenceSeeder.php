@@ -72,7 +72,7 @@ class E2eReferenceSeeder extends Seeder
 
     private function createRestrictedTenantUser(): void
     {
-        $tenant = Tenant::firstOrCreate(
+        $tenant = Tenant::updateOrCreate(
             ['document' => '98.765.432/0001-10'],
             [
                 'name' => 'TechAssist Serviços',
@@ -82,7 +82,7 @@ class E2eReferenceSeeder extends Seeder
             ]
         );
 
-        Branch::firstOrCreate(
+        Branch::updateOrCreate(
             ['tenant_id' => $tenant->id, 'code' => 'SED'],
             [
                 'name' => 'Sede Central',
@@ -98,21 +98,15 @@ class E2eReferenceSeeder extends Seeder
             return;
         }
 
-        $user = User::firstOrCreate(
-            ['email' => 'ricardo@techassist.com.br'],
-            [
-                'name' => 'Ricardo Técnico',
-                'password' => 'password',
-                'is_active' => true,
-                'tenant_id' => $tenant->id,
-                'current_tenant_id' => $tenant->id,
-            ]
-        );
+        $restrictedPassword = (string) (config('seeding.user_password') ?: 'CHANGE_ME_E2E_RESTRICTED_PASSWORD');
 
+        $user = User::firstOrNew(['email' => 'ricardo@techassist.com.br']);
         $user->forceFill([
+            'name' => 'Ricardo Técnico',
+            'password' => $restrictedPassword,
+            'is_active' => true,
             'tenant_id' => $tenant->id,
             'current_tenant_id' => $tenant->id,
-            'is_active' => true,
         ])->save();
         $user->tenants()->syncWithoutDetaching([$tenant->id => ['is_default' => true]]);
 
