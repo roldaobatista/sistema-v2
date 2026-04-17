@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (generated via artisan migrate)
--- Generated: 2026-04-17 19:18:17
+-- Generated: 2026-04-17 19:35:30
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7931,6 +7931,232 @@ CREATE INDEX "work_order_templates_tenant_id_idx" on "work_order_templates" ("te
 
 CREATE INDEX "work_order_time_logs_tenant_id_idx" on "work_order_time_logs" ("tenant_id");
 
+CREATE INDEX "account_payable_categories_deleted_at_idx" on "account_payable_categories" ("deleted_at");
+
+CREATE INDEX "account_receivable_categories_deleted_at_idx" on "account_receivable_categories" ("deleted_at");
+
+CREATE INDEX "accounts_payable_deleted_at_idx" on "accounts_payable" ("deleted_at");
+
+CREATE INDEX "accounts_receivable_deleted_at_idx" on "accounts_receivable" ("deleted_at");
+
+CREATE INDEX "asset_records_deleted_at_idx" on "asset_records" ("deleted_at");
+
+CREATE INDEX "auto_assignment_rules_deleted_at_idx" on "auto_assignment_rules" ("deleted_at");
+
+CREATE INDEX "automation_report_formats_deleted_at_idx" on "automation_report_formats" ("deleted_at");
+
+CREATE INDEX "automation_report_frequencies_deleted_at_idx" on "automation_report_frequencies" ("deleted_at");
+
+CREATE INDEX "automation_report_types_deleted_at_idx" on "automation_report_types" ("deleted_at");
+
+CREATE INDEX "automation_rules_deleted_at_idx" on "automation_rules" ("deleted_at");
+
+CREATE INDEX "auxiliary_tools_deleted_at_idx" on "auxiliary_tools" ("deleted_at");
+
+CREATE INDEX "bank_account_types_deleted_at_idx" on "bank_account_types" ("deleted_at");
+
+CREATE INDEX "bank_accounts_deleted_at_idx" on "bank_accounts" ("deleted_at");
+
+CREATE INDEX "batches_deleted_at_idx" on "batches" ("deleted_at");
+
+CREATE INDEX "calibration_types_deleted_at_idx" on "calibration_types" ("deleted_at");
+
+CREATE INDEX "cancellation_reasons_deleted_at_idx" on "cancellation_reasons" ("deleted_at");
+
+CREATE INDEX "central_items_deleted_at_idx" on "central_items" ("deleted_at");
+
+CREATE INDEX "commission_events_deleted_at_idx" on "commission_events" ("deleted_at");
+
+CREATE INDEX "commission_rules_deleted_at_idx" on "commission_rules" ("deleted_at");
+
+CREATE INDEX "contract_types_deleted_at_idx" on "contract_types" ("deleted_at");
+
+CREATE INDEX "contracts_deleted_at_idx" on "contracts" ("deleted_at");
+
+CREATE INDEX "cost_centers_deleted_at_idx" on "cost_centers" ("deleted_at");
+
+CREATE INDEX "crm_deals_deleted_at_idx" on "crm_deals" ("deleted_at");
+
+CREATE INDEX "crm_funnel_automations_deleted_at_idx" on "crm_funnel_automations" ("deleted_at");
+
+CREATE INDEX "crm_pipelines_deleted_at_idx" on "crm_pipelines" ("deleted_at");
+
+CREATE INDEX "crm_sequences_deleted_at_idx" on "crm_sequences" ("deleted_at");
+
+CREATE INDEX "crm_territories_deleted_at_idx" on "crm_territories" ("deleted_at");
+
+CREATE INDEX "crm_web_forms_deleted_at_idx" on "crm_web_forms" ("deleted_at");
+
+CREATE INDEX "customer_company_sizes_deleted_at_idx" on "customer_company_sizes" ("deleted_at");
+
+CREATE INDEX "customer_ratings_deleted_at_idx" on "customer_ratings" ("deleted_at");
+
+CREATE INDEX "customer_segments_deleted_at_idx" on "customer_segments" ("deleted_at");
+
+CREATE INDEX "customers_deleted_at_idx" on "customers" ("deleted_at");
+
+CREATE INDEX "document_types_deleted_at_idx" on "document_types" ("deleted_at");
+
+CREATE INDEX "document_versions_deleted_at_idx" on "document_versions" ("deleted_at");
+
+CREATE INDEX "equipment_brands_deleted_at_idx" on "equipment_brands" ("deleted_at");
+
+CREATE INDEX "equipment_categories_deleted_at_idx" on "equipment_categories" ("deleted_at");
+
+CREATE INDEX "equipment_types_deleted_at_idx" on "equipment_types" ("deleted_at");
+
+CREATE INDEX "equipments_deleted_at_idx" on "equipments" ("deleted_at");
+
+CREATE INDEX "expense_categories_deleted_at_idx" on "expense_categories" ("deleted_at");
+
+CREATE INDEX "expenses_deleted_at_idx" on "expenses" ("deleted_at");
+
+CREATE INDEX "financial_checks_deleted_at_idx" on "financial_checks" ("deleted_at");
+
+CREATE INDEX "fiscal_invoices_deleted_at_idx" on "fiscal_invoices" ("deleted_at");
+
+CREATE INDEX "fiscal_notes_deleted_at_idx" on "fiscal_notes" ("deleted_at");
+
+CREATE INDEX "fleet_fuel_types_deleted_at_idx" on "fleet_fuel_types" ("deleted_at");
+
+CREATE INDEX "fleet_vehicle_statuses_deleted_at_idx" on "fleet_vehicle_statuses" ("deleted_at");
+
+CREATE INDEX "fleet_vehicle_types_deleted_at_idx" on "fleet_vehicle_types" ("deleted_at");
+
+CREATE INDEX "fleet_vehicles_deleted_at_idx" on "fleet_vehicles" ("deleted_at");
+
+CREATE INDEX "fleets_deleted_at_idx" on "fleets" ("deleted_at");
+
+CREATE INDEX "follow_up_channels_deleted_at_idx" on "follow_up_channels" ("deleted_at");
+
+CREATE INDEX "follow_up_statuses_deleted_at_idx" on "follow_up_statuses" ("deleted_at");
+
+CREATE INDEX "fueling_fuel_types_deleted_at_idx" on "fueling_fuel_types" ("deleted_at");
+
+CREATE INDEX "fueling_logs_deleted_at_idx" on "fueling_logs" ("deleted_at");
+
+CREATE INDEX "fund_transfers_deleted_at_idx" on "fund_transfers" ("deleted_at");
+
+CREATE INDEX "hour_bank_policies_deleted_at_idx" on "hour_bank_policies" ("deleted_at");
+
+CREATE INDEX "inmetro_competitors_deleted_at_idx" on "inmetro_competitors" ("deleted_at");
+
+CREATE INDEX "inmetro_owners_deleted_at_idx" on "inmetro_owners" ("deleted_at");
+
+CREATE INDEX "inmetro_seal_statuses_deleted_at_idx" on "inmetro_seal_statuses" ("deleted_at");
+
+CREATE INDEX "inmetro_seal_types_deleted_at_idx" on "inmetro_seal_types" ("deleted_at");
+
+CREATE INDEX "inmetro_seals_deleted_at_idx" on "inmetro_seals" ("deleted_at");
+
+CREATE INDEX "inventories_deleted_at_idx" on "inventories" ("deleted_at");
+
+CREATE INDEX "invoices_deleted_at_idx" on "invoices" ("deleted_at");
+
+CREATE INDEX "journey_blocks_deleted_at_idx" on "journey_blocks" ("deleted_at");
+
+CREATE INDEX "journey_days_deleted_at_idx" on "journey_days" ("deleted_at");
+
+CREATE INDEX "journey_entries_deleted_at_idx" on "journey_entries" ("deleted_at");
+
+CREATE INDEX "journey_policies_deleted_at_idx" on "journey_policies" ("deleted_at");
+
+CREATE INDEX "journey_rules_deleted_at_idx" on "journey_rules" ("deleted_at");
+
+CREATE INDEX "lead_sources_deleted_at_idx" on "lead_sources" ("deleted_at");
+
+CREATE INDEX "maintenance_types_deleted_at_idx" on "maintenance_types" ("deleted_at");
+
+CREATE INDEX "material_requests_deleted_at_idx" on "material_requests" ("deleted_at");
+
+CREATE INDEX "measurement_units_deleted_at_idx" on "measurement_units" ("deleted_at");
+
+CREATE INDEX "non_conformities_deleted_at_idx" on "non_conformities" ("deleted_at");
+
+CREATE INDEX "onboarding_template_types_deleted_at_idx" on "onboarding_template_types" ("deleted_at");
+
+CREATE INDEX "parts_kits_deleted_at_idx" on "parts_kits" ("deleted_at");
+
+CREATE INDEX "payment_terms_deleted_at_idx" on "payment_terms" ("deleted_at");
+
+CREATE INDEX "price_table_adjustment_types_deleted_at_idx" on "price_table_adjustment_types" ("deleted_at");
+
+CREATE INDEX "price_tables_deleted_at_idx" on "price_tables" ("deleted_at");
+
+CREATE INDEX "product_serials_deleted_at_idx" on "product_serials" ("deleted_at");
+
+CREATE INDEX "products_deleted_at_idx" on "products" ("deleted_at");
+
+CREATE INDEX "projects_deleted_at_idx" on "projects" ("deleted_at");
+
+CREATE INDEX "purchase_quotations_deleted_at_idx" on "purchase_quotations" ("deleted_at");
+
+CREATE INDEX "purchase_quotes_deleted_at_idx" on "purchase_quotes" ("deleted_at");
+
+CREATE INDEX "quality_procedures_deleted_at_idx" on "quality_procedures" ("deleted_at");
+
+CREATE INDEX "quote_sources_deleted_at_idx" on "quote_sources" ("deleted_at");
+
+CREATE INDEX "quotes_deleted_at_idx" on "quotes" ("deleted_at");
+
+CREATE INDEX "recurring_contracts_deleted_at_idx" on "recurring_contracts" ("deleted_at");
+
+CREATE INDEX "repair_seal_batches_deleted_at_idx" on "repair_seal_batches" ("deleted_at");
+
+CREATE INDEX "rma_requests_deleted_at_idx" on "rma_requests" ("deleted_at");
+
+CREATE INDEX "schedules_deleted_at_idx" on "schedules" ("deleted_at");
+
+CREATE INDEX "service_calls_deleted_at_idx" on "service_calls" ("deleted_at");
+
+CREATE INDEX "service_types_deleted_at_idx" on "service_types" ("deleted_at");
+
+CREATE INDEX "services_deleted_at_idx" on "services" ("deleted_at");
+
+CREATE INDEX "standard_weights_deleted_at_idx" on "standard_weights" ("deleted_at");
+
+CREATE INDEX "stock_disposals_deleted_at_idx" on "stock_disposals" ("deleted_at");
+
+CREATE INDEX "stock_movements_deleted_at_idx" on "stock_movements" ("deleted_at");
+
+CREATE INDEX "supplier_contract_payment_frequencies_deleted_at_idx" on "supplier_contract_payment_frequencies" ("deleted_at");
+
+CREATE INDEX "supplier_contracts_deleted_at_idx" on "supplier_contracts" ("deleted_at");
+
+CREATE INDEX "suppliers_deleted_at_idx" on "suppliers" ("deleted_at");
+
+CREATE INDEX "surveys_deleted_at_idx" on "surveys" ("deleted_at");
+
+CREATE INDEX "technician_certifications_deleted_at_idx" on "technician_certifications" ("deleted_at");
+
+CREATE INDEX "tenants_deleted_at_idx" on "tenants" ("deleted_at");
+
+CREATE INDEX "time_entries_deleted_at_idx" on "time_entries" ("deleted_at");
+
+CREATE INDEX "tool_checkouts_deleted_at_idx" on "tool_checkouts" ("deleted_at");
+
+CREATE INDEX "tool_inventories_deleted_at_idx" on "tool_inventories" ("deleted_at");
+
+CREATE INDEX "travel_requests_deleted_at_idx" on "travel_requests" ("deleted_at");
+
+CREATE INDEX "tv_camera_types_deleted_at_idx" on "tv_camera_types" ("deleted_at");
+
+CREATE INDEX "users_deleted_at_idx" on "users" ("deleted_at");
+
+CREATE INDEX "vehicle_insurances_deleted_at_idx" on "vehicle_insurances" ("deleted_at");
+
+CREATE INDEX "vehicle_tires_deleted_at_idx" on "vehicle_tires" ("deleted_at");
+
+CREATE INDEX "warehouses_deleted_at_idx" on "warehouses" ("deleted_at");
+
+CREATE INDEX "webhooks_deleted_at_idx" on "webhooks" ("deleted_at");
+
+CREATE INDEX "work_order_recurrences_deleted_at_idx" on "work_order_recurrences" ("deleted_at");
+
+CREATE INDEX "work_order_templates_deleted_at_idx" on "work_order_templates" ("deleted_at");
+
+CREATE INDEX "work_orders_deleted_at_idx" on "work_orders" ("deleted_at");
+
 -- Migration records
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (1, '0001_01_01_000000_create_users_table', 1);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (2, '0001_01_01_000001_create_cache_table', 1);
@@ -8387,3 +8613,4 @@ INSERT INTO "migrations" ("id", "migration", "batch") VALUES (452, '2026_04_17_1
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (453, '2026_04_17_150000_backfill_tenant_id_and_make_not_null', 9);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (454, '2026_04_17_160000_revert_tenant_id_not_null_on_pivots', 10);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (455, '2026_04_17_170000_add_tenant_id_indexes_to_remaining_tables', 11);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (456, '2026_04_17_180000_add_deleted_at_indexes_to_remaining_tables', 12);
