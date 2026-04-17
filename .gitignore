@@ -1,5 +1,10 @@
 # ── IDE and agent config ──
-.claude/
+# Harness versionado: agents, skills, commands compartilhados pelo time
+# Estado local fica ignorado (settings, snapshots, telemetria, etc)
+.claude/*
+!.claude/agents/
+!.claude/skills/
+!.claude/commands/
 .superpowers/
 .worktrees/
 _bmad-output/*
