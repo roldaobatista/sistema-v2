@@ -1,10 +1,8 @@
 import { test, expect } from '@playwright/test'
 
-const BASE = 'http://localhost:3000'
-
 test.describe('Permissão e Acesso', () => {
     test('deve redirecionar rotas protegidas para login', async ({ page }) => {
-        await page.goto(BASE + '/login')
+        await page.goto('/login')
         await page.evaluate(() => localStorage.clear())
 
         const protectedRoutes = [
@@ -25,14 +23,14 @@ test.describe('Permissão e Acesso', () => {
         ]
 
         for (const route of protectedRoutes) {
-            await page.goto(BASE + route)
+            await page.goto(route)
             await page.waitForURL(/\/login/, { timeout: 5000 })
             expect(page.url()).toContain('/login')
         }
     })
 
     test('token expirado deve redirecionar para login', async ({ page }) => {
-        await page.goto(BASE + '/login')
+        await page.goto('/login')
 
         await page.evaluate(() => {
             localStorage.setItem('auth-store', JSON.stringify({
@@ -47,7 +45,7 @@ test.describe('Permissão e Acesso', () => {
             await route.fulfill({ status: 401, json: { message: "Unauthenticated." } });
         });
 
-        await page.goto(BASE + '/')
+        await page.goto('/')
 
         try {
             await page.waitForURL(/\/login/, { timeout: 4000 })
@@ -63,10 +61,10 @@ test.describe('Permissão e Acesso', () => {
     })
 
     test('rotas do portal devem redirecionar para portal/login', async ({ page }) => {
-        await page.goto(BASE + '/portal/login')
+        await page.goto('/portal/login')
         await page.evaluate(() => localStorage.clear())
 
-        await page.goto(BASE + '/portal')
+        await page.goto('/portal')
         await page.waitForURL(/\/portal\/login/, { timeout: 5000 })
         expect(page.url()).toContain('/portal/login')
     })

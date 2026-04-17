@@ -12,7 +12,20 @@ type CycleState = {
 }
 
 async function authHeaders(page: Page): Promise<Record<string, string>> {
-    const token = await page.evaluate(() => window.localStorage.getItem('auth_token'))
+    const storageState = await page.context().storageState()
+    const localStorageEntries = storageState.origins.flatMap(o => o.localStorage)
+    const directToken = localStorageEntries.find(e => e.name === 'auth_token')?.value
+    const persistedStore = localStorageEntries.find(e => e.name === 'auth-store')?.value
+    let token = directToken || ''
+
+    if (!token && persistedStore) {
+        try {
+            const parsed = JSON.parse(persistedStore) as { state?: { token?: unknown } }
+            if (typeof parsed.state?.token === 'string') token = parsed.state.token
+        } catch {
+            // ignore
+        }
+    }
 
     if (!token) {
         throw new Error('Token de autenticacao ausente para o ciclo E2E.')

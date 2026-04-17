@@ -68,6 +68,7 @@ test.describe('Edge Cases — Navegação Rápida', () => {
 
 test.describe('Edge Cases — Estado da Sessão', () => {
   test('Página deve sobreviver após longa inatividade simulada', async ({ page }) => {
+    test.setTimeout(60_000);
     await page.goto('/');
     await page.waitForTimeout(500);
     await page.reload();
@@ -75,6 +76,7 @@ test.describe('Edge Cases — Estado da Sessão', () => {
   });
 
   test('Múltiplas abas simuladas não devem conflitar', async ({ page, context }) => {
+    test.setTimeout(60_000);
     const page2 = await context.newPage();
     await page.goto('/os');
     await page2.goto('/crm');

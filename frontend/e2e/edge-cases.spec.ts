@@ -1,12 +1,10 @@
 import { test, expect } from '@playwright/test'
 
-const BASE = 'http://localhost:3000'
-
 test.describe('Edge Cases', () => {
     test.use({ storageState: { cookies: [], origins: [] } })
 
     test('formulario de login vazio nao deve submeter', async ({ page }) => {
-        await page.goto(BASE + '/login', { waitUntil: 'domcontentloaded' })
+        await page.goto('/login', { waitUntil: 'domcontentloaded' })
         await expect(page.locator('input#email')).toBeVisible({ timeout: 10_000 })
 
         await page.click('button[type="submit"]')
@@ -18,7 +16,7 @@ test.describe('Edge Cases', () => {
     })
 
     test('duplo submit deve ser prevenido (botao desabilitado durante loading)', async ({ page }) => {
-        await page.goto(BASE + '/login', { waitUntil: 'domcontentloaded' })
+        await page.goto('/login', { waitUntil: 'domcontentloaded' })
         await expect(page.locator('input#email')).toBeVisible({ timeout: 10_000 })
         await page.fill('input#email', 'test@test.com')
         await page.fill('input#password', 'password')
@@ -33,7 +31,7 @@ test.describe('Edge Cases', () => {
     })
 
     test('token invalido deve limpar estado e redirecionar', async ({ page }) => {
-        await page.goto(BASE + '/login')
+        await page.goto('/login')
 
         await page.evaluate(() => {
             localStorage.setItem('auth_token', 'invalid-garbage-token')
@@ -47,7 +45,7 @@ test.describe('Edge Cases', () => {
             await route.fulfill({ status: 401, json: { message: 'Unauthenticated.' } })
         })
 
-        await page.goto(BASE + '/')
+        await page.goto('/')
         await page.waitForTimeout(5000)
 
         const url = page.url()
@@ -57,17 +55,17 @@ test.describe('Edge Cases', () => {
     })
 
     test('rota inexistente deve redirecionar para /', async ({ page }) => {
-        await page.goto(BASE + '/login')
+        await page.goto('/login')
         await page.evaluate(() => localStorage.clear())
 
-        await page.goto(BASE + '/rota-que-nao-existe-abc123')
+        await page.goto('/rota-que-nao-existe-abc123')
         await page.waitForTimeout(2000)
 
         expect(page.url()).toContain('/login')
     })
 
     test('API offline deve mostrar feedback gracioso (sem crash)', async ({ page }) => {
-        await page.goto(BASE + '/login')
+        await page.goto('/login')
 
         await page.route('**/api/**', route => route.abort('connectionrefused'))
 
@@ -85,10 +83,10 @@ test.describe('Edge Cases', () => {
     })
 
     test('localStorage limpo deve redirecionar para login', async ({ page }) => {
-        await page.goto(BASE + '/login')
+        await page.goto('/login')
         await page.evaluate(() => localStorage.clear())
 
-        await page.goto(BASE + '/')
+        await page.goto('/')
         await page.waitForURL(/\/login/, { timeout: 5000 })
         expect(page.url()).toContain('/login')
     })

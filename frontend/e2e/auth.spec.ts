@@ -1,12 +1,10 @@
 import { test, expect } from '@playwright/test'
 
-const BASE = 'http://localhost:3000'
-
 test.describe('Autenticação', () => {
     test.use({ storageState: { cookies: [], origins: [] } })
 
     test('deve exibir formulário de login', async ({ page }) => {
-        await page.goto(BASE + '/login', { waitUntil: 'networkidle' })
+        await page.goto('/login', { waitUntil: 'networkidle' })
         await expect(page.locator('text=Bem-vindo de volta')).toBeVisible({ timeout: 15000 })
         await expect(page.locator('#email')).toBeVisible()
         await expect(page.locator('#password')).toBeVisible()
@@ -14,7 +12,7 @@ test.describe('Autenticação', () => {
     })
 
     test('deve exibir erro com credenciais inválidas', async ({ page }) => {
-        await page.goto(BASE + '/login', { waitUntil: 'networkidle' })
+        await page.goto('/login', { waitUntil: 'networkidle' })
         await page.fill('#email', 'invalido@teste.com')
         await page.fill('#password', 'senhaerrada')
         await page.click('button[type="submit"]')
@@ -22,13 +20,13 @@ test.describe('Autenticação', () => {
     })
 
     test('redirecionar para login quando não autenticado', async ({ page }) => {
-        await page.goto(BASE + '/')
+        await page.goto('/')
         await page.waitForURL(/\/login/, { timeout: 10000 })
         expect(page.url()).toContain('/login')
     })
 
     test('botão de submit mostra loading durante requisição', async ({ page }) => {
-        await page.goto(BASE + '/login', { waitUntil: 'networkidle' })
+        await page.goto('/login', { waitUntil: 'networkidle' })
 
         // Intercept login to delay response
         await page.route('**/api/v1/login', async (route) => {
@@ -45,7 +43,7 @@ test.describe('Autenticação', () => {
     })
 
     test('toggle de visibilidade da senha funciona', async ({ page }) => {
-        await page.goto(BASE + '/login', { waitUntil: 'networkidle' })
+        await page.goto('/login', { waitUntil: 'networkidle' })
         const passwordInput = page.locator('#password')
         await expect(passwordInput).toHaveAttribute('type', 'password')
 

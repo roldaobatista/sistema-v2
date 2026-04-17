@@ -65,8 +65,8 @@ test.describe('Testes da Tela de Login', () => {
   for (const email of emailsInvalidos) {
     test(`Deve rejeitar o formato de e-mail inválido: "${email}"`, async ({ page }) => {
       // O robô preenche o campo de e-mail com o valor maluco
-      await page.getByLabel('E-mail').fill(email);
-      await page.getByLabel('Senha').fill('qualquersenha');
+      await page.locator('#email').fill(email);
+      await page.locator('#password').fill('qualquersenha');
       await page.getByRole('button', { name: /entrar/i }).click();
 
       // O Chrome bloqueia a submissão. O robô confirma que NÃO saiu da tela de login.
