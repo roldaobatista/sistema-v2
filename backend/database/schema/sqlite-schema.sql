@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (generated via artisan migrate)
--- Generated: 2026-04-17 21:11:24
+-- Generated: 2026-04-17 21:48:17
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8671,3 +8671,4 @@ INSERT INTO "migrations" ("id", "migration", "batch") VALUES (458, '2026_04_17_2
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (459, '2026_04_17_210000_add_updated_by_deleted_by_to_financial_tables', 14);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (462, '2026_04_17_220000_normalize_monetary_precision', 8);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (463, '2026_04_17_230000_add_unique_composite_for_documents', 8);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (464, '2026_04_17_240000_normalize_standard_weight_shape_to_english', 15);

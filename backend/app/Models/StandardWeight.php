@@ -68,11 +68,11 @@ class StandardWeight extends Model
     public const UNITS = ['kg', 'g', 'mg'];
 
     public const SHAPES = [
-        'cilindrico' => 'Cilíndrico',
-        'retangular' => 'Retangular',
-        'disco' => 'Disco',
-        'paralelepipedo' => 'Paralelepípedo',
-        'outro' => 'Outro',
+        'cylindrical' => 'Cilíndrico',
+        'rectangular' => 'Retangular',
+        'disc' => 'Disco',
+        'parallelepiped' => 'Paralelepípedo',
+        'other' => 'Outro',
     ];
 
     protected $fillable = [

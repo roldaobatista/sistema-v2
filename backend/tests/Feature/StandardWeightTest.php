@@ -69,7 +69,7 @@ class StandardWeightTest extends TestCase
             'manufacturer' => 'Mettler Toledo',
             'precision_class' => 'M1',
             'material' => 'Aço Inox',
-            'shape' => 'cilindrico',
+            'shape' => 'cylindrical',
             'certificate_number' => 'CERT-2026-001',
             'certificate_date' => '2026-01-01',
             'certificate_expiry' => '2027-01-01',
