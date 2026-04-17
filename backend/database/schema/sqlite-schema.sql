@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (generated via artisan migrate)
--- Generated: 2026-04-17 21:58:39
+-- Generated: 2026-04-17 22:04:46
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2439,7 +2439,6 @@ CREATE TABLE "expenses" (
  "reimbursement_ap_id" integer DEFAULT NULL,
  "payroll_id" integer DEFAULT NULL,
  "payroll_line_id" integer DEFAULT NULL,
- "user_id" integer DEFAULT NULL,
  "reference_type" varchar(50) DEFAULT NULL,
  "reference_id" integer DEFAULT NULL
 );
@@ -8665,3 +8664,4 @@ INSERT INTO "migrations" ("id", "migration", "batch") VALUES (463, '2026_04_17_2
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (464, '2026_04_17_240000_normalize_standard_weight_shape_to_english', 15);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (465, '2026_04_17_250000_normalize_calibration_result_to_english', 16);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (466, '2026_04_17_260000_drop_pt_columns_from_customer_locations', 17);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (467, '2026_04_17_270000_drop_user_id_from_expenses', 18);
