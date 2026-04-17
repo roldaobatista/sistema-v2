@@ -219,17 +219,24 @@ class EdgeCasesAndBoundaryTest extends TestCase
 
     // ═══ Bulk edge cases ═══
 
-    public function test_multiple_customers_same_document(): void
+    public function test_multiple_customers_same_document_across_tenants(): void
     {
+        // Wave 5 (DATA-007): UNIQUE composto (tenant_id, document_hash, sentinela)
+        // bloqueia mesmo CPF em mesmo tenant (regra de negócio: 1 doc/tenant).
+        // Mesmo CPF em TENANTS DIFERENTES é permitido — Pessoa Física pode ser
+        // cliente de duas empresas Kalibrium independentes simultaneamente.
+        $otherTenant = Tenant::factory()->create();
+
         $c1 = Customer::factory()->create([
             'tenant_id' => $this->tenant->id,
             'document' => '12345678901',
         ]);
         $c2 = Customer::factory()->create([
-            'tenant_id' => $this->tenant->id,
+            'tenant_id' => $otherTenant->id,
             'document' => '12345678901',
         ]);
         $this->assertNotEquals($c1->id, $c2->id);
+        $this->assertNotEquals($c1->tenant_id, $c2->tenant_id);
     }
 
     public function test_wo_with_many_items(): void

@@ -21,15 +21,21 @@ class E2eReferenceSeeder extends Seeder
             ->each(function (Tenant $tenant): void {
                 $customer = $this->customerFixtureFor($tenant);
 
+                // Wave 1B/5: `document` é encrypted (cada save gera ciphertext
+                // diferente), então `WHERE document = X` nunca encontra a row
+                // existente — `updateOrCreate` cria duplicata e colide com o
+                // UNIQUE composto da Wave 5. Usar `document_hash` (HMAC
+                // determinístico, Wave 1B) como chave de match resolve ambos.
                 Customer::withoutGlobalScopes()->updateOrCreate(
                     [
                         'tenant_id' => $tenant->id,
-                        'document' => $customer['document'],
+                        'document_hash' => Customer::hashSearchable($customer['document'], digitsOnly: true),
                     ],
                     [
                         'type' => 'PJ',
                         'name' => $customer['name'],
                         'trade_name' => $customer['name'],
+                        'document' => $customer['document'],
                         'email' => $customer['email'],
                         'phone' => '(65) 99999-0000',
                         'address_city' => 'Cuiaba',

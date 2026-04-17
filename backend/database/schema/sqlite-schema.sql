@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (generated via artisan migrate)
--- Generated: 2026-04-17 20:16:37
+-- Generated: 2026-04-17 21:11:24
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1852,7 +1852,7 @@ CREATE TABLE "customers" (
  "enrichment_data" text DEFAULT NULL,
  "enriched_at" datetime NULL DEFAULT NULL,
  "company_name" varchar(255) DEFAULT NULL
-, "asaas_id" varchar, "document_hash" varchar);
+, "asaas_id" varchar, "document_hash" varchar, "document_hash_active_key" TEXT GENERATED ALWAYS AS (IFNULL("deleted_at", '1970-01-01 00:00:00')) STORED);
 
 CREATE TABLE "data_export_jobs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5618,7 +5618,7 @@ CREATE TABLE "suppliers" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
-, "document_hash" varchar);
+, "document_hash" varchar, "document_hash_active_key" TEXT GENERATED ALWAYS AS (IFNULL("deleted_at", '1970-01-01 00:00:00')) STORED);
 
 CREATE TABLE "support_tickets" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8205,6 +8205,10 @@ CREATE INDEX "accounts_receivable_deleted_at_idx" on "accounts_receivable" ("del
 
 CREATE INDEX "accounts_receivable_tenant_id_idx" on "accounts_receivable" ("tenant_id");
 
+CREATE UNIQUE INDEX "customers_tenant_active_document_hash_unique" on "customers" ("tenant_id", "document_hash", "document_hash_active_key");
+
+CREATE UNIQUE INDEX "suppliers_tenant_active_document_hash_unique" on "suppliers" ("tenant_id", "document_hash", "document_hash_active_key");
+
 -- Migration records
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (1, '0001_01_01_000000_create_users_table', 1);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (2, '0001_01_01_000001_create_cache_table', 1);
@@ -8665,3 +8669,5 @@ INSERT INTO "migrations" ("id", "migration", "batch") VALUES (456, '2026_04_17_1
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (457, '2026_04_17_190000_add_tenant_id_indexes_wave2e', 13);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (458, '2026_04_17_200000_add_hardening_to_client_portal_users', 14);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (459, '2026_04_17_210000_add_updated_by_deleted_by_to_financial_tables', 14);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (462, '2026_04_17_220000_normalize_monetary_precision', 8);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (463, '2026_04_17_230000_add_unique_composite_for_documents', 8);

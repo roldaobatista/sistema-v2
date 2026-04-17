@@ -371,3 +371,78 @@ Antes de incluir, **investigar o call-site**: se for inserção via `Model::crea
 
 ---
 
+### 14.10 Padrão de precisão decimal para colunas monetárias (Wave 5 — DATA-010)
+
+**Decisão (2026-04-17):** padronizar a precisão decimal de campos numéricos do sistema seguindo a tabela abaixo. Migration `2026_04_17_220000_normalize_monetary_precision.php` aplica o padrão **apenas em colunas de TOTAL/SALDO de domínio financeiro core** (5 tabelas, escopo cirúrgico). Demais colunas decimais permanecem como estão até justificativa caso a caso.
+
+**Tabela de padrão:**
+
+| Tipo lógico                       | Tipo SQL          | Faixa absoluta                  | Casos de uso                                    |
+| --------------------------------- | ----------------- | ------------------------------- | ----------------------------------------------- |
+| **money agregado** (totais, saldos) | `decimal(15, 2)`  | até R$ 9.999.999.999.999,99     | `invoices.total`, `accounts_*.amount`, `payments.amount`, `expenses.amount`, `balance` agregado |
+| **money item** (linha individual)  | `decimal(12, 2)`  | até R$ 9.999.999.999,99         | itens de pedido, linhas de comissão, valores unitários |
+| **quantity**                      | `decimal(15, 4)`  | até 99.999.999.999,9999         | estoque, peso, volume — alta precisão fracionária   |
+| **percentage**                    | `decimal(7, 4)`   | até 999,9999%                   | aliquotas, taxas, descontos percentuais        |
+
+**Por que o escopo desta wave foi limitado a 5 tabelas:**
+- Aplicar `decimal(15, 2)` em 100+ colunas tem custo operacional elevado (ALTER em prod), risco de regressão em queries que assumem precisão e zero ganho prático para itens cujo teto de R$ 9,9 bilhões nunca será atingido.
+- TOTAIS AGREGADOS, no entanto, somam centenas/milhares de itens ao longo do tempo — risco de overflow real existe em payroll consolidado, invoices de contratos longos, ou saldos de conta corrente em tenants de alto volume.
+- Campos cobertos: `invoices.total`, `accounts_payable.amount`, `accounts_payable.amount_paid`, `accounts_receivable.amount`, `accounts_receivable.amount_paid`, `payments.amount`, `expenses.amount`.
+
+**SQLite vs MySQL:** SQLite usa type affinity (`numeric` cobre toda a faixa); ALTER é no-op nos testes. MySQL/MariaDB com `doctrine/dbal` (presente no `composer.lock`) suporta ampliação online de `decimal(12,2) → decimal(15,2)` sem rewrite da tabela em InnoDB moderno. Migration é idempotente (consulta `information_schema.COLUMNS.NUMERIC_PRECISION`).
+
+**Como expandir o padrão no futuro:** ao criar nova migration que toca colunas monetárias, seguir a tabela acima desde o início. Para refatorar tabelas legadas, criar migration dedicada por domínio (ex: `normalize_monetary_precision_inventory.php`), nunca em massa.
+
+---
+
+### 14.11 UNIQUE composto com sentinela de soft-delete em customers/suppliers (Wave 5 — DATA-007)
+
+**Decisão (2026-04-17):** adicionar UNIQUE composto `(tenant_id, document_hash, document_hash_active_key)` em `customers` e `suppliers` via migration `2026_04_17_230000_add_unique_composite_for_documents.php`. A coluna `document_hash_active_key` é uma **GENERATED COLUMN STORED** que substitui `deleted_at NULL` por valor sentinela (`'1970-01-01 00:00:00'`), permitindo que UNIQUE bloqueie duplicatas APENAS para registros ATIVOS, mas permita re-criação após soft-delete (regra de negócio legítima do domínio).
+
+**Por que `document_hash` (e não `document`):**
+- A coluna `document` está cifrada at-rest (Eloquent encrypted cast / AES-GCM com IV aleatório). Cada cifragem do mesmo CPF produz ciphertext diferente — UNIQUE em `document` não detectaria colisão.
+- `document_hash` (Wave 1B, migration `2026_04_17_120000`) é HMAC-SHA256 determinístico do documento normalizado, criado exatamente para permitir busca exata e UNIQUE.
+
+**Por que UNIQUE no schema é necessário (validação no FormRequest não basta):**
+- Closure custom em FormRequest faz `SELECT ... WHERE document_hash = ?` antes de inserir. Janela entre SELECT e INSERT é exposta a race condition em requests concorrentes.
+- UNIQUE no DB serializa as duas tentativas: a primeira commita, a segunda recebe constraint violation traduzido para 422 pelo controller.
+
+**Por que sentinela em vez de UNIQUE simples (chave: limitação do MySQL):**
+- Domínio Kalibrium: é regra de negócio LEGÍTIMA que após soft-delete, outro cliente com mesmo CPF possa ser cadastrado (cliente cancelou e voltou). UNIQUE simples bloquearia esse fluxo (ver `tests/Feature/EdgeCases/General/SoftDeleteTest.php::can_create_customer_with_same_document_after_soft_delete`).
+- MySQL 8: UNIQUE em `(tenant_id, document_hash, deleted_at)` com `deleted_at NULL` permite múltiplas rows ativas com mesmo hash, porque NULLs em UNIQUE são considerados distintos ([docs MySQL](https://dev.mysql.com/doc/refman/8.0/en/create-index.html)).
+- Solução padrão da indústria: GENERATED COLUMN STORED que coalesça NULL para epoch determinístico. Duas rows ativas (sentinela = epoch) colidem; uma ativa + uma soft-deleted (sentinela = data real do delete) não colidem.
+
+**Compatibilidade entre drivers:**
+- MySQL 8 / MariaDB 10.5+: `GENERATED ALWAYS AS (IFNULL(deleted_at, '1970-01-01 00:00:00')) STORED`.
+- SQLite 3.31+: mesma sintaxe (testes in-memory).
+- Postgres: `GENERATED ALWAYS AS (COALESCE(deleted_at, TIMESTAMP '1970-01-01 00:00:00')) STORED`.
+
+**Impacto no controller `CustomerMergeController::searchDuplicates`:** o agrupamento por `document_hash` agora usa `withTrashed()` para detectar duplicatas em rows soft-deleted (cenário válido para registros legados pré-UNIQUE).
+
+**Impacto no `E2eReferenceSeeder`:** chave de match em `Customer::updateOrCreate` migrada de `document` (encrypted, gera ciphertext distinto a cada save → bug pré-existente exposto pela UNIQUE) para `document_hash` (determinístico).
+
+**Tolerância a duplicatas legadas em produção:** se houver rows ativas duplicadas pré-existentes, ALTER falha com "duplicate entry". Migration captura e segue — backfill / merge é tarefa operacional separada (`CustomerMergeController::merge` já existe).
+
+**`employees` ficou fora do escopo:** tabela `employees` não possui `document_hash`. Propagar a coluna para essa tabela exige wave dedicada com FormRequest atualizado.
+
+---
+
+### 14.12 Auditoria SoftDeletes — falso positivo da Rodada 3 (Wave 5 — DATA-013)
+
+**Decisão (2026-04-17):** o finding DATA-013 ("11 models com `use SoftDeletes` × 113 tabelas com coluna `deleted_at`") foi **invalidado por verificação direta do código**. Contagem real:
+
+```bash
+$ grep -rln 'use SoftDeletes;\|use Illuminate\\Database\\Eloquent\\SoftDeletes' app/Models | wc -l
+76
+```
+
+O número "11" da Rodada 3 era artefato de regex incompleto (provavelmente buscando apenas uma das duas formas de import: `use SoftDeletes;` shorthand vs `use Illuminate\Database\Eloquent\SoftDeletes;` fully-qualified). 76 models com SoftDeletes contra 113 tabelas com `deleted_at` é uma diferença esperada e benigna:
+
+- Tabelas pivot (M2M) frequentemente carregam `deleted_at` via convenção do schema base mas não têm model próprio — operações vão por `attach`/`detach`.
+- Tabelas auxiliares (lookup, configuração, status histórico) podem ter `deleted_at` adicionado por consistência sem que haja semântica de soft-delete no domínio.
+- Algumas tabelas de log/snapshot herdam `softDeletes()` por boilerplate mas o model usa `forceDeleteWhere` direto.
+
+**Conclusão:** não há drift acionável. Nenhuma migration ou alteração de model resultou desta análise. Se em audit futuro identificarmos um model específico (com nome) cuja tabela tem `deleted_at` e o controller faz `delete()` esperando soft delete — abrir finding pontual com `file:line`. Auditoria por contagem agregada é insuficiente.
+
+---
+

@@ -161,11 +161,18 @@ class CustomerMergeController extends Controller
         if ($type === 'document') {
             // `document` é encrypted (cast `encrypted`) — agrupar por `document_hash`
             // (HMAC-SHA256 determinístico) para detectar duplicatas reais.
-            $duplicates = Customer::select(
-                DB::raw('document_hash as document_normalized'),
-                DB::raw('count(*) as count'),
-                DB::raw("{$concatExpr} as ids")
-            )
+            //
+            // Wave 5 (DATA-007): UNIQUE composto agora previne duplicatas
+            // ATIVAS, mas registros LEGADOS (importados de sistema antigo)
+            // ou registros com soft-delete podem coexistir com mesmo hash.
+            // Incluir `withTrashed()` para detectar todos os casos onde
+            // operação de merge ainda faz sentido.
+            $duplicates = Customer::withTrashed()
+                ->select(
+                    DB::raw('document_hash as document_normalized'),
+                    DB::raw('count(*) as count'),
+                    DB::raw("{$concatExpr} as ids")
+                )
                 ->where('tenant_id', $this->tenantId())
                 ->whereNotNull('document_hash')
                 ->where('document_hash', '!=', '')
@@ -202,10 +209,18 @@ class CustomerMergeController extends Controller
         $results = [];
         foreach ($duplicates as $dup) {
             $ids = explode(',', $dup->ids);
-            $customers = Customer::query()
+            // Wave 5 (DATA-007): para `document`, o agrupamento usa
+            // `withTrashed()` — manter coerência aqui buscando também
+            // registros com soft-delete para que count e customers batam.
+            $customersQuery = Customer::query()
                 ->where('tenant_id', $this->tenantId())
-                ->whereIn('id', $ids)
-                ->get(['id', 'name', 'document', 'email', 'created_at']);
+                ->whereIn('id', $ids);
+
+            if ($type === 'document') {
+                $customersQuery->withTrashed();
+            }
+
+            $customers = $customersQuery->get(['id', 'name', 'document', 'email', 'created_at']);
 
             $key = match ($type) {
                 'document' => $dup->document_normalized,
