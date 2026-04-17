@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (generated via artisan migrate)
--- Generated: 2026-04-17 21:55:25
+-- Generated: 2026-04-17 21:58:39
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1754,16 +1754,7 @@ CREATE TABLE "customer_locations" (
  "contact_name" varchar(255) DEFAULT NULL,
  "contact_phone" varchar(20) DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL,
- "inscricao_estadual" varchar(20) DEFAULT NULL,
- "nome_propriedade" varchar(150) DEFAULT NULL,
- "tipo" varchar(20) DEFAULT 'principal',
- "endereco" varchar(255) DEFAULT NULL,
- "bairro" varchar(100) DEFAULT NULL,
- "cidade" varchar(100) DEFAULT NULL,
- "uf" varchar(2) DEFAULT NULL,
- "cep" varchar(10) DEFAULT NULL
-);
+ "updated_at" datetime NULL DEFAULT NULL);
 
 CREATE TABLE "customer_rfm_scores" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8673,3 +8664,4 @@ INSERT INTO "migrations" ("id", "migration", "batch") VALUES (462, '2026_04_17_2
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (463, '2026_04_17_230000_add_unique_composite_for_documents', 8);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (464, '2026_04_17_240000_normalize_standard_weight_shape_to_english', 15);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (465, '2026_04_17_250000_normalize_calibration_result_to_english', 16);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (466, '2026_04_17_260000_drop_pt_columns_from_customer_locations', 17);
