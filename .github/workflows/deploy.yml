@@ -49,7 +49,7 @@ jobs:
                     -o StrictHostKeyChecking=no \
                     -p "$DEPLOY_PORT" \
                     "${DEPLOY_USER}@${DEPLOY_HOST}" \
-                    'cd /srv/kalibrium && bash deploy/deploy.sh'
+                    'cd /root/sistema && bash deploy/deploy.sh'
 
             - name: Health Check
               env:
@@ -68,7 +68,7 @@ jobs:
                     -o StrictHostKeyChecking=no \
                     -p "$DEPLOY_PORT" \
                     "${DEPLOY_USER}@${DEPLOY_HOST}" \
-                    'cd /srv/kalibrium && bash deploy/deploy.sh --status'
+                    'cd /root/sistema && bash deploy/deploy.sh --status'
 
             - name: Rollback Guidance
               if: failure()
@@ -80,7 +80,7 @@ jobs:
                     echo ""
                     echo "Manual rollback command:"
                     echo "\`\`\`bash"
-                    echo "cd /srv/kalibrium && bash deploy/deploy.sh --rollback"
+                    echo "cd /root/sistema && bash deploy/deploy.sh --rollback"
                     echo "\`\`\`"
                   } >> "$GITHUB_STEP_SUMMARY"
 
