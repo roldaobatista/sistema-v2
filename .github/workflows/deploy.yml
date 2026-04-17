@@ -1,10 +1,12 @@
 name: Deploy to Production
 
 on:
-    workflow_run:
-        workflows: ["CI"]
-        types: [completed]
-        branches: [main]
+    workflow_dispatch:
+        inputs:
+            confirm:
+                description: "Confirmar deploy em produção (digite 'deploy')"
+                required: true
+                default: ""
 
 # Ensure only one deploy runs at a time
 concurrency:
@@ -19,7 +21,7 @@ jobs:
     deploy:
         name: Deploy (Zero-Downtime)
         runs-on: ubuntu-latest
-        if: github.event.workflow_run.conclusion == 'success'
+        if: github.event.inputs.confirm == 'deploy'
         environment: production
 
         steps:
