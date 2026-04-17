@@ -446,3 +446,47 @@ O número "11" da Rodada 3 era artefato de regex incompleto (provavelmente busca
 
 ---
 
+### 14.13 Convenção EN-only para schema e enums + compat PT (Wave 6 — PROD-001..005 / GOV-002..005)
+
+**Decisão (2026-04-17):** todo schema (colunas, enums, defaults) deve usar nomes e valores em inglês minúsculo (`snake_case`), com exceções explícitas para termos fiscais brasileiros irreplacáveis (`cnpj`, `cpf`, `inscricao_estadual`). Esta decisão formaliza o que o CLAUDE.md §4 já exigia para status, estendendo para todos os enums e nomes de coluna.
+
+**Renames executados (Wave 6.1–6.8):**
+
+| Onde | De | Para | Wave |
+|---|---|---|---|
+| `standard_weights.shape` enum | `cilindrico`, `retangular`, `disco`, `paralelepipedo`, `outro` | `cylindrical`, `rectangular`, `disc`, `parallelepiped`, `other` | 6.1 |
+| `equipment_calibrations.result` enum + default | `aprovado`, `aprovado_com_ressalva`, `reprovado` | `approved`, `approved_with_restriction`, `rejected` | 6.2 |
+| `customer_locations` (DROP cols órfãs PT) | `inscricao_estadual`, `nome_propriedade`, `tipo`, `endereco`, `bairro`, `cidade`, `uf`, `cep` | removidas (dead code, EN já existia) | 6.3 |
+| `expenses.user_id` | coluna | removida (duplicata de `created_by`) | 6.4 |
+| `travel_expense_reports.user_id` | coluna | renomeada para `created_by` | 6.5 |
+| `central_items` defaults | `ABERTO`, `MEDIA`, `EQUIPE`, `MANUAL` | `open`, `medium`, `team`, `manual` | 6.6 |
+| `central_*` colunas (5 tabelas, 11 colunas) | `titulo`, `descricao`, `tipo`, `origem`, `prioridade`, `visibilidade`, `contexto`, `ref_tipo`, `responsavel_user_id`, `criado_por_user_id`, `nome`, `ativo`, `prioridade_minima`, `acao_tipo`, etc | EN equivalentes (`title`, `description`, `type`, `origin`, `priority`, `visibility`, `context`, `ref_type`, `assignee_user_id`, `created_by_user_id`, `name`, `active`, `min_priority`, `action_type`, etc) | 6.7 |
+| `visit_reports.visit_type` + `crm_activities.channel` | `presencial` | `in_person` | 6.8 |
+
+**Decisões secundárias derivadas:**
+
+1. **Backward-compat via Resource + Model aliases** (§14.13.a): `AgendaItemResource` emite **ambas** as chaves (EN canônica + PT legacy) para não quebrar frontend não migrado. `AgendaItem::normalizeLegacyAliases()` aceita payloads em PT e mapeia para EN canônico. Aliases PT são **dívida de migração**, remoção programada para ciclo futuro quando frontend estiver 100% migrado.
+2. **Colisão `source` coluna × `source` polymorphic** (§14.13.b): coluna `origem` foi renomeada para `origin` (não `source`) para evitar colisão com relationship polimórfica `source()` em `AgendaItem` que usa `ref_type`/`ref_id`.
+3. **Polymorphic `source()` preservado**: inicialmente renomeado para `referable()` em tentativa de resolver colisão; após rollback via rename `source`→`origin`, polymorphic voltou ao nome original `source()`.
+4. **Termos fiscais brasileiros mantidos em PT** (§14.13.c): `cnpj`, `cpf`, `inscricao_estadual`, `nfse`, códigos ISO (BR, BRL) são termos técnicos sem equivalente direto em EN. Mantidos em PT por convenção de domínio fiscal BR.
+5. **Labels UI permanecem pt-BR**: valores de enum em EN, mas mapas de `label` em Models/constantes continuam em PT-BR porque a UI é pt-BR (`'approved' => 'Aprovado'`).
+
+**Resíduos aceitos (não bloqueiam Camada 1):**
+
+- `watermark_configs.text` default `'CONFIDENCIAL'` — é TEXTO DE EXIBIÇÃO em watermark de documentos, não enum. Pode ser configurado pelo usuário. Sem ação.
+- `QuickNote.php:33` labels PT (`'presencial' => 'Presencial'`) — mapa de tradução UI, keys devem ser EN mas são usadas em display-only. Correção menor para ciclo futuro.
+- Variáveis PHP internas com nomes PT (`$prioridades`, `$visibilidades` em FormRequests) — cosmético, não afeta API.
+
+**Como validar:**
+
+```bash
+# 1. Suite inteira verde
+cd backend && ./vendor/bin/pest --parallel --processes=16 --no-coverage
+
+# 2. Defaults EN no schema
+grep -oE "DEFAULT '[A-Z_]+'" database/schema/sqlite-schema.sql | sort -u
+# Permitidos: 'BR', 'BRL' (ISO), 'CONFIDENCIAL' (texto UI), 'PF', 'PJ' (fiscal BR)
+```
+
+---
+
