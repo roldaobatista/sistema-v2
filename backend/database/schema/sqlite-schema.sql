@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (generated via artisan migrate)
--- Generated: 2026-04-17 23:29:11
+-- Generated: 2026-04-17 23:44:16
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6307,30 +6307,6 @@ CREATE TABLE "visit_checkins" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
-CREATE TABLE "visit_reports" (
- "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "tenant_id" integer NOT NULL,
- "customer_id" integer NOT NULL,
- "user_id" integer NOT NULL,
- "checkin_id" integer DEFAULT NULL,
- "deal_id" integer DEFAULT NULL,
- "visit_date" date NOT NULL,
- "visit_type" varchar(255) NOT NULL DEFAULT 'presencial',
- "contact_name" varchar(255) DEFAULT NULL,
- "contact_role" varchar(255) DEFAULT NULL,
- "summary" text NOT NULL,
- "decisions" text,
- "next_steps" text,
- "overall_sentiment" varchar(255) DEFAULT NULL,
- "topics" text DEFAULT NULL,
- "attachments" text DEFAULT NULL,
- "follow_up_scheduled" tinyint NOT NULL DEFAULT '0',
- "next_contact_at" datetime NULL DEFAULT NULL,
- "next_contact_type" varchar(255) DEFAULT NULL,
- "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL
-);
-
 CREATE TABLE "visit_route_stops" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "visit_route_id" integer NOT NULL,
@@ -7752,8 +7728,6 @@ CREATE INDEX "virtual_cards_tenant_id_idx" on "virtual_cards" ("tenant_id");
 
 CREATE INDEX "visit_checkins_tenant_id_idx" on "visit_checkins" ("tenant_id");
 
-CREATE INDEX "visit_reports_tenant_id_idx" on "visit_reports" ("tenant_id");
-
 CREATE INDEX "visit_routes_tenant_id_idx" on "visit_routes" ("tenant_id");
 
 CREATE INDEX "visit_surveys_tenant_id_idx" on "visit_surveys" ("tenant_id");
@@ -8147,6 +8121,10 @@ CREATE UNIQUE INDEX "ci_ref_unique" on "central_items" ("tenant_id", "ref_type",
 CREATE TABLE "central_templates" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "nome" varchar(150) not null, "description" text, "type" varchar(20) not null default ('TAREFA'), "priority" varchar not null default 'medium', "visibility" varchar not null default 'team', "categoria" varchar(60) default (NULL), "due_days" int default (NULL), "subtasks" text default (NULL), "default_watchers" text default (NULL), "tags" text default (NULL), "ativo" tinyint not null default ('1'), "created_by" integer default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL));
 
 CREATE INDEX "central_templates_tenant_id_idx" on "central_templates" ("tenant_id");
+
+CREATE TABLE "visit_reports" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "customer_id" integer not null, "user_id" integer not null, "checkin_id" integer default (NULL), "deal_id" integer default (NULL), "visit_date" date not null, "visit_type" varchar not null default 'in_person', "contact_name" varchar(255) default (NULL), "contact_role" varchar(255) default (NULL), "summary" text not null, "decisions" text, "next_steps" text, "overall_sentiment" varchar(255) default (NULL), "topics" text default (NULL), "attachments" text default (NULL), "follow_up_scheduled" tinyint not null default ('0'), "next_contact_at" datetime default (NULL), "next_contact_type" varchar(255) default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL));
+
+CREATE INDEX "visit_reports_tenant_id_idx" on "visit_reports" ("tenant_id");
 
 -- Migration records
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (1, '0001_01_01_000000_create_users_table', 1);
@@ -8619,3 +8597,4 @@ INSERT INTO "migrations" ("id", "migration", "batch") VALUES (469, '2026_04_17_2
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (470, '2026_04_17_300000_rename_central_pt_columns_to_english', 21);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (471, '2026_04_17_310000_rename_central_source_to_origin', 22);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (472, '2026_04_17_320000_rename_central_rules_pt_columns', 23);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (473, '2026_04_17_330000_normalize_visit_report_visit_type_to_english', 24);
