@@ -218,3 +218,8 @@ Decisoes arquiteturais documentadas em `docs/TECHNICAL-DECISIONS.md` que devem s
 - **Naming heterogeneo de indices (`_del_idx`, `_deleted_at_idx`, etc.)** — §14.21.l / §14.21.t. Cosmetico aceito.
 - **Cosmeticos S4 gov-04/06/09/10/13/14/15** — §14.21.l. Comentarios PT em migrations antigas, imports nao utilizados, naming cosmetico.
 - **Falsos positivos §14.18** — `RespondToProposalRequest`, `ExportCsvRequest`, `Advanced/*` Requests.
+- **Roles Spatie em PT (`tecnico`, `vendedor`, `gerente`, `motorista`)** — §14.23.a. Nomes canonicos do dominio operacional BR; rename quebraria auth/permissions.
+- **Calibration type `interna`/`externa`/`rastreada_rbc`** — §14.23.b. Terminologia ISO 17025 PT-BR.
+- **Central de Tarefas types (`TAREFA`, `PROJETO`, `LEMBRETE`, `CHAMADO`, `CALIBRACAO`, `ORCAMENTO`, `CONTRATO`)** — §14.23.c. Vocabulario de produto.
+- **Nivel hierarquico `pleno`** — §14.23.d. Enum hibrido EN/PT aceito pelo mercado BR.
+- **Manter detecção EN-only para:** status operacional generico (`paid`/`pending`/`approved`), `priority` (`low`/`medium`/`high`/`urgent`), flags booleanas, tipos tecnicos de framework.

@@ -126,6 +126,7 @@ Decisoes arquiteturais documentadas em `docs/TECHNICAL-DECISIONS.md` que devem s
 - **M2M pivots com naming nao-alfabetico (`email_email_tag`, `quote_quote_tag`, `equipment_model_product`)** — §14.21.q. Cosmetico aceito.
 - **Sufixo `_history` em tabelas (central_item_history, expense_status_history, etc.)** — convencao Laravel historica. Aceito.
 - **`payment_gateway_configs` UNIQUE(tenant_id)** — §14.21.e. MVP one-gateway-per-tenant; multi-gateway e feature futura.
+- **Terminologia PT-BR do dominio** — §14.23. Roles Spatie (`tecnico`, `vendedor`), calibration_type (`externa`/`interna`/`rastreada_rbc`), Central de Tarefas (`TAREFA`/`PROJETO`/etc), `positions.level` (`pleno`). Regra EN-only aplica-se apenas a status operacional generico, priority, flags booleanas e tipos tecnicos de framework.
 
 ## Handoff
 

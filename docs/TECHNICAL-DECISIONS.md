@@ -732,6 +732,66 @@ Policy atual aceita 8 chars + mixedCase + numbers. Será elevado para **12 chars
 
 ---
 
+### 14.23 Terminologia PT-BR do domínio — vocabulários aceitos (gov-01/02/03/05, prod-01)
+
+**Decisão (2026-04-18):** os valores de enum e defaults em português abaixo são **vocabulário do domínio do produto** (não inconsistência linguística) e **permanecem em PT**. A regra EN-only declarada em CLAUDE.md Lei 4 e §14.13 aplica-se a *novos* enums de status técnico genérico (`paid`, `pending`, `approved`) — **não** a terminologia-domínio.
+
+#### 14.23.a Roles Spatie em PT (`tecnico`, `vendedor`, `gerente`, `motorista`, `tecnico_vendedor`)
+
+Nomes de role da tabela `roles` (Spatie Permission) são usados em **30+ arquivos** da aplicação:
+- `app/Http/Controllers/Api/V1/DashboardController.php:424` — filtro de técnicos
+- `app/Http/Controllers/Api/V1/Os/WorkOrderActionController.php:105` — pivot `work_order_technicians.role`
+- `app/Services/AutoAssignmentService.php:148` — `whereIn('roles.name', ['tecnico', 'technician'])`
+- `app/Services/TechnicianProductivityService.php:108,156`
+- `app/Services/WebPushService.php:77`
+- `app/Traits/ScopesByRole.php:14` — `$scopedRoles`
+- `app/Http/Requests/Iam/UpdateUserLocationRequest.php:17` — `hasAnyRole`
+- `app/Models/CommissionRule.php:97` — mapa `'tecnico' => ROLE_TECHNICIAN`
+- `database/seeders/PermissionsSeeder.php` — seeds de role
+- Spatie model `Role::TECNICO = 'tecnico'`
+
+Rename em produção quebraria: autorização, scoping, seeds, permissions, frontend. Canonicalmente o produto é BR, falado em PT; role names refletem o cargo operacional do usuário final.
+
+**Regra:** `roles.name` e `pivot.role` em commission_rules/commission_events/work_order_technicians mantêm PT. **DEFAULT `'tecnico'`** permanece.
+
+#### 14.23.b Calibração ISO 17025 em PT-BR (`interna`, `externa`, `rastreada_rbc`)
+
+Terminologia consolidada do mercado brasileiro de metrologia (Inmetro, RBC, ABNT). `EquipmentController.php:501` mapeia:
+```php
+['interna' => 'Interna', 'externa' => 'Externa', 'rastreada_rbc' => 'Rastreada RBC']
+```
+Valores devolvidos para UI sem tradução. Traduzir para `internal`/`external` criaria dissonância com documentação normativa do cliente.
+
+**Regra:** `equipment_calibrations.calibration_type` mantém `'externa'` como default e aceita `'interna'` / `'externa'` / `'rastreada_rbc'` como vocabulário canônico.
+
+#### 14.23.c Central de Tarefas — vocabulário de produto em PT (`TAREFA`, `PROJETO`, `LEMBRETE`, `CHAMADO`, `CALIBRACAO`)
+
+`central_templates.type` default `'TAREFA'` e `AgendaNotificationPreference.php:112-113` listam tipos em PT-UPPER. São **categorias da Central de Tarefas** exibidas diretamente na interface do usuário e em notificações. Termos carregam semântica específica do fluxo operacional de campo.
+
+**Regra:** `central_templates.type` mantém `'TAREFA'` como default. Enum aceito: `{TAREFA, PROJETO, LEMBRETE, CHAMADO, CALIBRACAO, ORCAMENTO, CONTRATO}` (UPPER, PT).
+
+#### 14.23.d Níveis hierárquicos mistos (`junior`, `pleno`, `senior`, `lead`, `manager`, `director`, `c-level`)
+
+Migration `2026_02_14_000006_create_hr_organization_tables.php:30` define enum:
+```php
+['junior', 'pleno', 'senior', 'lead', 'manager', 'director', 'c-level']
+```
+`pleno` é o único token em PT — equivalente EN seria `mid` ou `mid_level`. Mudar isoladamente criaria enum misto instável; mudar o enum inteiro quebraria dados reais.
+
+**Regra:** `positions.level` mantém enum atual. Aceito como híbrido EN/PT pela prevalência do termo "pleno" no mercado BR.
+
+#### 14.23.e Escopo EN-only reforçado
+
+A regra EN-only CONTINUA valendo para:
+- Status operacional genérico (`status` em OS, quotes, invoices): `paid`, `pending`, `approved`, `cancelled`.
+- Priority (`low`, `medium`, `high`, `urgent`) — exceção legitima onde `normal` existe: será unificado em bloco dedicado (prod-02).
+- Flags booleanas disfarçadas de string (`is_active` boolean, não `'ativo'`).
+- Tipos técnicos de framework (tokens, webhooks, jobs).
+
+**Implicação para auditoria:** `governance` e `product-expert` agent files devem **excluir** os vocabulários acima ao reportar PT em defaults. Manter detecção de PT em colunas de **status operacional genérico**.
+
+---
+
 **Resumo de agent files atualizados:**
 
 | Agent | Atualização |
