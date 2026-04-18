@@ -709,6 +709,29 @@ Colunas `work_order_id`, `reimbursement_ap_id`, `payroll_id`/`payroll_line_id`, 
 
 Policy atual aceita 8 chars + mixedCase + numbers. Será elevado para **12 chars + symbols + uncompromised()** em commit desta sessão (ver bloco "qa fixes" ou dedicado). Não é aceite — é item a corrigir.
 
+---
+
+### 14.22 FKs `tenant_id → tenants` com `ON DELETE CASCADE` — aceito como design (sec-02 / DATA-005 / SEC-012)
+
+**Decisão (2026-04-18):** as FKs das ~520 tabelas filhas de `tenants` permanecem com `ON DELETE CASCADE`, **exceto** `audit_logs` (migrada para RESTRICT em `2026_04_18_500006`).
+
+**Motivo:**
+
+1. **Tenant usa SoftDeletes.** `tenants.deleted_at` existe (trait `SoftDeletes` no model `App\Models\Tenant`). Deleção padrão é lógica, não física — CASCADE só dispara em `forceDelete()`, que é operação administrativa rara e explícita.
+2. **Padrão multi-tenant puro.** Em SaaS multi-tenant, dados pertencem ao tenant; quando o cliente sai e o tenant é força-deletado, todos os seus dados devem sair junto (direito ao esquecimento — LGPD art.18.IV). RESTRICT em massa criaria dependências circulares e exigiria pipeline de deleção customizado por tabela.
+3. **`audit_logs` é exceção LGPD + ISO 17025.** Trilha de auditoria deve sobreviver ao tenant (retenção mínima por regulamento). Por isso recebeu RESTRICT em `500006` — cascata lá eliminaria a evidência.
+4. **Dados fiscais/contábeis críticos** (`invoices`, `accounts_payable/receivable`, `calibration_certificates`) seriam candidatos teóricos a RESTRICT, mas:
+    - O `force-delete` de tenant não deve ocorrer enquanto houver obrigações fiscais pendentes (validação em nível de aplicação, antes da exclusão).
+    - Retenção legal de dados fiscais (5 anos PJ, 10 anos LGPD) é resolvida via **arquivamento anterior** ao `force-delete`, não via FK RESTRICT.
+
+**Exceção documentada: `audit_logs`.** FK `audit_logs.tenant_id → tenants.id` é `ON DELETE RESTRICT ON UPDATE CASCADE`.
+
+**Implicação para auditoria:** `security-expert` e `data-expert` agent files devem tratar CASCADE nas FKs para `tenants` como aceito por design. Reportar apenas se:
+- Nova tabela de compliance (LGPD/ISO/ANVISA) é criada sem RESTRICT.
+- `audit_logs` volta para CASCADE em rollback não-autorizado.
+
+---
+
 **Resumo de agent files atualizados:**
 
 | Agent | Atualização |

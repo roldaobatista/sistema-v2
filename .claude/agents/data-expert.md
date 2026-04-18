@@ -198,6 +198,7 @@ Decisoes arquiteturais documentadas em `docs/TECHNICAL-DECISIONS.md` que devem s
 - **Ausencia de TTL/arquivamento em `audit_logs`, `webhook_logs`, `whatsapp_message_logs`** — §14.21.s. Divida rastreada; sprint futura de observabilidade.
 - **Naming heterogeneo de indices legados (`_del_idx`, `_deleted_at_idx`, etc.)** — §14.21.t. Cosmetico aceito. Novos indices seguem `{table}_{cols}_index`.
 - **Conversao `numeric` no dump SQLite** — §14.21.c (reforco).
+- **FKs `tenant_id -> tenants` com `ON DELETE CASCADE`** — §14.22. Aceito (SoftDeletes no tenant + padrao multi-tenant). Excecao: `audit_logs` usa RESTRICT.
 
 ## Handoff
 
