@@ -172,6 +172,7 @@ Deteccao periodica de drift entre o CLAUDE.md (regras declaradas) e a realidade 
 | `no-archived-refs` | Codigo/docs ativos nao referenciam `docs/.archive/` |
 | `tenant-safety` | Nenhum `tenant_id` lido do request body em PR recente; `withoutGlobalScope` recente justificado em comentario |
 | `migrations-fossil` | Nenhuma alteracao em migration ja mergeada (regra H3) |
+| `migrations-timestamp-unico` | Novas migrations usam timestamp com sufixo `_500000+` para evitar colisao (ver `TECHNICAL-DECISIONS.md §14.19`). Os 10 pares duplicados historicos listados em §14.19 sao fossil aceito — NAO reportar |
 | `schema-dump-fresco` | `backend/database/schema/sqlite-schema.sql` foi atualizado apos cada migration nova |
 
 Findings com severidade (blocker/major/minor/advisory) + `file:line` + recomendacao concreta.

@@ -554,3 +554,42 @@ Esta é uma **exceção justificada**: usuários com acesso multi-tenant (holdin
 
 ---
 
+### 14.19 Timestamps de migration duplicados — fóssil H3 + regra para frente (GOV-RA-05)
+
+**Decisão (2026-04-18):** 10 pares de migrations com timestamps idênticos existem no histórico e são **aceitos como limitação permanente**. Corrigir agora exigiria reescrever migrations já aplicadas em produção (proibido pelo CLAUDE.md §Proibições — alterar migrations mergeadas). Para o futuro, toda nova migration deve usar timestamp com sufixo incremental ≥ `_500000` para garantir ordem determinística.
+
+**Pares atuais (fóssil H3, aceitos):**
+
+| Timestamp | Arquivos |
+|---|---|
+| `2026_03_16_000001` | 2 migrations |
+| `2026_03_16_500001` | 2 migrations |
+| `2026_03_20_120000` | 2 migrations |
+| `2026_03_22_200000` | 2 migrations |
+| `2026_03_23_200006` | 2 migrations |
+| `2026_03_23_300001` | 2 migrations |
+| `2026_03_23_300002` | 2 migrations |
+| `2026_03_24_000001` | 2 migrations |
+| `2026_03_26_400001` | 2 migrations |
+| `2026_04_09_100000` | 2 migrations |
+
+**Motivo da aceitação:**
+
+1. **Migrations já aplicadas em produção** — reescrever quebraria a tabela `migrations` e forçaria rollback/replay manual em ambientes existentes.
+2. **Laravel resolve colisões pela ordem do filesystem** — em todos os 10 pares, ambas as migrations são independentes entre si (tocam tabelas ou colunas distintas), então a ordem não afeta o schema final.
+3. **Risco zero em produção** — o schema dump canônico (`database/schema/sqlite-schema.sql`) representa o estado final, então ambientes novos não passam pela ordem em ordem.
+
+**Regra permanente para novas migrations:**
+
+Timestamp deve ter **sufixo incremental a partir de `_500000`** quando houver risco de colisão com timestamp do mesmo dia. Exemplos válidos:
+
+- `2026_05_10_500001_*.php`
+- `2026_05_10_500002_*.php`
+- `2026_05_10_500003_*.php`
+
+Timestamps com sufixo `_000000` ou menor que `_500000` são **reservados para migrations históricas** e não devem ser reutilizados.
+
+**Implicação para auditoria:** `governance` agent file deve tratar os 10 pares listados como fóssil aceito e não reportá-los. Detecção de novos duplicados continua válida.
+
+---
+
