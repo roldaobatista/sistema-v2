@@ -57,7 +57,7 @@ class ExtendedModulesApiTest extends TestCase
         $response = $this->actingAs($this->admin)->postJson('/api/v1/suppliers', [
             'name' => 'Fornecedor XYZ',
             'document' => '11222333000181',
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
         $this->assertTrue(in_array($response->status(), [200, 201]));
     }

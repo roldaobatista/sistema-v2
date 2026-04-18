@@ -190,11 +190,12 @@ test('CustomerObserver does not recalculate on irrelevant field changes', functi
         'tenant_id' => $this->tenant->id,
     ]);
 
-    // Changing name should not trigger health score recalculation
-    $customer->update(['name' => 'New Name']);
+    $originalScore = $customer->health_score;
 
-    // No exception = no infinite recursion
-    expect(true)->toBeTrue();
+    $customer->update(['name' => 'New Name']);
+    $customer->refresh();
+
+    expect($customer->health_score)->toBe($originalScore);
 });
 
 // ---------------------------------------------------------------------------

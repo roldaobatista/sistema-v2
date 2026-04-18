@@ -46,7 +46,7 @@ class ValidationEdgeCasesTest extends TestCase
     public function test_customer_name_required(): void
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/customers', [
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
         $response->assertUnprocessable();
         $response->assertJsonValidationErrors('name');
@@ -74,7 +74,7 @@ class ValidationEdgeCasesTest extends TestCase
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/customers', [
             'name' => 'Test',
-            'type' => 'company',
+            'type' => 'PJ',
             'email' => 'not-email',
         ]);
         $response->assertUnprocessable();
@@ -84,7 +84,7 @@ class ValidationEdgeCasesTest extends TestCase
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/customers', [
             'name' => str_repeat('A', 500),
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
         $this->assertTrue(in_array($response->status(), [201, 422]));
     }
@@ -228,7 +228,7 @@ class ValidationEdgeCasesTest extends TestCase
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/customers', [
             'name' => '',
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
         $response->assertUnprocessable();
     }
@@ -237,7 +237,7 @@ class ValidationEdgeCasesTest extends TestCase
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/customers', [
             'name' => null,
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
         $response->assertUnprocessable();
     }
@@ -246,7 +246,7 @@ class ValidationEdgeCasesTest extends TestCase
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/customers', [
             'name' => '   ',
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
         $this->assertTrue(in_array($response->status(), [201, 422]));
     }
@@ -257,7 +257,7 @@ class ValidationEdgeCasesTest extends TestCase
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/customers', [
             'name' => 'Empresa São João Ações ® © ™',
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
         $this->assertTrue(in_array($response->status(), [201, 422]));
     }
@@ -266,7 +266,7 @@ class ValidationEdgeCasesTest extends TestCase
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/customers', [
             'name' => 'Empresa 🏭',
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
         $this->assertTrue(in_array($response->status(), [201, 422]));
     }

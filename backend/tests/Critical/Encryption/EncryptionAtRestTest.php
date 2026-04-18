@@ -92,7 +92,7 @@ it('TwoFactorAuth.backup_codes é hash-at-rest (bcrypt), irreversível, verific�
 
     foreach ($plainCodes as $index => $plain) {
         expect(Hash::check($plain, $stored[$index]))->toBeTrue("Hash::check falhou para code {$plain}");
-        expect($stored[$index])->not->toBe($plain, 'backup_code[]' . $index . ' armazenado em plain text.');
+        expect($stored[$index])->not->toBe($plain, 'backup_code[]'.$index.' armazenado em plain text.');
     }
 });
 
@@ -176,4 +176,63 @@ it('raw DB row de user_2fa não é decriptável duas vezes (regressão dupla cri
     // Com correção, decryptString() retorna o secret plain e uma nova tentativa falha.
     expect(fn () => Crypt::decryptString($decryptedOnce))
         ->toThrow(DecryptException::class, null, 'user_2fa.secret está duplamente criptografado — dupla cripto da regressão ainda presente.');
+});
+
+/**
+ * qa-07: $hidden NÃO deve vazar campos sensíveis em serialização JSON.
+ * Se alguém remover 'secret' ou 'backup_codes' de $hidden no Model, o teste
+ * de encryption-at-rest anterior continua passando (cast funciona), mas o
+ * campo vaza em responses da API. Esta suite cobre essa regressão.
+ */
+it('TwoFactorAuth::toArray não vaza secret nem backup_codes (qa-07)', function () {
+    $user = User::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'current_tenant_id' => $this->tenant->id,
+    ]);
+
+    $twoFa = TwoFactorAuth::create([
+        'user_id' => $user->id,
+        'tenant_id' => $this->tenant->id,
+        'secret' => 'TOTP_SECRET_HIDDEN_CHECK_XXXXXXXX',
+        'backup_codes' => [Hash::make('ABC12345'), Hash::make('DEF67890')],
+        'method' => 'app',
+        'is_enabled' => true,
+    ]);
+
+    $array = $twoFa->fresh()->toArray();
+    $json = $twoFa->fresh()->toJson();
+
+    expect($array)
+        ->not->toHaveKey('secret', 'TwoFactorAuth.secret vazou em toArray — remova de $hidden quebra invariante de seguranca.')
+        ->and($array)
+        ->not->toHaveKey('backup_codes', 'TwoFactorAuth.backup_codes vazou em toArray.')
+        ->and($json)
+        ->not->toContain('TOTP_SECRET_HIDDEN_CHECK', 'Ciphertext ou plain do secret aparece no JSON serializado.');
+});
+
+it('MarketingIntegration::toArray não vaza api_key (qa-07)', function () {
+    $integration = new MarketingIntegration([
+        'provider' => 'mailchimp',
+        'api_key' => 'SUPER_SECRET_API_KEY_QA07',
+        'sync_contacts' => true,
+    ]);
+    $integration->save();
+
+    $array = $integration->fresh()->toArray();
+
+    expect($array)->not->toHaveKey('api_key');
+});
+
+it('SsoConfig::toArray não vaza client_secret (qa-07)', function () {
+    $sso = new SsoConfig([
+        'provider' => 'google',
+        'client_id' => 'client_id_qa07',
+        'client_secret' => 'SECRET_CLIENT_QA07',
+        'is_active' => true,
+    ]);
+    $sso->save();
+
+    $array = $sso->fresh()->toArray();
+
+    expect($array)->not->toHaveKey('client_secret');
 });

@@ -99,7 +99,7 @@ class RbacDeepTest extends TestCase
     {
         $response = $this->actingAs($this->manager)->postJson('/api/v1/customers', [
             'name' => 'Manager Customer',
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
         $this->assertTrue(in_array($response->status(), [201, 200]));
     }

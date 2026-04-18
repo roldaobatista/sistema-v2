@@ -94,17 +94,11 @@ class AuditLogControllerTest extends TestCase
 
         $response = $this->getJson('/api/v1/audit-logs?user_id='.$otherUser->id);
 
-        // Nao pode retornar 500. Pode retornar 422 (validacao rejeita) OU 200 com lista vazia.
-        $this->assertContains(
-            $response->status(),
-            [200, 422],
-            'Filtro por user_id de outro tenant deve ser rejeitado ou ignorado, nunca vazar logs'
-        );
-
-        if ($response->status() === 200) {
-            $data = $response->json('data') ?? [];
-            $this->assertCount(0, $data, 'Logs de user de outro tenant vazaram via filtro user_id');
-        }
+        // Contrato fixado: global scope BelongsToTenant filtra; filtro por user
+        // de outro tenant retorna 200 com lista vazia (nao vaza existencia nem dados).
+        $response->assertStatus(200);
+        $data = $response->json('data') ?? [];
+        $this->assertCount(0, $data, 'Logs de user de outro tenant vazaram via filtro user_id');
     }
 
     public function test_actions_endpoint_returns_distinct_actions_of_tenant(): void

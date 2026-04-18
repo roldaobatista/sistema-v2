@@ -8,6 +8,7 @@ use App\Enums\AgendaItemStatus;
 use App\Enums\AgendaItemType;
 use App\Enums\AgendaItemVisibility;
 use App\Models\AgendaItem;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,7 +19,7 @@ class AgendaItemFactory extends Factory
     public function definition(): array
     {
         return [
-            'tenant_id' => 1,
+            'tenant_id' => Tenant::factory(),
             'type' => fake()->randomElement(AgendaItemType::cases()),
             'title' => fake()->sentence(4),
             'short_description' => fake()->optional()->sentence(8),

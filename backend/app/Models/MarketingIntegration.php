@@ -39,6 +39,14 @@ class MarketingIntegration extends Model
         'sync_events',
     ];
 
+    /**
+     * qa-07 (Re-auditoria Camada 1): credencial de provedor externo nao pode
+     * aparecer em responses JSON mesmo decriptada — forca via $hidden.
+     */
+    protected $hidden = [
+        'api_key',
+    ];
+
     protected function casts(): array
     {
         return [

@@ -67,7 +67,7 @@ class AdvancedSecurityTest extends TestCase
     {
         $response = $this->actingAs($this->admin)->postJson('/api/v1/customers', [
             'name' => '<script>alert("xss")</script>Customer',
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
         if ($response->status() === 201) {
             $this->assertStringNotContainsString('<script>', $response->json('data.name', ''));
@@ -100,7 +100,7 @@ class AdvancedSecurityTest extends TestCase
     {
         $response = $this->actingAs($this->admin)->postJson('/api/v1/customers', [
             'name' => '{"$gt":""}',
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
         $this->assertNotEquals(500, $response->status(), 'NoSQL injection attempt caused a server error');
     }
@@ -159,7 +159,7 @@ class AdvancedSecurityTest extends TestCase
         $largeText = str_repeat('A', 100000);
         $response = $this->actingAs($this->admin)->postJson('/api/v1/customers', [
             'name' => $largeText,
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
         $this->assertContains($response->status(), [201, 422, 413], 'Large payload should be created or rejected by validation, not cause errors');
     }

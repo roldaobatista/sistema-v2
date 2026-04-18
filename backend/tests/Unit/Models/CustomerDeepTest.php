@@ -119,9 +119,9 @@ class CustomerDeepTest extends TestCase
     {
         $company = Customer::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
-        $results = Customer::where('type', 'company')->get();
+        $results = Customer::where('type', 'PJ')->get();
         $this->assertTrue($results->contains('id', $company->id));
     }
 
@@ -129,9 +129,9 @@ class CustomerDeepTest extends TestCase
     {
         $individual = Customer::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'type' => 'individual',
+            'type' => 'PF',
         ]);
-        $results = Customer::where('type', 'individual')->get();
+        $results = Customer::where('type', 'PF')->get();
         $this->assertTrue($results->contains('id', $individual->id));
     }
 
@@ -211,7 +211,7 @@ class CustomerDeepTest extends TestCase
             'email' => 'teste@t.com',
             'phone' => '11999887766',
             'document' => '12345678901',
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
         $this->assertEquals('Teste', $c->name);
         $this->assertEquals('teste@t.com', $c->email);

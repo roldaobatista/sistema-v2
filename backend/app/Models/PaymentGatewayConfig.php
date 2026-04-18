@@ -41,6 +41,15 @@ class PaymentGatewayConfig extends Model
         'is_active',
     ];
 
+    /**
+     * qa-07 (Re-auditoria Camada 1): credenciais de gateway nao podem vazar
+     * em serializacao JSON mesmo apos decriptagem.
+     */
+    protected $hidden = [
+        'api_key',
+        'api_secret',
+    ];
+
     protected function casts(): array
     {
         return [
