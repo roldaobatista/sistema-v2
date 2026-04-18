@@ -168,6 +168,7 @@ Decisoes arquiteturais documentadas em `docs/TECHNICAL-DECISIONS.md` que devem s
 - **Portal hardening (lockout/2FA/password_history) estrutura pronta, logica pendente** — §14.6 + §14.21.h. Backlog rastreado; nao reportar como finding ativo.
 - **Falsos positivos aceitos da re-auditoria 2026-04-17** — §14.18. `RespondToProposalRequest` / `ExportCsvRequest` / `Advanced/*` Requests tem `authorize()` valido; `fiscal_environment`/`rep_p_*` sao strings nativas sem necessidade de cast.
 - **FKs `tenant_id -> tenants` com `ON DELETE CASCADE`** — §14.22. Padrao multi-tenant; tenant usa SoftDeletes; force-delete e operacao administrativa explicita. Excecao `audit_logs` ja migrada para RESTRICT.
+- **Password policy via `Password::defaults()` no AppServiceProvider** — §14.27. Min 12 + mixedCase + numbers + symbols + uncompromised (prod). Nao reportar policy fraca; grep `Password::defaults` antes.
 
 ## Handoff
 

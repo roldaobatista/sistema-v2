@@ -820,6 +820,37 @@ A regra EN-only CONTINUA valendo para:
 
 ---
 
+### 14.26 `customers` / `suppliers` — unicidade via `document_hash`, não plaintext (data-08)
+
+**Decisão (2026-04-18):** `customers` e `suppliers` não têm UNIQUE direto em `(tenant_id, document)` porque o campo `document` é **encrypted-at-rest** (cast `encrypted`) — UNIQUE em ciphertext não faz sentido (o ciphertext muda a cada encryption).
+
+**Unicidade efetiva é garantida por:**
+- `customers_tenant_active_document_hash_unique("tenant_id", "document_hash", "document_hash_active_key")` — soft-delete-aware via `document_hash_active_key` (null quando ativo, `id` quando soft-deleted, permitindo re-cadastro após exclusão).
+- Igual pattern em `suppliers`.
+
+**Email sem UNIQUE por design:** um tenant pode ter múltiplos `customers` com mesmo email (endereço corporativo compartilhado entre contato PF e conta PJ). Aplicação valida unicidade quando necessário em FormRequest.
+
+**Implicação para auditoria:** `data-expert` agent file deve reconhecer `document_hash_unique` como equivalente funcional ao UNIQUE em plaintext. Reportar apenas ausência de AMBOS.
+
+---
+
+### 14.27 Password policy elevada — min 12 + symbols + uncompromised (sec-04)
+
+**Decisão (2026-04-18):** `Password::defaults()` em `AppServiceProvider::boot()` aplica OWASP ASVS L1:
+- `min(12)` — 12 caracteres (anterior: 8)
+- `mixedCase()` + `letters()` + `numbers()` + `symbols()`
+- `uncompromised()` em produção (checa HaveIBeenPwned API)
+
+Aplicado a toda `Rule::Password::defaults()` em FormRequests de cadastro, reset, troca de senha.
+
+**Não quebra senhas existentes** — policy só aplica ao validar novas senhas/trocas.
+
+**`uncompromised()` condicional:** desabilitado em ambientes não-produção porque depende de API externa — testes ficariam lentos/flaky.
+
+**Implicação para auditoria:** `security-expert` agent file não deve mais reportar password policy fraca.
+
+---
+
 ### 14.25 `user_2fa` UNIQUE(user_id) global — aceito (data-14)
 
 **Decisão (2026-04-18):** `user_2fa.user_id` UNIQUE global (não composto com `tenant_id`) **é o comportamento correto.**

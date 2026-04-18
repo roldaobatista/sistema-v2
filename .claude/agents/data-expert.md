@@ -200,6 +200,7 @@ Decisoes arquiteturais documentadas em `docs/TECHNICAL-DECISIONS.md` que devem s
 - **Conversao `numeric` no dump SQLite** — §14.21.c (reforco).
 - **FKs `tenant_id -> tenants` com `ON DELETE CASCADE`** — §14.22. Aceito (SoftDeletes no tenant + padrao multi-tenant). Excecao: `audit_logs` usa RESTRICT.
 - **`user_2fa.user_id` UNIQUE global** — §14.25. 2FA e identidade de usuario, nao de tenant.
+- **`customers` / `suppliers` UNIQUE via document_hash (nao plaintext)** — §14.26. Campo encrypted-at-rest; unicidade efetiva via hash + soft-delete-aware unique.
 
 ## Handoff
 
