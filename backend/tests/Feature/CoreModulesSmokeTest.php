@@ -96,7 +96,7 @@ class CoreModulesSmokeTest extends TestCase
         $response = $this->postJson('/api/v1/work-orders', [
             'customer_id' => $customer->id,
             'description' => 'Smoke OS',
-            'priority' => 'normal',
+            'priority' => 'medium',
         ]);
         $response->assertStatus(201);
         $id = $response->json('data.id');

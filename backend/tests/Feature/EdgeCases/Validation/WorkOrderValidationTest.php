@@ -84,7 +84,7 @@ test('invalid priority value is rejected', function () {
 });
 
 test('valid priority values are accepted', function () {
-    foreach (['low', 'normal', 'high', 'urgent'] as $priority) {
+    foreach (['low', 'medium', 'high', 'urgent'] as $priority) {
         $response = $this->postJson('/api/v1/work-orders', [
             'customer_id' => $this->customer->id,
             'description' => "Priority {$priority} test",

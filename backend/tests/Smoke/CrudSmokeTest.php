@@ -30,7 +30,7 @@ class CrudSmokeTest extends SmokeTestCase
         $response = $this->postJson('/api/v1/work-orders', [
             'customer_id' => $customer->id,
             'description' => 'Smoke Test OS',
-            'priority' => 'normal',
+            'priority' => 'medium',
         ]);
 
         $response->assertStatus(201);

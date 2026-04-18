@@ -74,7 +74,7 @@ class WorkOrderLifecycleE2ETest extends TestCase
         $response = $this->postJson('/api/v1/work-orders', [
             'customer_id' => $this->customer->id,
             'description' => 'Calibração balança industrial',
-            'priority' => 'normal',
+            'priority' => 'medium',
             'assigned_to' => $this->technician->id,
         ]);
 
