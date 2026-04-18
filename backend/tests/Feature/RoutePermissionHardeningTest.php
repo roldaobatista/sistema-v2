@@ -646,7 +646,7 @@ class RoutePermissionHardeningTest extends TestCase
             'created_by' => $otherUser->id,
             'number' => WorkOrder::nextNumber($otherTenant->id),
             'status' => WorkOrder::STATUS_OPEN,
-            'priority' => WorkOrder::PRIORITY_NORMAL,
+            'priority' => WorkOrder::PRIORITY_MEDIUM,
             'description' => 'OS outro tenant',
             'total' => 0,
             'origin_type' => WorkOrder::ORIGIN_MANUAL,

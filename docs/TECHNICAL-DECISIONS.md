@@ -490,3 +490,67 @@ grep -oE "DEFAULT '[A-Z_]+'" database/schema/sqlite-schema.sql | sort -u
 
 ---
 
+### 14.14 Tabelas globais-por-design (DATA-RA-09 — Onda 8)
+
+**Decisão (2026-04-18):** três tabelas do schema **não têm `tenant_id` por design**, pois carregam dados de escopo SaaS-wide ou infra. Auditorias de tenant isolation devem ignorá-las.
+
+| Tabela | Motivo |
+|---|---|
+| `marketplace_partners` | Catálogo centralizado de integrações disponíveis (padrão SaaS tipo AWS Marketplace / Shopify Apps). Parceiros não mudam por tenant; solicitações de tenant ficam em `marketplace_requests` (que tem `tenant_id`). |
+| `competitor_instrument_repairs` | Dados públicos de mercado (histórico de concorrentes Inmetro). Cross-tenant visibility é intencional para análise competitiva. |
+| `permission_groups` | Infra Spatie Permission — agrupa permissões do sistema (`customers.view`, etc.). Permissions são globais; escopo por tenant vive em `model_has_roles.team_id`. |
+
+**Implicação para re-auditoria:** agent files de `security-expert` e `data-expert` devem tratar essas três tabelas como exceção documentada. Não reportar como finding a partir desta data.
+
+---
+
+### 14.15 ConsolidatedFinancialController — exceção autorizada à Lei H1 (GOV-RA-07)
+
+**Decisão (2026-04-18, falso positivo da Rodada 3):** o endpoint `GET /financial/consolidated` aceita filtro `tenant_filter` / `tenant_id` via query string **por design**. O código já documenta essa exceção (vide docblock do controller) e implementa validação adequada:
+
+1. `userTenantIds($request)` retorna os tenants aos quais o usuário tem acesso.
+2. Se o filtro bate em um desses IDs, é aplicado como restrição (escopo mais estreito).
+3. Se não bate, o filtro é silenciosamente ignorado e retorna a visão padrão dos tenants permitidos.
+4. **Nunca** é usado para escopo de escrita — apenas filtro de leitura em consolidação.
+
+Esta é uma **exceção justificada**: usuários com acesso multi-tenant (holdings) precisam poder consolidar visão de UM tenant específico via endpoint único. A alternativa (criar N endpoints) seria pior.
+
+**Implicação:** `governance` e `security-expert` agent files devem reconhecer essa exceção e não reportar mais GOV-RA-07 como violação de Lei 4.
+
+---
+
+### 14.16 Terminologia — Certificado de Calibração vs Laudo Técnico (PROD-RA-01)
+
+**Decisão (2026-04-18):** os termos **não são sinônimos** no domínio ISO 17025 / Portaria Inmetro 157/2022, e o código reflete essa distinção corretamente.
+
+| Conceito | Definição | Onde mora no sistema |
+|---|---|---|
+| **Certificado de Calibração** (`calibration_certificate`) | Documento formal emitido por laboratório acreditado após execução de calibração. Contém rastreabilidade metrológica, valores medidos, incerteza declarada e carimbo RBC. Valor legal. | Tabela `calibration_certificates`; rota `/api/v1/calibration-certificates`; PDF gerado via `CalibrationCertificateService`. |
+| **Laudo Técnico** (`technical_report`) | Campo de texto livre onde o técnico registra observações da execução da OS (estado do equipamento recebido, anomalias, recomendações). Não é documento formal. | Coluna `work_orders.technical_report`; exibido em PDFs de OS como seção "Laudo Técnico". |
+
+**Implicação para re-auditoria:** o rótulo "Laudo Técnico" em `WorkOrderActionController.php:950` é **correto** e intencional — não é referência a certificado. `product-expert` agent file deve reconhecer a distinção. Terminologia "certificado de calibração" permanece canônica para o documento formal.
+
+---
+
+### 14.17 Switch de tenant revoga todos os tokens (SEC-RA-13)
+
+**Decisão (2026-04-18):** ao trocar de tenant via `POST /auth/switch-tenant`, o sistema revoga **todos** os tokens ativos do usuário (`$user->tokens()->delete()`) antes de emitir o novo token escopado para o tenant destino.
+
+**Motivação:** embora cada token seja emitido com ability `tenant:X`, a revogação total elimina qualquer janela de validação cross-tenant em devices/sessões paralelas. Trade-off: usuário desloga em todos os devices ao trocar de tenant — aceitável dado que switch é operação rara e intencional.
+
+**Alternativa considerada e descartada:** adicionar coluna `scoped_tenant_id` em `personal_access_tokens` + middleware de validação. Custo estrutural maior sem benefício funcional equivalente.
+
+---
+
+### 14.18 Falsos positivos aceitos da re-auditoria 2026-04-17
+
+**Decisão (2026-04-18):** três findings da re-auditoria foram verificados manualmente contra o código e classificados como **falsos positivos**. Não acionáveis.
+
+- **SEC-RA-09** — `RespondToProposalRequest::authorize()` **não** retorna `true` mudo: valida token de rota via lookup em `CrmInteractiveProposal`. `ExportCsvRequest::authorize()` valida permissão por entity via `$this->user()->can($permissions[$entity])`. Agent deu match superficial por grep de `return true`.
+- **SEC-RA-10** — os 5 Requests `Advanced/*` listados **têm** override explícito de `authorize()` chamando `$this->user()->can(...)` com permissão nomeada. Agent inferiu ausência a partir de grep incompleto.
+- **SEC-RA-11** — campos `fiscal_environment`, `rep_p_*`, `fiscal_nfse_city` são strings nativas. Cast explícito é desnecessário — Laravel trata como string por padrão.
+
+**Implicação:** `security-expert` agent file deve ser atualizado para reconhecer esses três padrões como válidos e não reportá-los em auditorias futuras.
+
+---
+

@@ -124,7 +124,7 @@ test('WorkOrderObserver logs critical field changes via audit', function () {
         'tenant_id' => $this->tenant->id,
         'created_by' => $this->user->id,
         'status' => WorkOrder::STATUS_OPEN,
-        'priority' => WorkOrder::PRIORITY_NORMAL,
+        'priority' => WorkOrder::PRIORITY_MEDIUM,
     ]);
 
     Log::shouldReceive('channel')

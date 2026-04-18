@@ -251,7 +251,7 @@ class StockAdvancedTest extends TestCase
             'customer_id' => $this->customer->id,
             'number' => WorkOrder::nextNumber($this->tenant->id),
             'status' => WorkOrder::STATUS_OPEN,
-            'priority' => WorkOrder::PRIORITY_NORMAL,
+            'priority' => WorkOrder::PRIORITY_MEDIUM,
             'description' => 'Warranty lookup test',
             'origin_type' => WorkOrder::ORIGIN_MANUAL,
             'created_by' => $this->user->id,

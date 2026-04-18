@@ -41,10 +41,6 @@ class StoreWorkOrderRequest extends FormRequest
             $cleaned['description'] = $this->input('title');
         }
 
-        if ($this->input('priority') === 'medium') {
-            $cleaned['priority'] = WorkOrder::PRIORITY_NORMAL;
-        }
-
         foreach ($nullable as $field) {
             if ($this->has($field) && $this->input($field) === '') {
                 $cleaned[$field] = null;

@@ -71,7 +71,7 @@ class ConvertQuoteToWorkOrderAction
                 'assigned_to' => $quote->seller_id,
                 'created_by' => $userId,
                 'status' => WorkOrder::STATUS_OPEN,
-                'priority' => WorkOrder::PRIORITY_NORMAL,
+                'priority' => WorkOrder::PRIORITY_MEDIUM,
                 'description' => $quote->observations ?? "Gerada a partir do orçamento {$quote->quote_number}",
                 'discount' => $quoteFixedDiscount,
                 'discount_percentage' => $quoteDiscountPercentage,
