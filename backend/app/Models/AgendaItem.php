@@ -251,7 +251,7 @@ class AgendaItem extends Model
 
     public function subtasks(): HasMany
     {
-        return $this->hasMany(AgendaSubtask::class, 'agenda_item_id')->orderBy('ordem');
+        return $this->hasMany(AgendaSubtask::class, 'agenda_item_id')->orderBy('sort_order');
     }
 
     public function attachments(): HasMany

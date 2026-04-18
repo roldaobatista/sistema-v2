@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property array<int|string, mixed>|null $subtasks
  * @property array<int|string, mixed>|null $default_watchers
  * @property array<int|string, mixed>|null $tags
- * @property bool|null $ativo
+ * @property bool|null $is_active
  * @property int|null $due_days
  */
 class AgendaTemplate extends Model
@@ -29,7 +29,7 @@ class AgendaTemplate extends Model
             'subtasks' => 'array',
             'default_watchers' => 'array',
             'tags' => 'array',
-            'ativo' => 'boolean',
+            'is_active' => 'boolean',
             'due_days' => 'integer',
         ];
 
@@ -49,7 +49,7 @@ class AgendaTemplate extends Model
             'tenant_id' => $tenantId,
             'type' => strtolower($this->type),
             'origin' => 'manual',
-            'title' => $overrides['title'] ?? $this->nome,
+            'title' => $overrides['title'] ?? $this->name,
             'short_description' => $overrides['short_description'] ?? $this->description,
             'assignee_user_id' => $responsavelId,
             'created_by_user_id' => $user?->id ?? $responsavelId,
@@ -67,7 +67,7 @@ class AgendaTemplate extends Model
                     $item->subtasks()->create([
                         'tenant_id' => $tenantId,
                         'title' => $title,
-                        'ordem' => $i,
+                        'sort_order' => $i,
                     ]);
                 }
             }

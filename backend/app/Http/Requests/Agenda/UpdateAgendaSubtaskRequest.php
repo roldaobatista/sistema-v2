@@ -15,8 +15,8 @@ class UpdateAgendaSubtaskRequest extends FormRequest
     {
         return [
             'title' => 'sometimes|string|max:255',
-            'concluido' => 'sometimes|boolean',
-            'ordem' => 'sometimes|integer|min:0',
+            'is_completed' => 'sometimes|boolean',
+            'sort_order' => 'sometimes|integer|min:0',
         ];
     }
 }

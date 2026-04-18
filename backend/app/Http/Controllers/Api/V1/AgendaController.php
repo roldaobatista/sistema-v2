@@ -392,12 +392,12 @@ class AgendaController extends Controller
     public function storeSubtask(StoreAgendaSubtaskRequest $request, AgendaItem $agendaItem): JsonResponse
     {
         $validated = $request->validated();
-        $maxOrdem = $agendaItem->subtasks()->max('ordem') ?? -1;
+        $maxOrder = $agendaItem->subtasks()->max('sort_order') ?? -1;
 
         $subtask = $agendaItem->subtasks()->create([
             'tenant_id' => $this->tenantId(),
             'title' => $validated['title'],
-            'ordem' => $validated['ordem'] ?? ($maxOrdem + 1),
+            'sort_order' => $validated['sort_order'] ?? ($maxOrder + 1),
         ]);
 
         return ApiResponse::data($subtask, 201);
@@ -411,10 +411,10 @@ class AgendaController extends Controller
 
         $validated = $request->validated();
 
-        if (isset($validated['concluido']) && $validated['concluido'] && ! $subtask->concluido) {
+        if (isset($validated['is_completed']) && $validated['is_completed'] && ! $subtask->is_completed) {
             $validated['completed_by'] = $request->user()?->getAuthIdentifier();
             $validated['completed_at'] = now();
-        } elseif (isset($validated['concluido']) && ! $validated['concluido']) {
+        } elseif (isset($validated['is_completed']) && ! $validated['is_completed']) {
             $validated['completed_by'] = null;
             $validated['completed_at'] = null;
         }
@@ -705,9 +705,9 @@ class AgendaController extends Controller
         $tenantId = $this->tenantId();
 
         $templates = AgendaTemplate::where('tenant_id', $tenantId)
-            ->where('active', true)
+            ->where('is_active', true)
             ->with('creator:id,name')
-            ->orderBy('categoria')
+            ->orderBy('category')
             ->orderBy('name')
             ->get();
 

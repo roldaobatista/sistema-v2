@@ -13,8 +13,8 @@ class StoreAgendaSubtaskRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if ($this->has('ordem') && $this->input('ordem') === '') {
-            $this->merge(['ordem' => null]);
+        if ($this->has('sort_order') && $this->input('sort_order') === '') {
+            $this->merge(['sort_order' => null]);
         }
     }
 
@@ -22,7 +22,7 @@ class StoreAgendaSubtaskRequest extends FormRequest
     {
         return [
             'title' => 'required|string|max:255',
-            'ordem' => 'nullable|integer|min:0',
+            'sort_order' => 'nullable|integer|min:0',
         ];
     }
 

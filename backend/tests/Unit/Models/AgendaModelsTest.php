@@ -131,7 +131,7 @@ class AgendaModelsTest extends TestCase
     {
         $template = AgendaTemplate::create([
             'tenant_id' => $this->tenant->id,
-            'nome' => 'Template teste',
+            'name' => 'Template teste',
             'type' => 'task',
             'priority' => 'medium',
             'visibility' => 'team',
