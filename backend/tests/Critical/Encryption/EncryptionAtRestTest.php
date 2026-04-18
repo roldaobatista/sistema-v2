@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * Regressão Onda 7.1 — SEC-RA-01, SEC-RA-02, SEC-RA-03.
@@ -63,30 +64,36 @@ it('TwoFactorAuth.secret é encrypted-at-rest, 1x, reversível via cast', functi
     assertEncryptedField($twoFa, 'secret', $plain);
 });
 
-it('TwoFactorAuth.backup_codes é encrypted-at-rest como array, 1x, reversível via cast', function () {
+it('TwoFactorAuth.backup_codes é hash-at-rest (bcrypt), irreversível, verificável via Hash::check', function () {
     $user = User::factory()->create([
         'tenant_id' => $this->tenant->id,
         'current_tenant_id' => $this->tenant->id,
     ]);
 
     $plainCodes = ['CODE1', 'CODE2', 'CODE3', 'CODE4'];
+    $hashedCodes = array_map(fn (string $c) => Hash::make($c), $plainCodes);
 
     $twoFa = TwoFactorAuth::create([
         'user_id' => $user->id,
         'tenant_id' => $this->tenant->id,
         'secret' => 'any',
         'method' => 'app',
-        'backup_codes' => $plainCodes,
+        'backup_codes' => $hashedCodes,
     ]);
 
     $twoFa->refresh();
 
-    $raw = $twoFa->getRawOriginal('backup_codes');
+    $stored = $twoFa->backup_codes;
 
-    expect($raw)
-        ->not->toBe(json_encode($plainCodes), 'backup_codes em plain JSON — encryption-at-rest violada.')
-        ->and(json_decode(Crypt::decryptString($raw), true))->toBe($plainCodes, 'backup_codes parece duplamente criptografado.')
-        ->and($twoFa->backup_codes)->toBe($plainCodes, 'Cast encrypted:array falhou ao decriptar backup_codes.');
+    expect($stored)
+        ->toBeArray()
+        ->toHaveCount(count($plainCodes), 'Quantidade de hashes nao bate com quantidade de codes.')
+        ->each->toStartWith('$2y$', 'backup_codes deveria ser array de hashes bcrypt ($2y$...).');
+
+    foreach ($plainCodes as $index => $plain) {
+        expect(Hash::check($plain, $stored[$index]))->toBeTrue("Hash::check falhou para code {$plain}");
+        expect($stored[$index])->not->toBe($plain, 'backup_code[]' . $index . ' armazenado em plain text.');
+    }
 });
 
 it('Tenant.fiscal_certificate_password é encrypted-at-rest, 1x, reversível via cast', function () {

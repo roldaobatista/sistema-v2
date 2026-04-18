@@ -85,7 +85,9 @@ class TwoFactorController extends Controller
         ]);
 
         $backupCodes = collect(range(1, 8))->map(fn () => Str::random(8))->toArray();
-        $twoFa->update(['backup_codes' => $backupCodes]);
+        $twoFa->update([
+            'backup_codes' => array_map(fn (string $code) => Hash::make($code), $backupCodes),
+        ]);
 
         return ApiResponse::message('2FA ativado com sucesso', 200, ['backup_codes' => $backupCodes]);
     }

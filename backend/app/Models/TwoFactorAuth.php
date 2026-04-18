@@ -30,7 +30,7 @@ class TwoFactorAuth extends Model
             'is_enabled' => 'boolean',
             'verified_at' => 'datetime',
             'secret' => 'encrypted',
-            'backup_codes' => 'encrypted:array',
+            'backup_codes' => 'array',
         ];
 
     }

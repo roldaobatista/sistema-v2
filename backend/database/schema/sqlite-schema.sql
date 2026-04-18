@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (converted from MySQL)
--- Generated: 2026-04-18 12:54:23
+-- Generated: 2026-04-18 13:56:56
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -9188,3 +9188,4 @@ INSERT INTO "migrations" ("id", "migration", "batch") VALUES (473, '2026_04_17_4
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (474, '2026_04_17_420000_normalize_work_orders_priority_to_medium', 9);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (475, '2026_04_18_500001_repair_encrypted_search_alter_on_mysql', 9);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (476, '2026_04_18_500002_restore_amount_paid_default', 10);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (477, '2026_04_18_500003_invalidate_legacy_backup_codes', 11);
