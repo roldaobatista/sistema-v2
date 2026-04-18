@@ -90,6 +90,7 @@ Use a `Agent` tool para invocar. Para auditoria multi-perspectiva, rodar em para
 | `/resume` | Restaurar contexto da sessão anterior |
 | `/context-check` | Saúde do contexto, sugere checkpoint |
 | `/mcp-check` | Lista MCPs ativos, valida autorização |
+| `/reaudit <camada>` | Re-auditoria neutra multi-especialista após correção (ver §Fechamento) |
 
 ---
 
@@ -108,10 +109,12 @@ Use a `Agent` tool para invocar. Para auditoria multi-perspectiva, rodar em para
 
 ## 🧱 Stack
 
-- **Backend:** Laravel 13 (PHP) em `backend/`
-- **Frontend:** React 19 + TypeScript + Vite em `frontend/`
-- **DB:** MySQL 8 (produção), SQLite in-memory (testes)
-- **Multi-tenant:** `tenant_id` + `current_tenant_id` no User (NUNCA `company_id`)
+- **Backend:** Laravel 13 (PHP 8.3+) em `backend/` — Sanctum, Spatie Permission, Horizon (filas Redis), Reverb (websockets), Scramble (OpenAPI).
+- **Frontend:** React 19 + TypeScript 5.9 + Vite 8 em `frontend/` — React Router v7, TailwindCSS 4 + Radix UI + shadcn/ui, Zustand (estado global), Axios + TanStack Query (dados), Vitest + Playwright (testes).
+- **DB:** MySQL 8 (produção), SQLite in-memory (testes via schema dump).
+- **Observabilidade:** Sentry + OpenTelemetry SDK + Telescope/Pulse (dev).
+- **Multi-tenant:** trait `BelongsToTenant` + middleware `EnsureTenantScope`. Tenant ID sempre em `$request->user()->current_tenant_id` (NUNCA `company_id`).
+- **Infra/CI:** Docker Compose + Nginx + Let's Encrypt; GitHub Actions (`.github/workflows/`: `ci.yml`, `deploy.yml`, `security.yml`, `dast.yml`, `nightly.yml`, `performance.yml`).
 
 ---
 
@@ -128,6 +131,32 @@ cd backend && php generate_sqlite_schema.php
 - DB de testes: SQLite in-memory com schema dump (`backend/database/schema/sqlite-schema.sql`)
 - Guia completo: `backend/TESTING_GUIDE.md`
 - Padrão de teste: `backend/tests/README.md`
+- Testsuite `Default` (usado pelo CI) = `Unit + Feature + Smoke + Arch`. Há também `Critical` e `E2E` standalone. Não alterar `defaultTestSuite` em `phpunit.xml` sem atualizar CI + composer scripts em cascata.
+
+### Composer scripts úteis (backend)
+
+| Script | Ação |
+|---|---|
+| `composer test-fast` | Pest paralelo 16 processos sem cobertura (equivalente ao comando principal) |
+| `composer test-dirty` | Só testes afetados pelo diff git — ideal para dev diário |
+| `composer test-coverage` | Paralelo + cobertura mínima 80% |
+| `composer test-profile` | Identifica testes mais lentos |
+| `composer analyse` | PHPStan + Larastan com baseline (`phpstan-baseline.neon`) |
+| `composer dev` | Sobe `artisan serve` + queue + pail + vite em paralelo |
+
+### Quality gates antes de commitar
+
+```bash
+# Backend
+cd backend && ./vendor/bin/pint                        # formata (Laravel preset)
+cd backend && composer analyse                         # static analysis
+cd backend && ./vendor/bin/pest --dirty --parallel --no-coverage
+
+# Frontend
+cd frontend && npm run typecheck
+cd frontend && npm run lint
+cd frontend && npm run test
+```
 
 ### Padrão obrigatório de testes (adaptativo)
 - Features com lógica = 8+ testes/controller
