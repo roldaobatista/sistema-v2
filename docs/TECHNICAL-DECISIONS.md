@@ -792,6 +792,48 @@ A regra EN-only CONTINUA valendo para:
 
 ---
 
+### 14.24 Priority dual: `normal` ↔ `medium` — sinônimos por módulo (prod-02)
+
+**Decisão (2026-04-18):** o enum `priority` é **dual no schema** — tabelas criadas antes de 2026-03 usam `low`/`normal`/`high`/`urgent`, tabelas criadas após usam `low`/`medium`/`high`/`urgent`. `normal` e `medium` são **sinônimos semânticos** na UI/produto.
+
+**Distribuição atual (inventário por tabela):**
+
+| Default | Tabelas |
+|---|---|
+| `'normal'` | `work_orders`, `service_calls`, `service_call_templates`, `portal_tickets`, `inmetro_owners`, `material_requests`, `recurring_contracts`, `recurring_commissions` (migrations `2026_02_07`..`2026_02_16`) |
+| `'medium'` | `central_items`, `central_templates`, `projects`, `sla_policies`, `ticket_categories` (migrations `2026_02_19`..`2026_03_02`) |
+
+**Motivação para manter dual:**
+
+1. **15+ testes usam `priority => 'normal'`** explicitamente — unificação exigiria refactor em massa da suíte.
+2. **Enum fechado** `inmetro_tables` declara `['urgent','high','normal','low']` em migration mergeada (H3 fóssil).
+3. **Valor semântico idêntico** — `normal` é nível intermediário, equivalente operacional de `medium`. Usuário final não distingue.
+4. **Ordenação respeitada.** Serviços que ordenam por prioridade (`SlaPolicy::rank`, `WorkOrderAssignment`) mapeiam `normal`→`medium` internamente quando necessário.
+
+**Regra para frente:**
+
+- Novas tabelas **DEVEM** usar `medium`.
+- Código que filtra por prioridade deve usar helper `PriorityHelper::normalize($value)` que trata `'normal'` e `'medium'` como equivalentes (criar helper se não existir — não bloqueia esta decisão).
+- Relatórios agregam `normal` e `medium` sob o mesmo grupo "Média".
+
+**Implicação para auditoria:** `product-expert` não reporta a divergência como inconsistência. Novo finding apenas se uma tabela criada pós-2026-04-18 introduzir `normal` de novo.
+
+---
+
+### 14.25 `user_2fa` UNIQUE(user_id) global — aceito (data-14)
+
+**Decisão (2026-04-18):** `user_2fa.user_id` UNIQUE global (não composto com `tenant_id`) **é o comportamento correto.**
+
+**Motivo:**
+
+1. **2FA pertence ao usuário, não ao tenant.** Um user acessa N tenants via `current_tenant_id`; seu TOTP/backup codes devem ser únicos *per user*.
+2. **User.tenant_id é NULLABLE** (§14.20). UNIQUE composto `(tenant_id, user_id)` com NULLs produz comportamento ambíguo no MySQL.
+3. **Mudar tenant não deve resetar 2FA.** Quando user troca de tenant ativo, continua protegido — é o comportamento esperado.
+
+**Implicação para auditoria:** `data-expert` não reporta. `user_2fa` é exceção legítima ao padrão "composto com tenant_id" — 2FA é identidade de usuário, não de tenant.
+
+---
+
 **Resumo de agent files atualizados:**
 
 | Agent | Atualização |

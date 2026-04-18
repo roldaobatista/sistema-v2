@@ -127,6 +127,7 @@ Decisoes arquiteturais documentadas em `docs/TECHNICAL-DECISIONS.md` que devem s
 - **Sufixo `_history` em tabelas (central_item_history, expense_status_history, etc.)** — convencao Laravel historica. Aceito.
 - **`payment_gateway_configs` UNIQUE(tenant_id)** — §14.21.e. MVP one-gateway-per-tenant; multi-gateway e feature futura.
 - **Terminologia PT-BR do dominio** — §14.23. Roles Spatie (`tecnico`, `vendedor`), calibration_type (`externa`/`interna`/`rastreada_rbc`), Central de Tarefas (`TAREFA`/`PROJETO`/etc), `positions.level` (`pleno`). Regra EN-only aplica-se apenas a status operacional generico, priority, flags booleanas e tipos tecnicos de framework.
+- **Priority dual `normal` / `medium`** — §14.24. Sinonimos semanticos; tabelas pre-2026-03 usam `normal`, pos usam `medium`. Aceito como dualidade transicional. Novo finding apenas se tabela pos-2026-04-18 introduzir `normal`.
 
 ## Handoff
 
