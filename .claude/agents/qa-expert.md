@@ -71,6 +71,8 @@ Acionado por `/test-audit`. Audita cobertura de ACs e qualidade dos testes do di
 - [ ] Sem `sleep()` para esperar async — usar polling/retry/Bus::fake()?
 - [ ] Density de assertion >= 2 por teste?
 
+**Nota sobre `phpunit.xml defaultTestSuite`:** o default `"Default"` agrupa Unit+Feature+Smoke+Arch propositalmente — e o comando rodado em CI (`ci.yml`) e em `composer test:ci`. A piramide de escalada (especifico -> grupo -> testsuite -> full) esta documentada em `backend/tests/README.md` secao "Piramide de Escalada" com comandos explicitos (`--testsuite=Unit`, `--testsuite=Feature`, etc.). Nao reportar o agrupamento "Default" como finding se a escalada estiver documentada no README.
+
 **Saida:** lista de findings (severidade blocker/major/minor) com `arquivo:linha` + recomendacao concreta. Builder corrige -> /test-audit re-roda no mesmo escopo ate verde.
 
 ### Modo 3: regression-design
