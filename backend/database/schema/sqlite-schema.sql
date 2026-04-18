@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (converted from MySQL)
--- Generated: 2026-04-18 15:14:47
+-- Generated: 2026-04-18 15:37:11
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -511,7 +511,7 @@ CREATE INDEX "audit_blockchain_hashes_tenant_id_idx" ON "audit_blockchain_hashes
 
 CREATE TABLE "audit_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
- "tenant_id" integer DEFAULT NULL,
+ "tenant_id" integer NOT NULL,
  "user_id" integer DEFAULT NULL,
  "action" varchar(50) NOT NULL,
  "auditable_type" varchar(255) DEFAULT NULL,
@@ -11246,3 +11246,4 @@ INSERT INTO "migrations" ("id", "migration", "batch") VALUES (476, '2026_04_18_5
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (477, '2026_04_18_500003_invalidate_legacy_backup_codes', 11);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (478, '2026_04_18_500004_add_unique_constraints_to_tenants', 12);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (479, '2026_04_18_500005_add_polymorphic_and_hot_log_indexes', 13);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (480, '2026_04_18_500006_audit_logs_tenant_id_not_null', 14);
