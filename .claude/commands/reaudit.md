@@ -90,13 +90,14 @@ novos          = encontrados \ originais
 
 Match por `arquivo:linha + palavra-chave`. Ambiguidade → mantém em "não resolvido" (conservador).
 
-### 7. Veredito
+### 7. Veredito (binário — zero findings)
 
 | Situação | Veredito |
 |---|---|
-| `não_resolvidos = ∅` E `novos_S1_S2 = ∅` | **FECHADA** |
-| `não_resolvidos ≠ ∅` OU `novos_S1 ≠ ∅` | **REABERTA** |
-| `não_resolvidos = ∅` E só `novos_S3_S4 ≠ ∅` | **CONDICIONAL** (dívida documentada) |
+| `encontrados = ∅` (zero findings em todas as severidades S1..S4) | **FECHADA** |
+| `encontrados ≠ ∅` (qualquer finding em qualquer severidade) | **REABERTA** |
+
+**Não existe CONDICIONAL.** S3/S4 aceitos como limitação são documentados em `TECHNICAL-DECISIONS.md` **antes** da auditoria (refletidos em agent files/skills para não reaparecerem como finding). Depois da auditoria, não há como "promover" S3/S4 a "aceito" para forçar fechamento.
 
 ### 8. Consolidar e registrar
 

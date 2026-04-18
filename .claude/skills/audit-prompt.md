@@ -136,13 +136,18 @@ novos          = encontrados \ originais
 
 Match por: `arquivo:linha` + palavra-chave da descrição. Se ambíguo, manter no conjunto "não resolvido" (conservador) e anotar.
 
-### 5. Veredito
+### 5. Veredito (binário — zero findings)
 
 | Situação | Veredito |
 |---|---|
-| `não_resolvidos = ∅` E `novos_S1_S2 = ∅` | **FECHADA** |
-| `não_resolvidos ≠ ∅` OU `novos_S1 ≠ ∅` | **REABERTA** |
-| `não_resolvidos = ∅` E só `novos_S3_S4 ≠ ∅` | **CONDICIONAL** — prossegue com dívida documentada |
+| `encontrados = ∅` (zero findings em todas as severidades S1..S4) | **FECHADA** |
+| `encontrados ≠ ∅` (qualquer finding em qualquer severidade) | **REABERTA** |
+
+**Não existe veredito CONDICIONAL.** Camada só fecha com re-auditoria retornando zero findings. S3/S4 aceitos como limitação devem ser documentados em `docs/TECHNICAL-DECISIONS.md` **antes** da re-auditoria e refletidos no agent file ou skill para não serem mais reportados (lista de exceções EN-only, tabelas globais-por-design, fósseis H3, etc.). Tentar documentar **depois** da re-auditoria para forçar fechamento é proibido.
+
+Ao receber output dos experts:
+- Se `encontrados ≠ ∅` → **REABERTA**. Triagem com usuário: (a) corrigir via `/fix`, ou (b) aceitar como limitação permanente (atualizar `TECHNICAL-DECISIONS.md` + agent file/skill) e re-rodar `/reaudit`.
+- Se `encontrados = ∅` → **FECHADA**. Atualizar handoff com evidência.
 
 ### 6. Registrar
 

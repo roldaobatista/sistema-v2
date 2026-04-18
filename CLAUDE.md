@@ -178,33 +178,52 @@ cd backend && php generate_sqlite_schema.php
 
 **Suite verde NÃO é fechamento.** Antes de declarar Camada/Wave/etapa "fechada", "pronta" ou "concluída":
 
-1. **Re-auditoria obrigatória** — usar `/reaudit <camada>` (preferido) ou invocar `orchestrator`/especialistas relevantes em paralelo (`data-expert`, `security-expert`, `governance`, `qa-expert` conforme o escopo)
-2. **Confirmar (a)** findings originais estão resolvidos
-3. **Confirmar (b)** zero novos findings introduzidos pela correção
-4. **Evidenciar** o output da re-auditoria na resposta (não basta afirmar)
+1. **Re-auditoria obrigatória** — usar `/reaudit <camada>` (preferido) ou invocar `orchestrator`/especialistas relevantes em paralelo (`data-expert`, `security-expert`, `governance`, `qa-expert`, `product-expert` conforme o escopo)
+2. **Zero findings remanescentes** — a re-auditoria deve retornar **0 S1, 0 S2, 0 S3, 0 S4**. Qualquer finding em qualquer severidade bloqueia o fechamento.
+3. **Evidenciar** o output da re-auditoria na resposta (não basta afirmar)
 
 Sem re-auditoria = etapa **em progresso**, não fechada. Suite verde valida implementação; auditoria valida fechamento.
 
+### Critério absoluto de fechamento (binário)
+
+- **FECHADA:** re-auditoria retorna **zero findings em todas as severidades** (S1..S4). Não há "quase fechada" nem "fechada com ressalva" — é binário.
+- **REABERTA:** qualquer finding remanescente em qualquer severidade. Voltar ao `builder`/`/fix`, corrigir, re-rodar `/reaudit` até zero.
+
+**Não existe veredito CONDICIONAL.** Dívida técnica não pode ser empurrada pra frente com rótulo de "fechada" — ou é corrigida agora e a camada fecha, ou a camada permanece aberta. Documentar S3/S4 como "aceito como limitação" em `TECHNICAL-DECISIONS.md` **antes** da re-auditoria retira o item do escopo auditado (deixa de ser finding); tentar documentar **depois** da re-auditoria para forçar fechamento é proibido.
+
+### Fluxo correto quando a re-auditoria acha S3/S4
+
+1. Avaliar cada finding: (a) corrigir, ou (b) aceitar como limitação permanente documentada em `TECHNICAL-DECISIONS.md` com justificativa técnica.
+2. Se aceitar → atualizar o agent file ou a skill relevante para que futuras auditorias não reportem aquele item como finding (ex: lista de exceções EN-only, tabelas globais-por-design).
+3. Re-rodar `/reaudit` — agora o item aceito não aparece.
+4. Zero findings → fechamento legítimo.
+
 ### Regra de prompt neutro para re-auditoria (anti-bias)
 
-Subagents iniciam com contexto isolado, MAS o prompt que eu escrevo pode carregar viés e anular a isolação. Ao invocar especialistas para re-auditoria:
+Subagents iniciam com contexto isolado, MAS o prompt que eu escrevo pode carregar viés e anular a isolação. **O padrão obrigatório de prompt está definido na skill `audit-prompt`** (`.claude/skills/audit-prompt.md`). Usar essa skill é mandatório em qualquer invocação de expert para auditar/re-auditar.
 
-**PROIBIDO no prompt:**
+Regra curta (detalhes na skill):
+
+**PROIBIDO no prompt do agente:**
 - Narrativa do que foi feito ("renomeamos colunas PT→EN", "Wave 6 resolveu X")
 - Conclusões antecipadas ("confirme que está OK", "valide o fechamento", "aprove se Y")
 - Resumo da correção ou decisões tomadas (§14.x)
-- Seleção de arquivos ou findings a revisar (entregue a lista crua, não sua curadoria)
+- Lista de findings originais, commit range, ou arquivos tocados (isso é bias disfarçado — o agente deve descobrir o estado atual cegamente)
 
-**OBRIGATÓRIO no prompt:**
-- Lista crua de findings originais com IDs (sem status "resolvido/não resolvido")
-- Range de commits a auditar (`git log <range>` sem interpretação)
-- Lista crua de arquivos tocados (`git diff --name-only`)
-- Checklist do domínio do especialista (do próprio `.claude/agents/<expert>.md`)
-- Instrução: "Proibido assumir que correções foram bem feitas. Sua função é ENCONTRAR, não aprovar."
+**OBRIGATÓRIO no prompt do agente:**
+- Nome da camada/escopo textual
+- Perímetro funcional (domínio, entidades — nunca arquivos de commit)
+- Diretórios sugeridos gerais
+- Checklist do próprio `.claude/agents/<expert>.md`
+- Proibições explícitas (não ler `docs/audits/`, `docs/handoffs/`, `docs/plans/`; não rodar `git log`/`diff`/`show`/`blame`)
+- Instrução: "Sua função é INVESTIGAR, não confirmar. Proibido aprovar/validar — apenas reportar achados."
 
-**Critério de fechamento após re-auditoria:**
-- **FECHADA:** 100% dos findings originais resolvidos + zero novos S1/S2
-- **REABERTA:** ≥ 1 original não resolvido OU ≥ 1 novo S1
-- **CONDICIONAL:** originais resolvidos + apenas novos S3/S4 documentados como dívida
+**Comparação com a baseline é operação mecânica do coordenador**, fora do agente — set-difference contra `docs/audits/findings-<camada>.md`.
+
+**Critério de fechamento após re-auditoria (binário):**
+- **FECHADA:** zero findings em todas as severidades (S1..S4). Único veredito que permite declarar camada concluída.
+- **REABERTA:** qualquer finding remanescente. Voltar ao `builder`/`/fix`, re-rodar `/reaudit` até zero.
+
+**Não existe CONDICIONAL.** S3/S4 aceitos como limitação devem ser documentados em `TECHNICAL-DECISIONS.md` **antes** da re-auditoria (e refletidos nos agent files/skill para não reaparecerem); **depois** da re-auditoria é proibido para forçar fechamento.
 
 Desacordo entre especialistas → ambos findings permanecem, usuário decide. Nunca resolver conflito em favor do "mais leniente".
