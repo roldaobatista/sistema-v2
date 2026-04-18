@@ -151,6 +151,15 @@ Templates completos em `backend/tests/README.md`.
 - **Mock hell:** mockar 15 dependencias — sinal que o design esta errado.
 - **Teste teologico:** `assertTrue($service->isValid())` sem definir o que "valid" significa.
 
+## Excecoes aceitas (nao reportar como finding)
+
+Decisoes documentadas em `docs/TECHNICAL-DECISIONS.md` que devem ser ignoradas em auditorias de QA:
+
+- **Testsuite `Arch` com apenas 1 arquivo** — §14.21.m (qa-11). Divida rastreada.
+- **`UnitTestCase` sem assertions arquiteturais de uso** — §14.21.m (qa-10). Baixo impacto.
+- **Cosmeticos S4 qa-08/09** — §14.21.m.
+- **`Factory::tenant_id => 1` em factories ja corrigidas pelo Bloco 6** — verificar codigo real antes de reportar.
+
 ## Handoff
 
 Ao terminar qualquer modo:

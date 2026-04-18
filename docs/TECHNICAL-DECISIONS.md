@@ -611,3 +611,113 @@ Timestamps com sufixo `_000000` ou menor que `_500000` são **reservados para mi
 
 ---
 
+### 14.21 Aceites em batch da re-auditoria Camada 1 (2026-04-18)
+
+**Decisão (2026-04-18):** após a re-auditoria `/reaudit "Camada 1"` (relatório `docs/audits/reaudit-camada-1-2026-04-18.md`), os findings abaixo são classificados como **aceitos como limitação permanente** ou **fósseis H3 imutáveis**. Agent files correspondentes foram atualizados para não reportá-los em auditorias futuras.
+
+#### 14.21.a Tabelas sem `tenant_id` por design (data-11)
+
+- **`personal_access_tokens`** (Sanctum) — pacote Laravel. Isolamento via `tokenable_type`/`tokenable_id` (user) + ability `tenant:X` no próprio token. Adicionar `tenant_id` quebraria convenção do pacote.
+- **`email_attachments`** — isolamento indireto via `email_id → emails.tenant_id`. Todas as queries já passam por JOIN com `emails`. Adicionar coluna duplicaria discriminador sem ganho.
+
+**Regra:** tabelas de pacote Laravel (Sanctum, Passport, queue `jobs`, `failed_jobs`) e tabelas-filha puramente estruturais (attachments, translations) podem operar sem `tenant_id` direto quando o parent fornece discriminação efetiva.
+
+#### 14.21.b Migrations `alter_*` antigas sem guards H3 (data-13, gov-12)
+
+70+ migrations `Schema::table(...)` anteriores a 2026-04-10 não possuem guards `hasColumn`/`hasTable`/`hasIndex`. **Aceitas como fóssil H3** — alterar migrations mergeadas é proibido por CLAUDE.md.
+
+**Regra para frente:** toda migration criada a partir de 2026-04-18 DEVE ter guards H3 explícitos. `governance` agent file passa a reportar apenas migrations criadas **depois** dessa data sem guards.
+
+#### 14.21.c Schema dump SQLite converte `decimal(N,M)` → `numeric` (data-17)
+
+Limitação nativa do SQLite (sem precisão decimal tipada). Conversão em `generate_sqlite_schema.php:128` é correta para carga do dump. Precisão real é validada em MySQL de produção. `data-expert` não deve reportar perda de precisão no dump.
+
+#### 14.21.d `suppliers.document` NULLABLE sem UNIQUE e `users.email` UNIQUE global (data-18)
+
+- **`suppliers.document`** NULLABLE — simétrico a `customers.document`. Fornecedor pode existir em cadastro preliminar sem CNPJ (ex: PF informal, importação sem identificador). Busca por PII usa `document_hash` (hash-at-rest). Hash unique por tenant é aplicado em `customers` e `suppliers`.
+- **`users.email`** UNIQUE global — Laravel Auth padrão. Trade-off conhecido: um email não pode estar em dois tenants simultaneamente. Multi-empresa com mesmo email é raro e resolvido via `current_tenant_id` dinâmico. Cenário explicitamente aceito.
+
+#### 14.21.e `payment_gateway_configs` UNIQUE(tenant_id) (data-15)
+
+MVP atual: **um gateway ativo por tenant**. Suporte a multi-gateway (PIX + Boleto em provedores distintos simultaneamente) é **feature futura**, não bug. Coluna `gateway` (varchar) identifica qual provedor está ativo. `data-expert` não deve reportar como finding — é gap funcional documentado no PRD, não dívida técnica.
+
+#### 14.21.f `sec-06` falso positivo — `backup_codes` cast `'array'` é correto
+
+`TwoFactorController::89` já aplica `Hash::make()` individualmente em cada código antes de persistir. Cast `'encrypted:array'` adicional seria criptografia sobre conteúdo já unidirecional (hash bcrypt), sem ganho prático e com overhead. Padrão OWASP para recovery codes: hash individual + `$hidden` no model. Ambos já estão aplicados.
+
+#### 14.21.g `password_reset_tokens.token` — Laravel default aceito (sec-07)
+
+Coluna `token` armazena valor já hasheado pelo Laravel Auth (`Illuminate\Auth\Passwords\DatabaseTokenRepository::hashToken()`). Não é plaintext. Agent deve grep `hashToken`/`createNewToken` antes de reportar.
+
+#### 14.21.h Portal hardening — estrutura pronta, lógica pendente (sec-05, overlap §14.6)
+
+§14.6 já documenta que `client_portal_users` tem as 8 colunas de lockout/2FA/password history mas a lógica funcional de ativação é sprint futura. `security-expert` agent file deve tratar como "backlog rastreado", não finding ativo.
+
+#### 14.21.i `gov-07` — `add_missing_columns_for_tests` é fóssil H3 (gov-07)
+
+As 16 migrations `add_missing_columns_*` / `fix_missing_columns_*` / `fix_production_schema_drifts` são **migrations de reparo históricas** aplicadas quando divergências entre spec e schema foram detectadas. Não podem ser removidas (H3). Regra para frente: qualquer nova coluna deve ser adicionada via migration dedicada ao domínio, nunca em migrations "add_missing_*".
+
+#### 14.21.j `gov-08` — `user_id` vs `created_by` — fóssil + regra para frente
+
+Tabelas com `user_id` (em vez de `created_by`) em migrations pré-2026-04-18: **fóssil H3**. Renomear em massa exigiria migrations de rename + refatoração de models + atualização de queries/formrequests — risco alto para benefício cosmético.
+
+**Regra para frente:** toda nova tabela DEVE usar `created_by` (ou coluna semântica como `technician_id` para scheduling). `governance` agent file reporta apenas violação em migrations criadas após 2026-04-18.
+
+#### 14.21.k `gov-11` — migration `2025_02_10_090000_*` é fóssil H3
+
+Migration com timestamp `2025_02_10` aparece no diretório apesar do restante ser `2026_02_07+`. Funciona em runtime via `hasTable`/`hasColumn`. Renomear quebraria a tabela `migrations` em ambientes existentes. Aceita como fóssil.
+
+#### 14.21.l Cosméticos S4 aceitos em batch (gov-04/06/09/10/13/14/15)
+
+7 findings cosméticos de governance: nomenclatura de índices inconsistente (`_del_idx` vs `_deleted_at_idx`), comentários PT em migrations antigas, imports não utilizados, naming de indices. **Baixo valor para auditoria, baixo custo para fix pontual quando incidental** — aceitos em batch.
+
+#### 14.21.m Test infra S4 aceitos (qa-08/09/10/11)
+
+- Testsuite `Arch` com 1 arquivo (qa-11) — dívida rastreável em plan futuro.
+- `UnitTestCase` sem assertions arquiteturais (qa-10) — idem.
+- qa-08/09: baixo impacto, cosméticos.
+
+#### 14.21.n `prod-03` — `accounts_payable` dupla representação (supplier + supplier_id, category + category_id) — aceito transicional
+
+Colunas `supplier` (varchar) e `category` (varchar) coexistem com `supplier_id` e `category_id` (FKs). **Canônico é a FK.** Os campos varchar são **snapshot histórico** para relatórios que não devem mudar quando o supplier/category é renomeado. Padrão de auditoria contábil aceito.
+
+#### 14.21.o `prod-04` — FKs `central_*` com `agenda_item_id` — fóssil semântico (rename pré-Wave 6)
+
+6 tabelas filhas de `central_items` usam `agenda_item_id` como FK (vestígio do rename `agenda → central`). Renomear em cascata exigiria 6 migrations + atualização de models/relationships/queries. **Aceito como fóssil H3.** Regra para frente: novas tabelas filhas usam `central_item_id`.
+
+#### 14.21.p `prod-05` / `prod-06` — cadeia `origin_type` / `reference_id` em `accounts_receivable` e `work_orders` — fóssil de nomenclatura
+
+Convenção Laravel seria par `origin_type` + `origin_id`. Schema atual usa `origin_type` + `reference_id` (accounts_receivable) e `origin_type` (work_orders standalone). §14.13.b documenta cadeia canônica `origem→source→origin` apenas para `central_items`. Aceito como nomenclatura divergente transicional — funcional, sem impacto em produção.
+
+#### 14.21.q `prod-07` / `prod-08` — naming de tabelas (singular/pivot) cosmético
+
+Tabelas `continuous_feedback`, `warranty_tracking`, `routes_planning`, `portal_white_label`, `sync_queue`, `search_index` no singular. M2M `email_email_tag`, `quote_quote_tag`, `equipment_model_product` com naming não-alfabético. **Aceitos como cosmético** — rename exigiria migration + model + relationships + FKs de filhas.
+
+#### 14.21.r `data-07` — `expenses` com 3 FKs sobrepostas sem CHECK — aceito como design de domínio
+
+Colunas `work_order_id`, `reimbursement_ap_id`, `payroll_id`/`payroll_line_id`, polimórfico `reference_type`/`reference_id` representam **múltiplas origens válidas** de despesa (OS, reembolso, folha, avulso). CHECK de mutual exclusion em MySQL 8 é suportado mas complexo de manter em Laravel builder. Regra aplicada via `ExpenseObserver` / `StoreExpenseRequest` na aplicação, não no banco.
+
+#### 14.21.s `data-10` — retenção de logs hot — dívida rastreada
+
+`audit_logs`, `webhook_logs`, `whatsapp_message_logs` sem estratégia de arquivamento/TTL no banco. **Aceito como dívida rastreável** — sprint futuro de observabilidade criará job `ArchiveOldLogs` com janela configurável por tenant. Agent file não reporta.
+
+#### 14.21.t `data-idx-09` / `data-idx-10` — naming de índices cosmético
+
+Índices legados com sufixos heterogêneos (`_del_idx`, `_deleted_at_idx`, `_cust_deleted_at`, `_deleted_at_index`). Canonicalização exigiria migration de rename em massa (alto risco, zero benefício funcional). **Aceito como cosmético.** Novos índices seguem a convenção Laravel padrão (`{table}_{cols}_index`).
+
+#### 14.21.u `sec-04` — password policy (min 8 + mixedCase + numbers) — será elevado
+
+Policy atual aceita 8 chars + mixedCase + numbers. Será elevado para **12 chars + symbols + uncompromised()** em commit desta sessão (ver bloco "qa fixes" ou dedicado). Não é aceite — é item a corrigir.
+
+**Resumo de agent files atualizados:**
+
+| Agent | Atualização |
+|---|---|
+| `data-expert` | Excluir: personal_access_tokens/email_attachments (14.21.a); decimal→numeric no dump (14.21.c); suppliers.document + users.email unique global (14.21.d); payment_gateway_configs unique(tenant_id) (14.21.e); expenses FKs sobrepostas (14.21.r); data-10 retenção (14.21.s); data-idx-09/10 naming (14.21.t) |
+| `security-expert` | Excluir: sec-06 falso positivo backup_codes (14.21.f); sec-07 password_reset_tokens Laravel default (14.21.g); sec-05 portal hardening backlog rastreado (14.21.h) |
+| `governance` | Excluir: fósseis H3 pré-2026-04-18 para guards (14.21.b); `add_missing_columns_*` como fóssil (14.21.i); `user_id` em migrations antigas (14.21.j); migration 2025_02_10 fóssil (14.21.k); cosméticos S4 (14.21.l) |
+| `qa-expert` | Excluir: qa-08/09/10/11 (14.21.m) |
+| `product-expert` | Excluir: prod-03 (14.21.n); prod-04 (14.21.o); prod-05/06 (14.21.p); prod-07/08 (14.21.q) |
+
+---
+

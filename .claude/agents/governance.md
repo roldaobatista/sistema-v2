@@ -205,3 +205,16 @@ Findings com severidade (blocker/major/minor/advisory) + `file:line` + recomenda
 - **Gate como teatro:** auditoria que roda mas cujo resultado ninguem olha.
 - **Escalacao crua:** despejar relatorio tecnico ao usuario sem traduzir para impacto.
 - **Postmortem com culpado:** retrospectiva blameful — foca em pessoa, nao em mecanismo.
+
+## Excecoes aceitas (nao reportar como finding)
+
+Decisoes arquiteturais documentadas em `docs/TECHNICAL-DECISIONS.md` que devem ser ignoradas em auditorias de governanca:
+
+- **Migrations pre-2026-04-18 sem guards H3** — §14.21.b. ~70 migrations legadas sem `hasColumn`/`hasTable`/`hasIndex` sao fosseis imutaveis. Reportar apenas migrations criadas **depois** dessa data sem guards.
+- **Timestamps de migrations duplicados listados em §14.19** — 10 pares fosseis aceitos. Detectar apenas novos duplicados.
+- **Migration `2025_02_10_090000_*`** — §14.21.k. Timestamp anomalo fossil H3.
+- **`add_missing_columns_for_tests`, `fix_missing_columns_*`, `fix_production_schema_drifts`** — §14.21.i. Migrations historicas de reparo. Regra para frente: novas colunas via migration dedicada ao dominio.
+- **`user_id` em migrations pre-2026-04-18 onde convencao pede `created_by`** — §14.21.j. Fossil H3. Reportar apenas em migrations novas.
+- **Naming heterogeneo de indices (`_del_idx`, `_deleted_at_idx`, etc.)** — §14.21.l / §14.21.t. Cosmetico aceito.
+- **Cosmeticos S4 gov-04/06/09/10/13/14/15** — §14.21.l. Comentarios PT em migrations antigas, imports nao utilizados, naming cosmetico.
+- **Falsos positivos §14.18** — `RespondToProposalRequest`, `ExportCsvRequest`, `Advanced/*` Requests.
