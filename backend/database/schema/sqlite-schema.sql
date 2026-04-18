@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (converted from MySQL)
--- Generated: 2026-04-18 13:56:56
+-- Generated: 2026-04-18 14:26:55
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -11,6 +11,8 @@ CREATE TABLE "access_time_restrictions" (
  "is_active" tinyint NOT NULL DEFAULT '1',
  "created_at" datetime NOT NULL
 );
+CREATE INDEX "access_time_restrictions_tenant_id_index" ON "access_time_restrictions" ("tenant_id");
+CREATE INDEX "access_time_restrictions_tenant_id_idx" ON "access_time_restrictions" ("tenant_id");
 
 CREATE TABLE "account_payable_categories" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -23,6 +25,10 @@ CREATE TABLE "account_payable_categories" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "account_payable_categories_tenant_id_is_active_index" ON "account_payable_categories" ("tenant_id","is_active");
+CREATE INDEX "account_payable_categories_del_idx" ON "account_payable_categories" ("deleted_at");
+CREATE INDEX "account_payable_categories_tenant_id_idx" ON "account_payable_categories" ("tenant_id");
+CREATE INDEX "account_payable_categories_deleted_at_idx" ON "account_payable_categories" ("deleted_at");
 
 CREATE TABLE "account_payable_installments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -37,6 +43,8 @@ CREATE TABLE "account_payable_installments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "account_payable_installments_ap_inst_tenant_ap_idx" ON "account_payable_installments" ("tenant_id","account_payable_id");
+CREATE INDEX "account_payable_installments_tenant_id_idx" ON "account_payable_installments" ("tenant_id");
 
 CREATE TABLE "account_payable_payments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -50,6 +58,8 @@ CREATE TABLE "account_payable_payments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "account_payable_payments_ap_pay_tenant_ap_idx" ON "account_payable_payments" ("tenant_id","account_payable_id");
+CREATE INDEX "account_payable_payments_tenant_id_idx" ON "account_payable_payments" ("tenant_id");
 
 CREATE TABLE "account_plan_actions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -64,6 +74,8 @@ CREATE TABLE "account_plan_actions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "account_plan_actions_assigned_to_foreign" ON "account_plan_actions" ("assigned_to");
+CREATE INDEX "account_plan_actions_apa_plan_status_idx" ON "account_plan_actions" ("account_plan_id","status");
 
 CREATE TABLE "account_plans" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -82,6 +94,11 @@ CREATE TABLE "account_plans" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "account_plans_customer_id_foreign" ON "account_plans" ("customer_id");
+CREATE INDEX "account_plans_owner_id_foreign" ON "account_plans" ("owner_id");
+CREATE INDEX "account_plans_ap_tenant_cust_idx" ON "account_plans" ("tenant_id","customer_id");
+CREATE INDEX "account_plans_ap_tenant_status_idx" ON "account_plans" ("tenant_id","status");
+CREATE INDEX "account_plans_tenant_id_idx" ON "account_plans" ("tenant_id");
 
 CREATE TABLE "account_receivable_categories" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -98,6 +115,9 @@ CREATE TABLE "account_receivable_categories" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "account_receivable_categories_tid_slug_uq" ON "account_receivable_categories" ("tenant_id","slug");
+CREATE INDEX "account_receivable_categories_tid_idx" ON "account_receivable_categories" ("tenant_id");
+CREATE INDEX "account_receivable_categories_del_idx" ON "account_receivable_categories" ("deleted_at");
+CREATE INDEX "account_receivable_categories_deleted_at_idx" ON "account_receivable_categories" ("deleted_at");
 
 CREATE TABLE "account_receivable_installments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -118,6 +138,9 @@ CREATE TABLE "account_receivable_installments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "account_receivable_installments_ar_inst_tenant_ar_idx" ON "account_receivable_installments" ("tenant_id","account_receivable_id");
+CREATE INDEX "account_receivable_installments_psp_external_id_index" ON "account_receivable_installments" ("psp_external_id");
+CREATE INDEX "account_receivable_installments_tenant_id_idx" ON "account_receivable_installments" ("tenant_id");
 
 CREATE TABLE "accounts_payable" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -147,6 +170,22 @@ CREATE TABLE "accounts_payable" (
  "discount_amount" numeric NOT NULL DEFAULT '0.00',
  "work_order_id" integer DEFAULT NULL
 );
+CREATE INDEX "accounts_payable_tenant_id_status_index" ON "accounts_payable" ("tenant_id","status");
+CREATE INDEX "accounts_payable_tenant_id_due_date_index" ON "accounts_payable" ("tenant_id","due_date");
+CREATE INDEX "accounts_payable_ap_chart_account" ON "accounts_payable" ("chart_of_account_id");
+CREATE INDEX "accounts_payable_ap_tenant_status_due" ON "accounts_payable" ("tenant_id","status","due_date");
+CREATE INDEX "accounts_payable_created_by_foreign" ON "accounts_payable" ("created_by");
+CREATE INDEX "accounts_payable_ap_deleted_at" ON "accounts_payable" ("tenant_id","deleted_at");
+CREATE INDEX "accounts_payable_del_idx" ON "accounts_payable" ("deleted_at");
+CREATE INDEX "accounts_payable_category_id_fk_idx" ON "accounts_payable" ("category_id");
+CREATE INDEX "accounts_payable_supplier_id_fk_idx" ON "accounts_payable" ("supplier_id");
+CREATE INDEX "accounts_payable_chart_of_account_id_fk_idx" ON "accounts_payable" ("chart_of_account_id");
+CREATE INDEX "accounts_payable_cost_center_id_fk_idx" ON "accounts_payable" ("cost_center_id");
+CREATE INDEX "accounts_payable_work_order_id_index" ON "accounts_payable" ("work_order_id");
+CREATE INDEX "accounts_payable_deleted_at_idx" ON "accounts_payable" ("deleted_at");
+CREATE INDEX "accounts_payable_tenant_id_idx" ON "accounts_payable" ("tenant_id");
+CREATE INDEX "accounts_payable_updated_by_foreign" ON "accounts_payable" ("updated_by");
+CREATE INDEX "accounts_payable_deleted_by_foreign" ON "accounts_payable" ("deleted_by");
 
 CREATE TABLE "accounts_receivable" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -182,6 +221,29 @@ CREATE TABLE "accounts_receivable" (
  "cost_center_id" integer DEFAULT NULL,
  "reference_id" integer DEFAULT NULL
 );
+CREATE INDEX "accounts_receivable_customer_id_foreign" ON "accounts_receivable" ("customer_id");
+CREATE INDEX "accounts_receivable_tenant_id_status_index" ON "accounts_receivable" ("tenant_id","status");
+CREATE INDEX "accounts_receivable_tenant_id_due_date_index" ON "accounts_receivable" ("tenant_id","due_date");
+CREATE INDEX "accounts_receivable_tenant_id_customer_id_index" ON "accounts_receivable" ("tenant_id","customer_id");
+CREATE INDEX "accounts_receivable_collection_rule_id_foreign" ON "accounts_receivable" ("collection_rule_id");
+CREATE INDEX "accounts_receivable_ar_cnab_match_idx" ON "accounts_receivable" ("tenant_id","nosso_numero");
+CREATE INDEX "accounts_receivable_ar_cnab_doc_idx" ON "accounts_receivable" ("tenant_id","numero_documento");
+CREATE INDEX "accounts_receivable_ar_invoice_id_idx" ON "accounts_receivable" ("invoice_id");
+CREATE INDEX "accounts_receivable_ar_work_order" ON "accounts_receivable" ("work_order_id");
+CREATE INDEX "accounts_receivable_ar_tenant_paid" ON "accounts_receivable" ("tenant_id","paid_at");
+CREATE INDEX "accounts_receivable_ar_tenant_status_due" ON "accounts_receivable" ("tenant_id","status","due_date");
+CREATE INDEX "accounts_receivable_created_by_foreign" ON "accounts_receivable" ("created_by");
+CREATE INDEX "accounts_receivable_ar_deleted_at" ON "accounts_receivable" ("tenant_id","deleted_at");
+CREATE INDEX "accounts_receivable_del_idx" ON "accounts_receivable" ("deleted_at");
+CREATE INDEX "accounts_receivable_work_order_id_fk_idx" ON "accounts_receivable" ("work_order_id");
+CREATE INDEX "accounts_receivable_chart_of_account_id_fk_idx" ON "accounts_receivable" ("chart_of_account_id");
+CREATE INDEX "accounts_receivable_ar_quote_id_idx" ON "accounts_receivable" ("quote_id");
+CREATE INDEX "accounts_receivable_ar_origin_type_idx" ON "accounts_receivable" ("origin_type");
+CREATE INDEX "accounts_receivable_cost_center_id_foreign" ON "accounts_receivable" ("cost_center_id");
+CREATE INDEX "accounts_receivable_tenant_id_idx" ON "accounts_receivable" ("tenant_id");
+CREATE INDEX "accounts_receivable_deleted_at_idx" ON "accounts_receivable" ("deleted_at");
+CREATE INDEX "accounts_receivable_updated_by_foreign" ON "accounts_receivable" ("updated_by");
+CREATE INDEX "accounts_receivable_deleted_by_foreign" ON "accounts_receivable" ("deleted_by");
 
 CREATE TABLE "accreditation_scopes" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -197,6 +259,7 @@ CREATE TABLE "accreditation_scopes" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "accreditation_scopes_tenant_id_is_active_index" ON "accreditation_scopes" ("tenant_id","is_active");
 
 CREATE TABLE "admissions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -217,6 +280,10 @@ CREATE TABLE "admissions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "admissions_tenant_id_index" ON "admissions" ("tenant_id");
+CREATE INDEX "admissions_candidate_id_index" ON "admissions" ("candidate_id");
+CREATE INDEX "admissions_user_id_index" ON "admissions" ("user_id");
+CREATE INDEX "admissions_tenant_id_idx" ON "admissions" ("tenant_id");
 
 CREATE TABLE "alert_configurations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -252,6 +319,9 @@ CREATE TABLE "analytics_datasets" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "analytics_datasets_created_by_foreign" ON "analytics_datasets" ("created_by");
+CREATE INDEX "analytics_datasets_tenant_active_idx" ON "analytics_datasets" ("tenant_id","is_active");
+CREATE INDEX "analytics_datasets_tenant_id_idx" ON "analytics_datasets" ("tenant_id");
 
 CREATE TABLE "api_keys" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -268,6 +338,11 @@ CREATE TABLE "api_keys" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "api_keys_key_hash_index" ON "api_keys" ("key_hash");
+CREATE INDEX "api_keys_ak_tenant_active" ON "api_keys" ("tenant_id","is_active");
+CREATE INDEX "api_keys_ak_created_by" ON "api_keys" ("created_by");
+CREATE INDEX "api_keys_tid_idx" ON "api_keys" ("tenant_id");
+CREATE INDEX "api_keys_tenant_id_idx" ON "api_keys" ("tenant_id");
 
 CREATE TABLE "asset_disposals" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -285,6 +360,12 @@ CREATE TABLE "asset_disposals" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "asset_disposals_asset_record_id_foreign" ON "asset_disposals" ("asset_record_id");
+CREATE INDEX "asset_disposals_fiscal_note_id_foreign" ON "asset_disposals" ("fiscal_note_id");
+CREATE INDEX "asset_disposals_approved_by_foreign" ON "asset_disposals" ("approved_by");
+CREATE INDEX "asset_disposals_created_by_foreign" ON "asset_disposals" ("created_by");
+CREATE INDEX "asset_disposals_tenant_date_idx" ON "asset_disposals" ("tenant_id","disposal_date");
+CREATE INDEX "asset_disposals_tenant_id_idx" ON "asset_disposals" ("tenant_id");
 
 CREATE TABLE "asset_inventories" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -302,6 +383,11 @@ CREATE TABLE "asset_inventories" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "asset_inventories_asset_record_id_foreign" ON "asset_inventories" ("asset_record_id");
+CREATE INDEX "asset_inventories_counted_by_foreign" ON "asset_inventories" ("counted_by");
+CREATE INDEX "asset_inventories_tenant_asset_idx" ON "asset_inventories" ("tenant_id","asset_record_id");
+CREATE INDEX "asset_inventories_tenant_date_idx" ON "asset_inventories" ("tenant_id","inventory_date");
+CREATE INDEX "asset_inventories_tenant_id_idx" ON "asset_inventories" ("tenant_id");
 
 CREATE TABLE "asset_movements" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -318,6 +404,13 @@ CREATE TABLE "asset_movements" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "asset_movements_asset_record_id_foreign" ON "asset_movements" ("asset_record_id");
+CREATE INDEX "asset_movements_from_responsible_user_id_foreign" ON "asset_movements" ("from_responsible_user_id");
+CREATE INDEX "asset_movements_to_responsible_user_id_foreign" ON "asset_movements" ("to_responsible_user_id");
+CREATE INDEX "asset_movements_created_by_foreign" ON "asset_movements" ("created_by");
+CREATE INDEX "asset_movements_tenant_asset_idx" ON "asset_movements" ("tenant_id","asset_record_id");
+CREATE INDEX "asset_movements_tenant_type_idx" ON "asset_movements" ("tenant_id","movement_type");
+CREATE INDEX "asset_movements_tenant_id_idx" ON "asset_movements" ("tenant_id");
 
 CREATE TABLE "asset_records" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -355,6 +448,14 @@ CREATE TABLE "asset_records" (
  "crm_deal_id" integer DEFAULT NULL
 );
 CREATE UNIQUE INDEX "asset_records_tenant_code_unique" ON "asset_records" ("tenant_id","code");
+CREATE INDEX "asset_records_responsible_user_id_foreign" ON "asset_records" ("responsible_user_id");
+CREATE INDEX "asset_records_supplier_id_foreign" ON "asset_records" ("supplier_id");
+CREATE INDEX "asset_records_fleet_vehicle_id_foreign" ON "asset_records" ("fleet_vehicle_id");
+CREATE INDEX "asset_records_created_by_foreign" ON "asset_records" ("created_by");
+CREATE INDEX "asset_records_tenant_category_idx" ON "asset_records" ("tenant_id","category");
+CREATE INDEX "asset_records_tenant_status_idx" ON "asset_records" ("tenant_id","status");
+CREATE INDEX "asset_records_crm_deal_id_foreign" ON "asset_records" ("crm_deal_id");
+CREATE INDEX "asset_records_deleted_at_idx" ON "asset_records" ("deleted_at");
 
 CREATE TABLE "asset_tag_scans" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -369,6 +470,8 @@ CREATE TABLE "asset_tag_scans" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "asset_tag_scans_asset_tag_id_foreign" ON "asset_tag_scans" ("asset_tag_id");
+CREATE INDEX "asset_tag_scans_tenant_id_idx" ON "asset_tag_scans" ("tenant_id");
 
 CREATE TABLE "asset_tags" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -386,6 +489,9 @@ CREATE TABLE "asset_tags" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "asset_tags_tag_code_unique" ON "asset_tags" ("tag_code");
+CREATE INDEX "asset_tags_taggable_type_taggable_id_index" ON "asset_tags" ("taggable_type","taggable_id");
+CREATE INDEX "asset_tags_tenant_id_index" ON "asset_tags" ("tenant_id");
+CREATE INDEX "asset_tags_tenant_id_idx" ON "asset_tags" ("tenant_id");
 
 CREATE TABLE "audit_blockchain_hashes" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -398,6 +504,10 @@ CREATE TABLE "audit_blockchain_hashes" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "audit_blockchain_hashes_user_id_foreign" ON "audit_blockchain_hashes" ("user_id");
+CREATE INDEX "audit_blockchain_hashes_table_name_record_id_index" ON "audit_blockchain_hashes" ("table_name","record_id");
+CREATE INDEX "audit_blockchain_hashes_tid_idx" ON "audit_blockchain_hashes" ("tenant_id");
+CREATE INDEX "audit_blockchain_hashes_tenant_id_idx" ON "audit_blockchain_hashes" ("tenant_id");
 
 CREATE TABLE "audit_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -413,6 +523,11 @@ CREATE TABLE "audit_logs" (
  "user_agent" varchar(255) DEFAULT NULL,
  "created_at" datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX "audit_logs_tenant_id_created_at_index" ON "audit_logs" ("tenant_id","created_at");
+CREATE INDEX "audit_logs_tenant_id_auditable_type_auditable_id_index" ON "audit_logs" ("tenant_id","auditable_type","auditable_id");
+CREATE INDEX "audit_logs_audit_auditable_poly" ON "audit_logs" ("auditable_type","auditable_id");
+CREATE INDEX "audit_logs_audit_user" ON "audit_logs" ("user_id");
+CREATE INDEX "audit_logs_tenant_id_idx" ON "audit_logs" ("tenant_id");
 
 CREATE TABLE "auto_assignment_rules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -429,6 +544,10 @@ CREATE TABLE "auto_assignment_rules" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "auto_assignment_rules_tenant_id_entity_type_is_active_index" ON "auto_assignment_rules" ("tenant_id","entity_type","is_active");
+CREATE INDEX "auto_assignment_rules_del_idx" ON "auto_assignment_rules" ("deleted_at");
+CREATE INDEX "auto_assignment_rules_tenant_id_idx" ON "auto_assignment_rules" ("tenant_id");
+CREATE INDEX "auto_assignment_rules_deleted_at_idx" ON "auto_assignment_rules" ("deleted_at");
 
 CREATE TABLE "auto_purchase_rules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -443,6 +562,8 @@ CREATE TABLE "auto_purchase_rules" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "auto_purchase_rules_tenant_id_product_id_unique" ON "auto_purchase_rules" ("tenant_id","product_id");
+CREATE INDEX "auto_purchase_rules_product_id_foreign" ON "auto_purchase_rules" ("product_id");
+CREATE INDEX "auto_purchase_rules_preferred_supplier_id_foreign" ON "auto_purchase_rules" ("preferred_supplier_id");
 
 CREATE TABLE "automation_report_formats" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -459,6 +580,9 @@ CREATE TABLE "automation_report_formats" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "automation_report_formats_tid_slug_uq" ON "automation_report_formats" ("tenant_id","slug");
+CREATE INDEX "automation_report_formats_tid_idx" ON "automation_report_formats" ("tenant_id");
+CREATE INDEX "automation_report_formats_del_idx" ON "automation_report_formats" ("deleted_at");
+CREATE INDEX "automation_report_formats_deleted_at_idx" ON "automation_report_formats" ("deleted_at");
 
 CREATE TABLE "automation_report_frequencies" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -475,6 +599,9 @@ CREATE TABLE "automation_report_frequencies" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "automation_report_frequencies_tid_slug_uq" ON "automation_report_frequencies" ("tenant_id","slug");
+CREATE INDEX "automation_report_frequencies_tid_idx" ON "automation_report_frequencies" ("tenant_id");
+CREATE INDEX "automation_report_frequencies_del_idx" ON "automation_report_frequencies" ("deleted_at");
+CREATE INDEX "automation_report_frequencies_deleted_at_idx" ON "automation_report_frequencies" ("deleted_at");
 
 CREATE TABLE "automation_report_types" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -491,6 +618,9 @@ CREATE TABLE "automation_report_types" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "automation_report_types_tid_slug_uq" ON "automation_report_types" ("tenant_id","slug");
+CREATE INDEX "automation_report_types_tid_idx" ON "automation_report_types" ("tenant_id");
+CREATE INDEX "automation_report_types_del_idx" ON "automation_report_types" ("deleted_at");
+CREATE INDEX "automation_report_types_deleted_at_idx" ON "automation_report_types" ("deleted_at");
 
 CREATE TABLE "automation_rules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -507,6 +637,11 @@ CREATE TABLE "automation_rules" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "automation_rules_created_by_foreign" ON "automation_rules" ("created_by");
+CREATE INDEX "automation_rules_tid_idx" ON "automation_rules" ("tenant_id");
+CREATE INDEX "automation_rules_del_idx" ON "automation_rules" ("deleted_at");
+CREATE INDEX "automation_rules_tenant_id_idx" ON "automation_rules" ("tenant_id");
+CREATE INDEX "automation_rules_deleted_at_idx" ON "automation_rules" ("deleted_at");
 
 CREATE TABLE "auvo_id_mappings" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -519,6 +654,8 @@ CREATE TABLE "auvo_id_mappings" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "auvo_id_mappings_tenant_id_entity_type_auvo_id_unique" ON "auvo_id_mappings" ("tenant_id","entity_type","auvo_id");
+CREATE INDEX "auvo_id_mappings_tenant_id_entity_type_local_id_index" ON "auvo_id_mappings" ("tenant_id","entity_type","local_id");
+CREATE INDEX "auvo_id_mappings_import_id_index" ON "auvo_id_mappings" ("import_id");
 
 CREATE TABLE "auvo_imports" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -541,6 +678,10 @@ CREATE TABLE "auvo_imports" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "auvo_imports_tenant_id_entity_type_index" ON "auvo_imports" ("tenant_id","entity_type");
+CREATE INDEX "auvo_imports_tenant_id_status_index" ON "auvo_imports" ("tenant_id","status");
+CREATE INDEX "auvo_imports_user_id_foreign" ON "auvo_imports" ("user_id");
+CREATE INDEX "auvo_imports_tenant_id_idx" ON "auvo_imports" ("tenant_id");
 
 CREATE TABLE "auxiliary_tools" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -557,6 +698,10 @@ CREATE TABLE "auxiliary_tools" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "auxiliary_tools_tid_idx" ON "auxiliary_tools" ("tenant_id");
+CREATE INDEX "auxiliary_tools_del_idx" ON "auxiliary_tools" ("deleted_at");
+CREATE INDEX "auxiliary_tools_tenant_id_idx" ON "auxiliary_tools" ("tenant_id");
+CREATE INDEX "auxiliary_tools_deleted_at_idx" ON "auxiliary_tools" ("deleted_at");
 
 CREATE TABLE "bank_account_types" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -573,6 +718,9 @@ CREATE TABLE "bank_account_types" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "bank_account_types_tid_slug_uq" ON "bank_account_types" ("tenant_id","slug");
+CREATE INDEX "bank_account_types_tid_idx" ON "bank_account_types" ("tenant_id");
+CREATE INDEX "bank_account_types_del_idx" ON "bank_account_types" ("deleted_at");
+CREATE INDEX "bank_account_types_deleted_at_idx" ON "bank_account_types" ("deleted_at");
 
 CREATE TABLE "bank_accounts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -591,6 +739,12 @@ CREATE TABLE "bank_accounts" (
  "deleted_at" datetime NULL DEFAULT NULL,
  "initial_balance" numeric DEFAULT NULL
 );
+CREATE INDEX "bank_accounts_tenant_id_is_active_index" ON "bank_accounts" ("tenant_id","is_active");
+CREATE INDEX "bank_accounts_created_by_foreign" ON "bank_accounts" ("created_by");
+CREATE INDEX "bank_accounts_ba_deleted_at" ON "bank_accounts" ("tenant_id","deleted_at");
+CREATE INDEX "bank_accounts_del_idx" ON "bank_accounts" ("deleted_at");
+CREATE INDEX "bank_accounts_tenant_id_idx" ON "bank_accounts" ("tenant_id");
+CREATE INDEX "bank_accounts_deleted_at_idx" ON "bank_accounts" ("deleted_at");
 
 CREATE TABLE "bank_statement_entries" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -613,6 +767,14 @@ CREATE TABLE "bank_statement_entries" (
  "rule_id" integer DEFAULT NULL,
  "transaction_id" varchar(100) DEFAULT NULL
 );
+CREATE INDEX "bank_statement_entries_reconciled_by_user_id_foreign" ON "bank_statement_entries" ("reconciled_by_user_id");
+CREATE INDEX "bank_statement_entries_rule_id_foreign" ON "bank_statement_entries" ("rule_id");
+CREATE INDEX "bank_statement_entries_transaction_id_index" ON "bank_statement_entries" ("transaction_id");
+CREATE INDEX "bank_statement_entries_bse_statement" ON "bank_statement_entries" ("bank_statement_id");
+CREATE INDEX "bank_statement_entries_bse_tenant_status" ON "bank_statement_entries" ("tenant_id","status");
+CREATE INDEX "bank_statement_entries_tid_idx" ON "bank_statement_entries" ("tenant_id");
+CREATE INDEX "bank_statement_entries_matched_id_index" ON "bank_statement_entries" ("matched_id");
+CREATE INDEX "bank_statement_entries_tenant_id_idx" ON "bank_statement_entries" ("tenant_id");
 
 CREATE TABLE "bank_statements" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -627,6 +789,10 @@ CREATE TABLE "bank_statements" (
  "format" varchar(20) NOT NULL DEFAULT 'ofx',
  "bank_account_id" integer DEFAULT NULL
 );
+CREATE INDEX "bank_statements_created_by_foreign" ON "bank_statements" ("created_by");
+CREATE INDEX "bank_statements_bank_account_id_foreign" ON "bank_statements" ("bank_account_id");
+CREATE INDEX "bank_statements_tid_idx" ON "bank_statements" ("tenant_id");
+CREATE INDEX "bank_statements_tenant_id_idx" ON "bank_statements" ("tenant_id");
 
 CREATE TABLE "batches" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -639,6 +805,11 @@ CREATE TABLE "batches" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "batches_product_id_foreign" ON "batches" ("product_id");
+CREATE INDEX "batches_tenant_id_product_id_code_index" ON "batches" ("tenant_id","product_id","code");
+CREATE INDEX "batches_del_idx" ON "batches" ("deleted_at");
+CREATE INDEX "batches_tenant_id_idx" ON "batches" ("tenant_id");
+CREATE INDEX "batches_deleted_at_idx" ON "batches" ("deleted_at");
 
 CREATE TABLE "biometric_configs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -651,6 +822,8 @@ CREATE TABLE "biometric_configs" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "biometric_configs_user_id_unique" ON "biometric_configs" ("user_id");
+CREATE INDEX "biometric_configs_device_id_index" ON "biometric_configs" ("device_id");
+CREATE INDEX "biometric_configs_tenant_id_idx" ON "biometric_configs" ("tenant_id");
 
 CREATE TABLE "biometric_consents" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -668,6 +841,8 @@ CREATE TABLE "biometric_consents" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "biometric_consents_user_id_foreign" ON "biometric_consents" ("user_id");
+CREATE INDEX "biometric_consents_tenant_id_user_id_data_type_index" ON "biometric_consents" ("tenant_id","user_id","data_type");
 
 CREATE TABLE "branches" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -686,6 +861,8 @@ CREATE TABLE "branches" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "branches_tenant_code_index" ON "branches" ("tenant_id","code");
+CREATE INDEX "branches_tenant_id_idx" ON "branches" ("tenant_id");
 
 CREATE TABLE "business_hours" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -698,6 +875,7 @@ CREATE TABLE "business_hours" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "business_hours_tenant_id_day_of_week_unique" ON "business_hours" ("tenant_id","day_of_week");
+CREATE INDEX "business_hours_tenant_id_index" ON "business_hours" ("tenant_id");
 
 CREATE TABLE "cache" (
  "key" varchar(255) NOT NULL,
@@ -705,6 +883,7 @@ CREATE TABLE "cache" (
  "expiration" int NOT NULL,
  PRIMARY KEY ("key")
 );
+CREATE INDEX "cache_expiration_index" ON "cache" ("expiration");
 
 CREATE TABLE "cache_locks" (
  "key" varchar(255) NOT NULL,
@@ -712,6 +891,7 @@ CREATE TABLE "cache_locks" (
  "expiration" int NOT NULL,
  PRIMARY KEY ("key")
 );
+CREATE INDEX "cache_locks_expiration_index" ON "cache_locks" ("expiration");
 
 CREATE TABLE "calibration_decision_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -725,6 +905,9 @@ CREATE TABLE "calibration_decision_logs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "calibration_decision_logs_equipment_calibration_id_foreign" ON "calibration_decision_logs" ("equipment_calibration_id");
+CREATE INDEX "calibration_decision_logs_user_id_foreign" ON "calibration_decision_logs" ("user_id");
+CREATE INDEX "calibration_decision_logs_cal_decision_logs_tenant_cal_idx" ON "calibration_decision_logs" ("tenant_id","equipment_calibration_id");
 
 CREATE TABLE "calibration_readings" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -749,6 +932,9 @@ CREATE TABLE "calibration_readings" (
  "ema" numeric DEFAULT NULL,
  "conforms" tinyint DEFAULT NULL
 );
+CREATE INDEX "calibration_readings_cal_readings_cal_id_order_idx" ON "calibration_readings" ("equipment_calibration_id","reading_order");
+CREATE INDEX "calibration_readings_tid_idx" ON "calibration_readings" ("tenant_id");
+CREATE INDEX "calibration_readings_tenant_id_idx" ON "calibration_readings" ("tenant_id");
 
 CREATE TABLE "calibration_standard_weight" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -759,6 +945,9 @@ CREATE TABLE "calibration_standard_weight" (
  "tenant_id" integer DEFAULT NULL
 );
 CREATE UNIQUE INDEX "cal_sw_unique" ON "calibration_standard_weight" ("equipment_calibration_id","standard_weight_id");
+CREATE INDEX "calibration_standard_weight_standard_weight_id_foreign" ON "calibration_standard_weight" ("standard_weight_id");
+CREATE INDEX "calibration_standard_weight_calibration_standard_tenant_idx" ON "calibration_standard_weight" ("tenant_id");
+CREATE INDEX "calibration_standard_weight_tenant_id_idx" ON "calibration_standard_weight" ("tenant_id");
 
 CREATE TABLE "calibration_types" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -775,6 +964,9 @@ CREATE TABLE "calibration_types" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "calibration_types_tid_slug_uq" ON "calibration_types" ("tenant_id","slug");
+CREATE INDEX "calibration_types_tid_idx" ON "calibration_types" ("tenant_id");
+CREATE INDEX "calibration_types_del_idx" ON "calibration_types" ("deleted_at");
+CREATE INDEX "calibration_types_deleted_at_idx" ON "calibration_types" ("deleted_at");
 
 CREATE TABLE "cameras" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -788,6 +980,8 @@ CREATE TABLE "cameras" (
  "location" varchar(255) DEFAULT NULL,
  "type" varchar(255) NOT NULL DEFAULT 'ip'
 );
+CREATE INDEX "cameras_tenant_id_index" ON "cameras" ("tenant_id");
+CREATE INDEX "cameras_tenant_id_idx" ON "cameras" ("tenant_id");
 
 CREATE TABLE "cancellation_reasons" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -805,6 +999,9 @@ CREATE TABLE "cancellation_reasons" (
  "applies_to" text DEFAULT NULL
 );
 CREATE UNIQUE INDEX "cancellation_reasons_tid_slug_uq" ON "cancellation_reasons" ("tenant_id","slug");
+CREATE INDEX "cancellation_reasons_tid_idx" ON "cancellation_reasons" ("tenant_id");
+CREATE INDEX "cancellation_reasons_del_idx" ON "cancellation_reasons" ("deleted_at");
+CREATE INDEX "cancellation_reasons_deleted_at_idx" ON "cancellation_reasons" ("deleted_at");
 
 CREATE TABLE "candidates" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -821,6 +1018,9 @@ CREATE TABLE "candidates" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "candidates_job_posting_id_foreign" ON "candidates" ("job_posting_id");
+CREATE INDEX "candidates_tid_idx" ON "candidates" ("tenant_id");
+CREATE INDEX "candidates_tenant_id_idx" ON "candidates" ("tenant_id");
 
 CREATE TABLE "capa_records" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -843,6 +1043,11 @@ CREATE TABLE "capa_records" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "capa_records_assigned_to_foreign" ON "capa_records" ("assigned_to");
+CREATE INDEX "capa_records_created_by_foreign" ON "capa_records" ("created_by");
+CREATE INDEX "capa_records_tenant_id_status_index" ON "capa_records" ("tenant_id","status");
+CREATE INDEX "capa_records_source_id_index" ON "capa_records" ("source_id");
+CREATE INDEX "capa_records_tenant_id_idx" ON "capa_records" ("tenant_id");
 
 CREATE TABLE "central_attachments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -856,6 +1061,10 @@ CREATE TABLE "central_attachments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "central_attachments_uploaded_by_foreign" ON "central_attachments" ("uploaded_by");
+CREATE INDEX "central_attachments_agenda_item_id_index" ON "central_attachments" ("agenda_item_id");
+CREATE INDEX "central_attachments_tenant_id_index" ON "central_attachments" ("tenant_id");
+CREATE INDEX "central_attachments_tenant_id_idx" ON "central_attachments" ("tenant_id");
 
 CREATE TABLE "central_item_comments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -866,6 +1075,9 @@ CREATE TABLE "central_item_comments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "central_item_comments_agenda_item_id_index" ON "central_item_comments" ("agenda_item_id");
+CREATE INDEX "central_item_comments_cic_user" ON "central_item_comments" ("user_id");
+CREATE INDEX "central_item_comments_tenant_id_index" ON "central_item_comments" ("tenant_id");
 
 CREATE TABLE "central_item_dependencies" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -876,6 +1088,9 @@ CREATE TABLE "central_item_dependencies" (
  "tenant_id" integer NOT NULL
 );
 CREATE UNIQUE INDEX "central_item_dependencies_item_id_depends_on_id_unique" ON "central_item_dependencies" ("item_id","depends_on_id");
+CREATE INDEX "central_item_dependencies_depends_on_id_foreign" ON "central_item_dependencies" ("depends_on_id");
+CREATE INDEX "central_item_dependencies_central_item_depen_tenant_idx" ON "central_item_dependencies" ("tenant_id");
+CREATE INDEX "central_item_dependencies_tenant_id_idx" ON "central_item_dependencies" ("tenant_id");
 
 CREATE TABLE "central_item_history" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -887,6 +1102,9 @@ CREATE TABLE "central_item_history" (
  "to_value" varchar(255) DEFAULT NULL,
  "created_at" datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX "central_item_history_user_id_foreign" ON "central_item_history" ("user_id");
+CREATE INDEX "central_item_history_agenda_item_id_index" ON "central_item_history" ("agenda_item_id");
+CREATE INDEX "central_item_history_tenant_id_index" ON "central_item_history" ("tenant_id");
 
 CREATE TABLE "central_item_watchers" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -904,6 +1122,10 @@ CREATE TABLE "central_item_watchers" (
  "tenant_id" integer NOT NULL
 );
 CREATE UNIQUE INDEX "ciw_item_user_unique" ON "central_item_watchers" ("agenda_item_id","user_id");
+CREATE INDEX "central_item_watchers_added_by_user_id_foreign" ON "central_item_watchers" ("added_by_user_id");
+CREATE INDEX "central_item_watchers_central_item_watch_tenant_idx" ON "central_item_watchers" ("tenant_id");
+CREATE INDEX "central_item_watchers_ciw_user" ON "central_item_watchers" ("user_id");
+CREATE INDEX "central_item_watchers_tenant_id_idx" ON "central_item_watchers" ("tenant_id");
 
 CREATE TABLE "central_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -939,6 +1161,17 @@ CREATE TABLE "central_items" (
  "visibility_users" text DEFAULT NULL
 );
 CREATE UNIQUE INDEX "ci_ref_unique" ON "central_items" ("tenant_id","ref_type","ref_id");
+CREATE INDEX "central_items_ci_user_status_due" ON "central_items" ("tenant_id","assignee_user_id","status","due_at");
+CREATE INDEX "central_items_ci_tipo_status" ON "central_items" ("tenant_id","type","status");
+CREATE INDEX "central_items_ci_sla" ON "central_items" ("tenant_id","sla_due_at");
+CREATE INDEX "central_items_ci_created" ON "central_items" ("tenant_id","created_at");
+CREATE INDEX "central_items_closed_by_foreign" ON "central_items" ("closed_by");
+CREATE INDEX "central_items_ci_tenant_status" ON "central_items" ("tenant_id","status");
+CREATE INDEX "central_items_responsavel_user_id_foreign" ON "central_items" ("assignee_user_id");
+CREATE INDEX "central_items_criado_por_user_id_foreign" ON "central_items" ("created_by_user_id");
+CREATE INDEX "central_items_ci_deleted_at" ON "central_items" ("tenant_id","deleted_at");
+CREATE INDEX "central_items_del_idx" ON "central_items" ("deleted_at");
+CREATE INDEX "central_items_deleted_at_idx" ON "central_items" ("deleted_at");
 
 CREATE TABLE "central_notification_prefs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -959,6 +1192,8 @@ CREATE TABLE "central_notification_prefs" (
  "notify_types" text DEFAULT NULL
 );
 CREATE UNIQUE INDEX "cnp_user_tenant" ON "central_notification_prefs" ("user_id","tenant_id");
+CREATE INDEX "central_notification_prefs_tid_idx" ON "central_notification_prefs" ("tenant_id");
+CREATE INDEX "central_notification_prefs_tenant_id_idx" ON "central_notification_prefs" ("tenant_id");
 
 CREATE TABLE "central_rules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -978,6 +1213,12 @@ CREATE TABLE "central_rules" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "central_rules_tenant_id_index" ON "central_rules" ("tenant_id");
+CREATE INDEX "central_rules_ativo_index" ON "central_rules" ("active");
+CREATE INDEX "central_rules_evento_trigger_index" ON "central_rules" ("event_trigger");
+CREATE INDEX "central_rules_created_by_foreign" ON "central_rules" ("created_by");
+CREATE INDEX "central_rules_responsavel_user_id_foreign" ON "central_rules" ("assignee_user_id");
+CREATE INDEX "central_rules_tenant_id_idx" ON "central_rules" ("tenant_id");
 
 CREATE TABLE "central_subtasks" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -991,6 +1232,10 @@ CREATE TABLE "central_subtasks" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "central_subtasks_completed_by_foreign" ON "central_subtasks" ("completed_by");
+CREATE INDEX "central_subtasks_agenda_item_id_ordem_index" ON "central_subtasks" ("agenda_item_id","sort_order");
+CREATE INDEX "central_subtasks_tenant_id_index" ON "central_subtasks" ("tenant_id");
+CREATE INDEX "central_subtasks_tenant_id_idx" ON "central_subtasks" ("tenant_id");
 
 CREATE TABLE "central_templates" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1010,6 +1255,9 @@ CREATE TABLE "central_templates" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "central_templates_created_by_foreign" ON "central_templates" ("created_by");
+CREATE INDEX "central_templates_ct_tenant_active" ON "central_templates" ("tenant_id","is_active");
+CREATE INDEX "central_templates_tenant_id_idx" ON "central_templates" ("tenant_id");
 
 CREATE TABLE "central_time_entries" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1023,6 +1271,10 @@ CREATE TABLE "central_time_entries" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "central_time_entries_user_id_foreign" ON "central_time_entries" ("user_id");
+CREATE INDEX "central_time_entries_agenda_item_id_user_id_index" ON "central_time_entries" ("agenda_item_id","user_id");
+CREATE INDEX "central_time_entries_tenant_id_index" ON "central_time_entries" ("tenant_id");
+CREATE INDEX "central_time_entries_tenant_id_idx" ON "central_time_entries" ("tenant_id");
 
 CREATE TABLE "certificate_emission_checklists" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1047,6 +1299,8 @@ CREATE TABLE "certificate_emission_checklists" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "cert_checklist_cal_unique" ON "certificate_emission_checklists" ("equipment_calibration_id");
+CREATE INDEX "certificate_emission_checklists_verified_by_foreign" ON "certificate_emission_checklists" ("verified_by");
+CREATE INDEX "certificate_emission_checklists_tenant_id_index" ON "certificate_emission_checklists" ("tenant_id");
 
 CREATE TABLE "certificate_signatures" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1059,6 +1313,9 @@ CREATE TABLE "certificate_signatures" (
  "ip_address" varchar(45) DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "certificate_signatures_tid_idx" ON "certificate_signatures" ("tenant_id");
+CREATE INDEX "certificate_signatures_certificate_id_index" ON "certificate_signatures" ("certificate_id");
+CREATE INDEX "certificate_signatures_tenant_id_idx" ON "certificate_signatures" ("tenant_id");
 
 CREATE TABLE "certificate_templates" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1077,6 +1334,8 @@ CREATE TABLE "certificate_templates" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "certificate_templates_tid_idx" ON "certificate_templates" ("tenant_id");
+CREATE INDEX "certificate_templates_tenant_id_idx" ON "certificate_templates" ("tenant_id");
 
 CREATE TABLE "chart_of_accounts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1091,6 +1350,7 @@ CREATE TABLE "chart_of_accounts" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "chart_of_accounts_tenant_id_code_unique" ON "chart_of_accounts" ("tenant_id","code");
+CREATE INDEX "chart_of_accounts_parent_id_foreign" ON "chart_of_accounts" ("parent_id");
 
 CREATE TABLE "chat_messages" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1101,6 +1361,10 @@ CREATE TABLE "chat_messages" (
  "message" text NOT NULL,
  "created_at" datetime NOT NULL
 );
+CREATE INDEX "chat_messages_tenant_id_index" ON "chat_messages" ("tenant_id");
+CREATE INDEX "chat_messages_ticket_id_index" ON "chat_messages" ("ticket_id");
+CREATE INDEX "chat_messages_sender_id_foreign" ON "chat_messages" ("sender_id");
+CREATE INDEX "chat_messages_tenant_id_idx" ON "chat_messages" ("tenant_id");
 
 CREATE TABLE "checklist_submissions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1113,6 +1377,11 @@ CREATE TABLE "checklist_submissions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "checklist_submissions_checklist_id_foreign" ON "checklist_submissions" ("checklist_id");
+CREATE INDEX "checklist_submissions_work_order_id_foreign" ON "checklist_submissions" ("work_order_id");
+CREATE INDEX "checklist_submissions_technician_id_foreign" ON "checklist_submissions" ("technician_id");
+CREATE INDEX "checklist_submissions_tid_idx" ON "checklist_submissions" ("tenant_id");
+CREATE INDEX "checklist_submissions_tenant_id_idx" ON "checklist_submissions" ("tenant_id");
 
 CREATE TABLE "checklists" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1124,6 +1393,8 @@ CREATE TABLE "checklists" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "checklists_tid_idx" ON "checklists" ("tenant_id");
+CREATE INDEX "checklists_tenant_id_idx" ON "checklists" ("tenant_id");
 
 CREATE TABLE "client_portal_users" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1147,6 +1418,7 @@ CREATE TABLE "client_portal_users" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "client_portal_users_tenant_id_email_unique" ON "client_portal_users" ("tenant_id","email");
+CREATE INDEX "client_portal_users_customer_id_foreign" ON "client_portal_users" ("customer_id");
 
 CREATE TABLE "clt_violations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1163,6 +1435,9 @@ CREATE TABLE "clt_violations" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "clt_violations_user_id_foreign" ON "clt_violations" ("user_id");
+CREATE INDEX "clt_violations_resolved_by_foreign" ON "clt_violations" ("resolved_by");
+CREATE INDEX "clt_violations_tenant_id_idx" ON "clt_violations" ("tenant_id");
 
 CREATE TABLE "collection_action_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1176,6 +1451,10 @@ CREATE TABLE "collection_action_logs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "collection_action_logs_receivable_id_foreign" ON "collection_action_logs" ("receivable_id");
+CREATE INDEX "collection_action_logs_rule_id_foreign" ON "collection_action_logs" ("rule_id");
+CREATE INDEX "collection_action_logs_tenant_id_receivable_id_index" ON "collection_action_logs" ("tenant_id","receivable_id");
+CREATE INDEX "collection_action_logs_tenant_id_idx" ON "collection_action_logs" ("tenant_id");
 
 CREATE TABLE "collection_actions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1191,6 +1470,11 @@ CREATE TABLE "collection_actions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "collection_actions_account_receivable_id_foreign" ON "collection_actions" ("account_receivable_id");
+CREATE INDEX "collection_actions_collection_rule_id_foreign" ON "collection_actions" ("collection_rule_id");
+CREATE INDEX "collection_actions_ca_tenant_status_scheduled" ON "collection_actions" ("tenant_id","status","scheduled_at");
+CREATE INDEX "collection_actions_tid_idx" ON "collection_actions" ("tenant_id");
+CREATE INDEX "collection_actions_tenant_id_idx" ON "collection_actions" ("tenant_id");
 
 CREATE TABLE "collection_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1202,6 +1486,10 @@ CREATE TABLE "collection_logs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "collection_logs_collection_rule_id_foreign" ON "collection_logs" ("collection_rule_id");
+CREATE INDEX "collection_logs_tenant_id_created_at_index" ON "collection_logs" ("tenant_id","created_at");
+CREATE INDEX "collection_logs_cl_ar_status" ON "collection_logs" ("account_receivable_id","status");
+CREATE INDEX "collection_logs_tenant_id_idx" ON "collection_logs" ("tenant_id");
 
 CREATE TABLE "collection_rules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1212,6 +1500,8 @@ CREATE TABLE "collection_rules" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "collection_rules_tid_idx" ON "collection_rules" ("tenant_id");
+CREATE INDEX "collection_rules_tenant_id_idx" ON "collection_rules" ("tenant_id");
 
 CREATE TABLE "commission_campaigns" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1227,6 +1517,8 @@ CREATE TABLE "commission_campaigns" (
  "updated_at" datetime NULL DEFAULT NULL,
  "is_active" tinyint DEFAULT NULL
 );
+CREATE INDEX "commission_campaigns_tid_idx" ON "commission_campaigns" ("tenant_id");
+CREATE INDEX "commission_campaigns_tenant_id_idx" ON "commission_campaigns" ("tenant_id");
 
 CREATE TABLE "commission_disputes" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1241,6 +1533,10 @@ CREATE TABLE "commission_disputes" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "commission_disputes_commission_event_id_foreign" ON "commission_disputes" ("commission_event_id");
+CREATE INDEX "commission_disputes_tenant_id_status_index" ON "commission_disputes" ("tenant_id","status");
+CREATE INDEX "commission_disputes_user_id_foreign" ON "commission_disputes" ("user_id");
+CREATE INDEX "commission_disputes_tenant_id_idx" ON "commission_disputes" ("tenant_id");
 
 CREATE TABLE "commission_events" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1260,6 +1556,20 @@ CREATE TABLE "commission_events" (
  "deleted_at" datetime NULL DEFAULT NULL,
  "amount" numeric DEFAULT NULL
 );
+CREATE INDEX "commission_events_tenant_id_user_id_status_index" ON "commission_events" ("tenant_id","user_id","status");
+CREATE INDEX "commission_events_account_receivable_id_foreign" ON "commission_events" ("account_receivable_id");
+CREATE INDEX "commission_events_settlement_id_index" ON "commission_events" ("settlement_id");
+CREATE INDEX "commission_events_ce_work_order" ON "commission_events" ("work_order_id");
+CREATE INDEX "commission_events_ce_tenant_created" ON "commission_events" ("tenant_id","created_at");
+CREATE INDEX "commission_events_user_id_foreign" ON "commission_events" ("user_id");
+CREATE INDEX "commission_events_ce_tenant_status_created" ON "commission_events" ("tenant_id","status","created_at");
+CREATE INDEX "commission_events_ce_tenant_user" ON "commission_events" ("tenant_id","user_id");
+CREATE INDEX "commission_events_ce_wo_status" ON "commission_events" ("work_order_id","status");
+CREATE INDEX "commission_events_del_idx" ON "commission_events" ("deleted_at");
+CREATE INDEX "commission_events_commission_rule_id_fk_idx" ON "commission_events" ("commission_rule_id");
+CREATE INDEX "commission_events_work_order_id_fk_idx" ON "commission_events" ("work_order_id");
+CREATE INDEX "commission_events_tenant_id_idx" ON "commission_events" ("tenant_id");
+CREATE INDEX "commission_events_deleted_at_idx" ON "commission_events" ("deleted_at");
 
 CREATE TABLE "commission_goals" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1280,6 +1590,8 @@ CREATE TABLE "commission_goals" (
  "current_value" numeric DEFAULT NULL
 );
 CREATE UNIQUE INDEX "commission_goals_tenant_user_period_type_unique" ON "commission_goals" ("tenant_id","user_id","period","type");
+CREATE INDEX "commission_goals_tenant_id_period_index" ON "commission_goals" ("tenant_id","period");
+CREATE INDEX "commission_goals_user_id_foreign" ON "commission_goals" ("user_id");
 
 CREATE TABLE "commission_rules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1302,6 +1614,10 @@ CREATE TABLE "commission_rules" (
  "fixed_amount" numeric DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "commission_rules_tenant_id_user_id_index" ON "commission_rules" ("tenant_id","user_id");
+CREATE INDEX "commission_rules_user_id_foreign" ON "commission_rules" ("user_id");
+CREATE INDEX "commission_rules_tenant_id_idx" ON "commission_rules" ("tenant_id");
+CREATE INDEX "commission_rules_deleted_at_idx" ON "commission_rules" ("deleted_at");
 
 CREATE TABLE "commission_settlements" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1324,6 +1640,12 @@ CREATE TABLE "commission_settlements" (
  "total" numeric DEFAULT NULL
 );
 CREATE UNIQUE INDEX "commission_settlements_tenant_id_user_id_period_unique" ON "commission_settlements" ("tenant_id","user_id","period");
+CREATE INDEX "commission_settlements_closed_by_foreign" ON "commission_settlements" ("closed_by");
+CREATE INDEX "commission_settlements_approved_by_foreign" ON "commission_settlements" ("approved_by");
+CREATE INDEX "commission_settlements_cs_tenant_status" ON "commission_settlements" ("tenant_id","status");
+CREATE INDEX "commission_settlements_user_id_foreign" ON "commission_settlements" ("user_id");
+CREATE INDEX "commission_settlements_cset_tenant_user_status" ON "commission_settlements" ("tenant_id","user_id","status");
+CREATE INDEX "commission_settlements_comset_tid_st_idx" ON "commission_settlements" ("tenant_id","status");
 
 CREATE TABLE "commission_splits" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1336,6 +1658,11 @@ CREATE TABLE "commission_splits" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "commission_splits_commission_event_id_index" ON "commission_splits" ("commission_event_id");
+CREATE INDEX "commission_splits_cs_event" ON "commission_splits" ("commission_event_id");
+CREATE INDEX "commission_splits_tid_idx" ON "commission_splits" ("tenant_id");
+CREATE INDEX "commission_splits_user_id_fk_idx" ON "commission_splits" ("user_id");
+CREATE INDEX "commission_splits_tenant_id_idx" ON "commission_splits" ("tenant_id");
 
 CREATE TABLE "commitments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1356,6 +1683,13 @@ CREATE TABLE "commitments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "commitments_customer_id_foreign" ON "commitments" ("customer_id");
+CREATE INDEX "commitments_user_id_foreign" ON "commitments" ("user_id");
+CREATE INDEX "commitments_visit_report_id_foreign" ON "commitments" ("visit_report_id");
+CREATE INDEX "commitments_activity_id_foreign" ON "commitments" ("activity_id");
+CREATE INDEX "commitments_commit_tenant_status_due_idx" ON "commitments" ("tenant_id","status","due_date");
+CREATE INDEX "commitments_commit_tenant_cust_idx" ON "commitments" ("tenant_id","customer_id");
+CREATE INDEX "commitments_tenant_id_idx" ON "commitments" ("tenant_id");
 
 CREATE TABLE "competitor_instrument_repairs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1368,6 +1702,8 @@ CREATE TABLE "competitor_instrument_repairs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "competitor_instrument_repairs_competitor_id_repair_date_index" ON "competitor_instrument_repairs" ("competitor_id","repair_date");
+CREATE INDEX "competitor_instrument_repairs_instrument_id_repair_date_index" ON "competitor_instrument_repairs" ("instrument_id","repair_date");
 
 CREATE TABLE "contact_policies" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1383,6 +1719,8 @@ CREATE TABLE "contact_policies" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "contact_policies_cp_tenant_active_idx" ON "contact_policies" ("tenant_id","is_active");
+CREATE INDEX "contact_policies_tenant_id_idx" ON "contact_policies" ("tenant_id");
 
 CREATE TABLE "continuous_feedback" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1397,6 +1735,10 @@ CREATE TABLE "continuous_feedback" (
  "updated_at" datetime NULL DEFAULT NULL,
  "attachment_path" varchar(255) DEFAULT NULL
 );
+CREATE INDEX "continuous_feedback_from_user_id_foreign" ON "continuous_feedback" ("from_user_id");
+CREATE INDEX "continuous_feedback_to_user_id_foreign" ON "continuous_feedback" ("to_user_id");
+CREATE INDEX "continuous_feedback_tid_idx" ON "continuous_feedback" ("tenant_id");
+CREATE INDEX "continuous_feedback_tenant_id_idx" ON "continuous_feedback" ("tenant_id");
 
 CREATE TABLE "contract_addendums" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1414,6 +1756,11 @@ CREATE TABLE "contract_addendums" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "contract_addendums_created_by_foreign" ON "contract_addendums" ("created_by");
+CREATE INDEX "contract_addendums_approved_by_foreign" ON "contract_addendums" ("approved_by");
+CREATE INDEX "contract_addendums_tid_idx" ON "contract_addendums" ("tenant_id");
+CREATE INDEX "contract_addendums_contract_id_fk_idx" ON "contract_addendums" ("contract_id");
+CREATE INDEX "contract_addendums_tenant_id_idx" ON "contract_addendums" ("tenant_id");
 
 CREATE TABLE "contract_adjustments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1427,6 +1774,10 @@ CREATE TABLE "contract_adjustments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "contract_adjustments_applied_by_foreign" ON "contract_adjustments" ("applied_by");
+CREATE INDEX "contract_adjustments_contract_id_foreign" ON "contract_adjustments" ("contract_id");
+CREATE INDEX "contract_adjustments_tid_idx" ON "contract_adjustments" ("tenant_id");
+CREATE INDEX "contract_adjustments_tenant_id_idx" ON "contract_adjustments" ("tenant_id");
 
 CREATE TABLE "contract_measurements" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1442,6 +1793,10 @@ CREATE TABLE "contract_measurements" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "contract_measurements_created_by_foreign" ON "contract_measurements" ("created_by");
+CREATE INDEX "contract_measurements_cm_contract" ON "contract_measurements" ("contract_id");
+CREATE INDEX "contract_measurements_tid_idx" ON "contract_measurements" ("tenant_id");
+CREATE INDEX "contract_measurements_tenant_id_idx" ON "contract_measurements" ("tenant_id");
 
 CREATE TABLE "contract_types" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1458,6 +1813,9 @@ CREATE TABLE "contract_types" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "contract_types_tid_slug_uq" ON "contract_types" ("tenant_id","slug");
+CREATE INDEX "contract_types_tid_idx" ON "contract_types" ("tenant_id");
+CREATE INDEX "contract_types_del_idx" ON "contract_types" ("deleted_at");
+CREATE INDEX "contract_types_deleted_at_idx" ON "contract_types" ("deleted_at");
 
 CREATE TABLE "contracts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1474,6 +1832,12 @@ CREATE TABLE "contracts" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "contracts_tenant_id_is_active_index" ON "contracts" ("tenant_id","is_active");
+CREATE INDEX "contracts_del_idx" ON "contracts" ("deleted_at");
+CREATE INDEX "contracts_customer_id_fk_idx" ON "contracts" ("customer_id");
+CREATE INDEX "contracts_tid_st_idx" ON "contracts" ("tenant_id","status");
+CREATE INDEX "contracts_tenant_id_idx" ON "contracts" ("tenant_id");
+CREATE INDEX "contracts_deleted_at_idx" ON "contracts" ("deleted_at");
 
 CREATE TABLE "corrective_actions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1493,6 +1857,12 @@ CREATE TABLE "corrective_actions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "corrective_actions_sourceable_type_sourceable_id_index" ON "corrective_actions" ("sourceable_type","sourceable_id");
+CREATE INDEX "corrective_actions_responsible_id_foreign" ON "corrective_actions" ("responsible_id");
+CREATE INDEX "corrective_actions_corract_sourceable_poly" ON "corrective_actions" ("sourceable_type","sourceable_id");
+CREATE INDEX "corrective_actions_tid_idx" ON "corrective_actions" ("tenant_id");
+CREATE INDEX "corrective_actions_tid_st_idx" ON "corrective_actions" ("tenant_id","status");
+CREATE INDEX "corrective_actions_tenant_id_idx" ON "corrective_actions" ("tenant_id");
 
 CREATE TABLE "cost_centers" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1505,6 +1875,12 @@ CREATE TABLE "cost_centers" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "cost_centers_parent_id_foreign" ON "cost_centers" ("parent_id");
+CREATE INDEX "cost_centers_code_index" ON "cost_centers" ("code");
+CREATE INDEX "cost_centers_tid_idx" ON "cost_centers" ("tenant_id");
+CREATE INDEX "cost_centers_del_idx" ON "cost_centers" ("deleted_at");
+CREATE INDEX "cost_centers_tenant_id_idx" ON "cost_centers" ("tenant_id");
+CREATE INDEX "cost_centers_deleted_at_idx" ON "cost_centers" ("deleted_at");
 
 CREATE TABLE "crm_activities" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1526,6 +1902,15 @@ CREATE TABLE "crm_activities" (
  "updated_at" datetime NULL DEFAULT NULL,
  "contact_id" integer DEFAULT NULL
 );
+CREATE INDEX "crm_activities_customer_id_foreign" ON "crm_activities" ("customer_id");
+CREATE INDEX "crm_activities_user_id_foreign" ON "crm_activities" ("user_id");
+CREATE INDEX "crm_activities_tenant_id_customer_id_index" ON "crm_activities" ("tenant_id","customer_id");
+CREATE INDEX "crm_activities_tenant_id_deal_id_index" ON "crm_activities" ("tenant_id","deal_id");
+CREATE INDEX "crm_activities_tenant_id_type_index" ON "crm_activities" ("tenant_id","type");
+CREATE INDEX "crm_activities_crm_act_tenant_contact_idx" ON "crm_activities" ("tenant_id","contact_id");
+CREATE INDEX "crm_activities_crma_deal" ON "crm_activities" ("deal_id");
+CREATE INDEX "crm_activities_crma_contact" ON "crm_activities" ("contact_id");
+CREATE INDEX "crm_activities_tenant_id_idx" ON "crm_activities" ("tenant_id");
 
 CREATE TABLE "crm_calendar_events" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1549,6 +1934,13 @@ CREATE TABLE "crm_calendar_events" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_calendar_events_user_id_foreign" ON "crm_calendar_events" ("user_id");
+CREATE INDEX "crm_calendar_events_customer_id_foreign" ON "crm_calendar_events" ("customer_id");
+CREATE INDEX "crm_calendar_events_deal_id_foreign" ON "crm_calendar_events" ("deal_id");
+CREATE INDEX "crm_calendar_events_activity_id_foreign" ON "crm_calendar_events" ("activity_id");
+CREATE INDEX "crm_calendar_events_crm_cal_tenant_user_start_idx" ON "crm_calendar_events" ("tenant_id","user_id","start_at");
+CREATE INDEX "crm_calendar_events_external_id_index" ON "crm_calendar_events" ("external_id");
+CREATE INDEX "crm_calendar_events_tenant_id_idx" ON "crm_calendar_events" ("tenant_id");
 
 CREATE TABLE "crm_contract_renewals" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1566,6 +1958,10 @@ CREATE TABLE "crm_contract_renewals" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_contract_renewals_customer_id_foreign" ON "crm_contract_renewals" ("customer_id");
+CREATE INDEX "crm_contract_renewals_deal_id_foreign" ON "crm_contract_renewals" ("deal_id");
+CREATE INDEX "crm_contract_renewals_crm_renew_tenant_status_end_idx" ON "crm_contract_renewals" ("tenant_id","status","contract_end_date");
+CREATE INDEX "crm_contract_renewals_tenant_id_idx" ON "crm_contract_renewals" ("tenant_id");
 
 CREATE TABLE "crm_deal_competitors" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1579,6 +1975,8 @@ CREATE TABLE "crm_deal_competitors" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_deal_competitors_cdc_deal" ON "crm_deal_competitors" ("deal_id");
+CREATE INDEX "crm_deal_competitors_tenant_id_index" ON "crm_deal_competitors" ("tenant_id");
 
 CREATE TABLE "crm_deal_products" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1591,6 +1989,8 @@ CREATE TABLE "crm_deal_products" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_deal_products_crm_dp_tenant_deal_idx" ON "crm_deal_products" ("tenant_id","deal_id");
+CREATE INDEX "crm_deal_products_tenant_id_idx" ON "crm_deal_products" ("tenant_id");
 
 CREATE TABLE "crm_deal_stage_histories" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1603,6 +2003,8 @@ CREATE TABLE "crm_deal_stage_histories" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_deal_stage_histories_crm_dsh_tenant_deal_idx" ON "crm_deal_stage_histories" ("tenant_id","deal_id");
+CREATE INDEX "crm_deal_stage_histories_tenant_id_idx" ON "crm_deal_stage_histories" ("tenant_id");
 
 CREATE TABLE "crm_deals" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1632,6 +2034,23 @@ CREATE TABLE "crm_deals" (
  "competitor_name" varchar(255) DEFAULT NULL,
  "competitor_price" numeric DEFAULT NULL
 );
+CREATE INDEX "crm_deals_customer_id_foreign" ON "crm_deals" ("customer_id");
+CREATE INDEX "crm_deals_pipeline_id_foreign" ON "crm_deals" ("pipeline_id");
+CREATE INDEX "crm_deals_stage_id_foreign" ON "crm_deals" ("stage_id");
+CREATE INDEX "crm_deals_assigned_to_foreign" ON "crm_deals" ("assigned_to");
+CREATE INDEX "crm_deals_tenant_id_status_index" ON "crm_deals" ("tenant_id","status");
+CREATE INDEX "crm_deals_tenant_id_pipeline_id_stage_id_index" ON "crm_deals" ("tenant_id","pipeline_id","stage_id");
+CREATE INDEX "crm_deals_loss_reason_id_foreign" ON "crm_deals" ("loss_reason_id");
+CREATE INDEX "crm_deals_tenant_cust_idx" ON "crm_deals" ("tenant_id","customer_id");
+CREATE INDEX "crm_deals_tenant_assigned" ON "crm_deals" ("tenant_id","assigned_to");
+CREATE INDEX "crm_deals_tenant_stage" ON "crm_deals" ("tenant_id","stage_id");
+CREATE INDEX "crm_deals_deals_deleted_at" ON "crm_deals" ("tenant_id","deleted_at");
+CREATE INDEX "crm_deals_del_idx" ON "crm_deals" ("deleted_at");
+CREATE INDEX "crm_deals_quote_id_fk_idx" ON "crm_deals" ("quote_id");
+CREATE INDEX "crm_deals_work_order_id_fk_idx" ON "crm_deals" ("work_order_id");
+CREATE INDEX "crm_deals_equipment_id_fk_idx" ON "crm_deals" ("equipment_id");
+CREATE INDEX "crm_deals_tenant_id_idx" ON "crm_deals" ("tenant_id");
+CREATE INDEX "crm_deals_deleted_at_idx" ON "crm_deals" ("deleted_at");
 
 CREATE TABLE "crm_email_threads" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1647,6 +2066,9 @@ CREATE TABLE "crm_email_threads" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "crm_email_threads_message_id_hash_unique" ON "crm_email_threads" ("message_id_hash");
+CREATE INDEX "crm_email_threads_customer_id_foreign" ON "crm_email_threads" ("customer_id");
+CREATE INDEX "crm_email_threads_tid_idx" ON "crm_email_threads" ("tenant_id");
+CREATE INDEX "crm_email_threads_tenant_id_idx" ON "crm_email_threads" ("tenant_id");
 
 CREATE TABLE "crm_external_leads" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1662,6 +2084,9 @@ CREATE TABLE "crm_external_leads" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_external_leads_tid_idx" ON "crm_external_leads" ("tenant_id");
+CREATE INDEX "crm_external_leads_tax_id_index" ON "crm_external_leads" ("tax_id");
+CREATE INDEX "crm_external_leads_tenant_id_idx" ON "crm_external_leads" ("tenant_id");
 
 CREATE TABLE "crm_follow_up_tasks" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1676,6 +2101,8 @@ CREATE TABLE "crm_follow_up_tasks" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_follow_up_tasks_crm_fut_tenant_deal_idx" ON "crm_follow_up_tasks" ("tenant_id","deal_id");
+CREATE INDEX "crm_follow_up_tasks_tenant_id_idx" ON "crm_follow_up_tasks" ("tenant_id");
 
 CREATE TABLE "crm_forecast_snapshots" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1697,6 +2124,8 @@ CREATE TABLE "crm_forecast_snapshots" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_forecast_snapshots_crm_forecast_tenant_date_idx" ON "crm_forecast_snapshots" ("tenant_id","snapshot_date");
+CREATE INDEX "crm_forecast_snapshots_tenant_id_idx" ON "crm_forecast_snapshots" ("tenant_id");
 
 CREATE TABLE "crm_funnel_automations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1714,6 +2143,11 @@ CREATE TABLE "crm_funnel_automations" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_funnel_automations_pipeline_id_foreign" ON "crm_funnel_automations" ("pipeline_id");
+CREATE INDEX "crm_funnel_automations_stage_id_foreign" ON "crm_funnel_automations" ("stage_id");
+CREATE INDEX "crm_funnel_automations_created_by_foreign" ON "crm_funnel_automations" ("created_by");
+CREATE INDEX "crm_funnel_automations_tenant_id_index" ON "crm_funnel_automations" ("tenant_id");
+CREATE INDEX "crm_funnel_automations_deleted_at_idx" ON "crm_funnel_automations" ("deleted_at");
 
 CREATE TABLE "crm_interactive_proposals" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1736,6 +2170,10 @@ CREATE TABLE "crm_interactive_proposals" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "crm_interactive_proposals_token_unique" ON "crm_interactive_proposals" ("token");
+CREATE INDEX "crm_interactive_proposals_quote_id_foreign" ON "crm_interactive_proposals" ("quote_id");
+CREATE INDEX "crm_interactive_proposals_deal_id_foreign" ON "crm_interactive_proposals" ("deal_id");
+CREATE INDEX "crm_interactive_proposals_tid_idx" ON "crm_interactive_proposals" ("tenant_id");
+CREATE INDEX "crm_interactive_proposals_tenant_id_idx" ON "crm_interactive_proposals" ("tenant_id");
 
 CREATE TABLE "crm_lead_scores" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1749,6 +2187,7 @@ CREATE TABLE "crm_lead_scores" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "crm_lead_scores_tenant_id_customer_id_unique" ON "crm_lead_scores" ("tenant_id","customer_id");
+CREATE INDEX "crm_lead_scores_customer_id_foreign" ON "crm_lead_scores" ("customer_id");
 
 CREATE TABLE "crm_lead_scoring_rules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1764,6 +2203,8 @@ CREATE TABLE "crm_lead_scoring_rules" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_lead_scoring_rules_tenant_id_is_active_index" ON "crm_lead_scoring_rules" ("tenant_id","is_active");
+CREATE INDEX "crm_lead_scoring_rules_tenant_id_idx" ON "crm_lead_scoring_rules" ("tenant_id");
 
 CREATE TABLE "crm_loss_reasons" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1775,6 +2216,8 @@ CREATE TABLE "crm_loss_reasons" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_loss_reasons_tenant_id_is_active_index" ON "crm_loss_reasons" ("tenant_id","is_active");
+CREATE INDEX "crm_loss_reasons_tenant_id_idx" ON "crm_loss_reasons" ("tenant_id");
 
 CREATE TABLE "crm_message_templates" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1790,6 +2233,7 @@ CREATE TABLE "crm_message_templates" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "crm_message_templates_tenant_id_slug_unique" ON "crm_message_templates" ("tenant_id","slug");
+CREATE INDEX "crm_message_templates_slug_index" ON "crm_message_templates" ("slug");
 
 CREATE TABLE "crm_messages" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1816,6 +2260,14 @@ CREATE TABLE "crm_messages" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_messages_customer_id_foreign" ON "crm_messages" ("customer_id");
+CREATE INDEX "crm_messages_deal_id_foreign" ON "crm_messages" ("deal_id");
+CREATE INDEX "crm_messages_tenant_id_customer_id_channel_index" ON "crm_messages" ("tenant_id","customer_id","channel");
+CREATE INDEX "crm_messages_tenant_id_channel_status_index" ON "crm_messages" ("tenant_id","channel","status");
+CREATE INDEX "crm_messages_external_id_index" ON "crm_messages" ("external_id");
+CREATE INDEX "crm_messages_crm_msg_tenant_deal_created" ON "crm_messages" ("tenant_id","deal_id","created_at");
+CREATE INDEX "crm_messages_user_id_fk_idx" ON "crm_messages" ("user_id");
+CREATE INDEX "crm_messages_tenant_id_idx" ON "crm_messages" ("tenant_id");
 
 CREATE TABLE "crm_pipeline_stages" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1831,6 +2283,9 @@ CREATE TABLE "crm_pipeline_stages" (
  "tenant_id" integer NOT NULL,
  "order" int DEFAULT NULL
 );
+CREATE INDEX "crm_pipeline_stages_tenant_id_index" ON "crm_pipeline_stages" ("tenant_id");
+CREATE INDEX "crm_pipeline_stages_pipeline_id_fk_idx" ON "crm_pipeline_stages" ("pipeline_id");
+CREATE INDEX "crm_pipeline_stages_tenant_id_idx" ON "crm_pipeline_stages" ("tenant_id");
 
 CREATE TABLE "crm_pipelines" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1846,6 +2301,7 @@ CREATE TABLE "crm_pipelines" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "crm_pipelines_tenant_id_slug_unique" ON "crm_pipelines" ("tenant_id","slug");
+CREATE INDEX "crm_pipelines_deleted_at_idx" ON "crm_pipelines" ("deleted_at");
 
 CREATE TABLE "crm_referrals" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1866,6 +2322,11 @@ CREATE TABLE "crm_referrals" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_referrals_referred_customer_id_foreign" ON "crm_referrals" ("referred_customer_id");
+CREATE INDEX "crm_referrals_deal_id_foreign" ON "crm_referrals" ("deal_id");
+CREATE INDEX "crm_referrals_tenant_id_status_index" ON "crm_referrals" ("tenant_id","status");
+CREATE INDEX "crm_referrals_referrer_customer_id_index" ON "crm_referrals" ("referrer_customer_id");
+CREATE INDEX "crm_referrals_tenant_id_idx" ON "crm_referrals" ("tenant_id");
 
 CREATE TABLE "crm_sales_goals" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1886,6 +2347,10 @@ CREATE TABLE "crm_sales_goals" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_sales_goals_user_id_foreign" ON "crm_sales_goals" ("user_id");
+CREATE INDEX "crm_sales_goals_territory_id_foreign" ON "crm_sales_goals" ("territory_id");
+CREATE INDEX "crm_sales_goals_crm_goals_tenant_user_period_idx" ON "crm_sales_goals" ("tenant_id","user_id","period_start");
+CREATE INDEX "crm_sales_goals_tenant_id_idx" ON "crm_sales_goals" ("tenant_id");
 
 CREATE TABLE "crm_sequence_enrollments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1903,6 +2368,12 @@ CREATE TABLE "crm_sequence_enrollments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_sequence_enrollments_sequence_id_foreign" ON "crm_sequence_enrollments" ("sequence_id");
+CREATE INDEX "crm_sequence_enrollments_customer_id_foreign" ON "crm_sequence_enrollments" ("customer_id");
+CREATE INDEX "crm_sequence_enrollments_deal_id_foreign" ON "crm_sequence_enrollments" ("deal_id");
+CREATE INDEX "crm_sequence_enrollments_enrolled_by_foreign" ON "crm_sequence_enrollments" ("enrolled_by");
+CREATE INDEX "crm_sequence_enrollments_crm_seq_enr_tenant_status_next_idx" ON "crm_sequence_enrollments" ("tenant_id","status","next_action_at");
+CREATE INDEX "crm_sequence_enrollments_tenant_id_idx" ON "crm_sequence_enrollments" ("tenant_id");
 
 CREATE TABLE "crm_sequence_steps" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1919,6 +2390,9 @@ CREATE TABLE "crm_sequence_steps" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_sequence_steps_template_id_foreign" ON "crm_sequence_steps" ("template_id");
+CREATE INDEX "crm_sequence_steps_sequence_id_step_order_index" ON "crm_sequence_steps" ("sequence_id","step_order");
+CREATE INDEX "crm_sequence_steps_tenant_id_index" ON "crm_sequence_steps" ("tenant_id");
 
 CREATE TABLE "crm_sequences" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1932,6 +2406,11 @@ CREATE TABLE "crm_sequences" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_sequences_created_by_foreign" ON "crm_sequences" ("created_by");
+CREATE INDEX "crm_sequences_tenant_id_status_index" ON "crm_sequences" ("tenant_id","status");
+CREATE INDEX "crm_sequences_del_idx" ON "crm_sequences" ("deleted_at");
+CREATE INDEX "crm_sequences_deleted_at_idx" ON "crm_sequences" ("deleted_at");
+CREATE INDEX "crm_sequences_tenant_id_idx" ON "crm_sequences" ("tenant_id");
 
 CREATE TABLE "crm_smart_alerts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1951,6 +2430,13 @@ CREATE TABLE "crm_smart_alerts" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_smart_alerts_customer_id_foreign" ON "crm_smart_alerts" ("customer_id");
+CREATE INDEX "crm_smart_alerts_deal_id_foreign" ON "crm_smart_alerts" ("deal_id");
+CREATE INDEX "crm_smart_alerts_equipment_id_foreign" ON "crm_smart_alerts" ("equipment_id");
+CREATE INDEX "crm_smart_alerts_assigned_to_foreign" ON "crm_smart_alerts" ("assigned_to");
+CREATE INDEX "crm_smart_alerts_crm_alerts_tenant_status_pri_idx" ON "crm_smart_alerts" ("tenant_id","status","priority");
+CREATE INDEX "crm_smart_alerts_crm_alerts_tenant_type_idx" ON "crm_smart_alerts" ("tenant_id","type");
+CREATE INDEX "crm_smart_alerts_tenant_id_idx" ON "crm_smart_alerts" ("tenant_id");
 
 CREATE TABLE "crm_territories" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1965,6 +2451,11 @@ CREATE TABLE "crm_territories" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_territories_manager_id_foreign" ON "crm_territories" ("manager_id");
+CREATE INDEX "crm_territories_tenant_id_is_active_index" ON "crm_territories" ("tenant_id","is_active");
+CREATE INDEX "crm_territories_del_idx" ON "crm_territories" ("deleted_at");
+CREATE INDEX "crm_territories_tenant_id_idx" ON "crm_territories" ("tenant_id");
+CREATE INDEX "crm_territories_deleted_at_idx" ON "crm_territories" ("deleted_at");
 
 CREATE TABLE "crm_territory_members" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1976,6 +2467,8 @@ CREATE TABLE "crm_territory_members" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "crm_territory_members_territory_id_user_id_unique" ON "crm_territory_members" ("territory_id","user_id");
+CREATE INDEX "crm_territory_members_user_id_foreign" ON "crm_territory_members" ("user_id");
+CREATE INDEX "crm_territory_members_tenant_id_index" ON "crm_territory_members" ("tenant_id");
 
 CREATE TABLE "crm_tracking_events" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1992,6 +2485,11 @@ CREATE TABLE "crm_tracking_events" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_tracking_events_customer_id_foreign" ON "crm_tracking_events" ("customer_id");
+CREATE INDEX "crm_tracking_events_deal_id_foreign" ON "crm_tracking_events" ("deal_id");
+CREATE INDEX "crm_tracking_events_trackable_type_trackable_id_index" ON "crm_tracking_events" ("trackable_type","trackable_id");
+CREATE INDEX "crm_tracking_events_tenant_id_event_type_index" ON "crm_tracking_events" ("tenant_id","event_type");
+CREATE INDEX "crm_tracking_events_tenant_id_idx" ON "crm_tracking_events" ("tenant_id");
 
 CREATE TABLE "crm_web_form_submissions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2008,6 +2506,10 @@ CREATE TABLE "crm_web_form_submissions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "crm_web_form_submissions_form_id_index" ON "crm_web_form_submissions" ("form_id");
+CREATE INDEX "crm_web_form_submissions_customer_id_fk_idx" ON "crm_web_form_submissions" ("customer_id");
+CREATE INDEX "crm_web_form_submissions_deal_id_fk_idx" ON "crm_web_form_submissions" ("deal_id");
+CREATE INDEX "crm_web_form_submissions_tenant_id_index" ON "crm_web_form_submissions" ("tenant_id");
 
 CREATE TABLE "crm_web_forms" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2028,6 +2530,11 @@ CREATE TABLE "crm_web_forms" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "crm_web_forms_tenant_slug_unique" ON "crm_web_forms" ("tenant_id","slug");
+CREATE INDEX "crm_web_forms_pipeline_id_foreign" ON "crm_web_forms" ("pipeline_id");
+CREATE INDEX "crm_web_forms_assign_to_foreign" ON "crm_web_forms" ("assign_to");
+CREATE INDEX "crm_web_forms_sequence_id_foreign" ON "crm_web_forms" ("sequence_id");
+CREATE INDEX "crm_web_forms_del_idx" ON "crm_web_forms" ("deleted_at");
+CREATE INDEX "crm_web_forms_deleted_at_idx" ON "crm_web_forms" ("deleted_at");
 
 CREATE TABLE "custom_themes" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2063,6 +2570,8 @@ CREATE TABLE "customer_addresses" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "customer_addresses_cust_addr_tenant_cust_idx" ON "customer_addresses" ("tenant_id","customer_id");
+CREATE INDEX "customer_addresses_tenant_id_idx" ON "customer_addresses" ("tenant_id");
 
 CREATE TABLE "customer_company_sizes" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2079,6 +2588,9 @@ CREATE TABLE "customer_company_sizes" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "customer_company_sizes_tid_slug_uq" ON "customer_company_sizes" ("tenant_id","slug");
+CREATE INDEX "customer_company_sizes_tid_idx" ON "customer_company_sizes" ("tenant_id");
+CREATE INDEX "customer_company_sizes_del_idx" ON "customer_company_sizes" ("deleted_at");
+CREATE INDEX "customer_company_sizes_deleted_at_idx" ON "customer_company_sizes" ("deleted_at");
 
 CREATE TABLE "customer_complaints" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2098,6 +2610,12 @@ CREATE TABLE "customer_complaints" (
  "response_due_at" date DEFAULT NULL,
  "responded_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "customer_complaints_equipment_id_foreign" ON "customer_complaints" ("equipment_id");
+CREATE INDEX "customer_complaints_assigned_to_foreign" ON "customer_complaints" ("assigned_to");
+CREATE INDEX "customer_complaints_tid_idx" ON "customer_complaints" ("tenant_id");
+CREATE INDEX "customer_complaints_customer_id_fk_idx" ON "customer_complaints" ("customer_id");
+CREATE INDEX "customer_complaints_work_order_id_fk_idx" ON "customer_complaints" ("work_order_id");
+CREATE INDEX "customer_complaints_tenant_id_idx" ON "customer_complaints" ("tenant_id");
 
 CREATE TABLE "customer_contacts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2111,6 +2629,10 @@ CREATE TABLE "customer_contacts" (
  "updated_at" datetime NULL DEFAULT NULL,
  "tenant_id" integer NOT NULL
 );
+CREATE INDEX "customer_contacts_tenant_id_index" ON "customer_contacts" ("tenant_id");
+CREATE INDEX "customer_contacts_customer_id_fk_idx" ON "customer_contacts" ("customer_id");
+CREATE INDEX "customer_contacts_cc_cid_prim_idx" ON "customer_contacts" ("customer_id","is_primary");
+CREATE INDEX "customer_contacts_tenant_id_idx" ON "customer_contacts" ("tenant_id");
 
 CREATE TABLE "customer_documents" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2127,6 +2649,10 @@ CREATE TABLE "customer_documents" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "customer_documents_uploaded_by_foreign" ON "customer_documents" ("uploaded_by");
+CREATE INDEX "customer_documents_tid_idx" ON "customer_documents" ("tenant_id");
+CREATE INDEX "customer_documents_customer_id_fk_idx" ON "customer_documents" ("customer_id");
+CREATE INDEX "customer_documents_tenant_id_idx" ON "customer_documents" ("tenant_id");
 
 CREATE TABLE "customer_health_scores" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2139,6 +2665,7 @@ CREATE TABLE "customer_health_scores" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "customer_health_scores_tenant_id_customer_id_unique" ON "customer_health_scores" ("tenant_id","customer_id");
+CREATE INDEX "customer_health_scores_customer_id_foreign" ON "customer_health_scores" ("customer_id");
 
 CREATE TABLE "customer_locations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2156,6 +2683,9 @@ CREATE TABLE "customer_locations" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "customer_locations_tenant_id_index" ON "customer_locations" ("tenant_id");
+CREATE INDEX "customer_locations_customer_id_index" ON "customer_locations" ("customer_id");
+CREATE INDEX "customer_locations_tenant_id_idx" ON "customer_locations" ("tenant_id");
 
 CREATE TABLE "customer_ratings" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2172,6 +2702,9 @@ CREATE TABLE "customer_ratings" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "customer_ratings_tid_slug_uq" ON "customer_ratings" ("tenant_id","slug");
+CREATE INDEX "customer_ratings_tid_idx" ON "customer_ratings" ("tenant_id");
+CREATE INDEX "customer_ratings_del_idx" ON "customer_ratings" ("deleted_at");
+CREATE INDEX "customer_ratings_deleted_at_idx" ON "customer_ratings" ("deleted_at");
 
 CREATE TABLE "customer_rfm_scores" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2190,6 +2723,8 @@ CREATE TABLE "customer_rfm_scores" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "crfm_tenant_cust_uniq" ON "customer_rfm_scores" ("tenant_id","customer_id");
+CREATE INDEX "customer_rfm_scores_customer_id_foreign" ON "customer_rfm_scores" ("customer_id");
+CREATE INDEX "customer_rfm_scores_crfm_tenant_seg_idx" ON "customer_rfm_scores" ("tenant_id","rfm_segment");
 
 CREATE TABLE "customer_segments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2206,6 +2741,9 @@ CREATE TABLE "customer_segments" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "customer_segments_tid_slug_uq" ON "customer_segments" ("tenant_id","slug");
+CREATE INDEX "customer_segments_tid_idx" ON "customer_segments" ("tenant_id");
+CREATE INDEX "customer_segments_del_idx" ON "customer_segments" ("deleted_at");
+CREATE INDEX "customer_segments_deleted_at_idx" ON "customer_segments" ("deleted_at");
 
 CREATE TABLE "customers" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2280,6 +2818,20 @@ CREATE TABLE "customers" (
  "document_hash_active_key" char(19) GENERATED ALWAYS AS (ifnull(cast("deleted_at" as char(19)),'1970-01-01 00:00:00')) STORED
 );
 CREATE UNIQUE INDEX "customers_tenant_active_document_hash_unique" ON "customers" ("tenant_id","document_hash","document_hash_active_key");
+CREATE INDEX "customers_tenant_id_name_index" ON "customers" ("tenant_id","name");
+CREATE INDEX "customers_assigned_seller_id_foreign" ON "customers" ("assigned_seller_id");
+CREATE INDEX "customers_referred_by_customer_id_foreign" ON "customers" ("referred_by_customer_id");
+CREATE INDEX "customers_territory_id_foreign" ON "customers" ("territory_id");
+CREATE INDEX "customers_cust_tenant_active" ON "customers" ("tenant_id","is_active");
+CREATE INDEX "customers_cust_tenant_seller" ON "customers" ("tenant_id","assigned_seller_id");
+CREATE INDEX "customers_cust_tenant_contact" ON "customers" ("tenant_id","last_contact_at");
+CREATE INDEX "customers_cust_tenant_followup" ON "customers" ("tenant_id","next_follow_up_at");
+CREATE INDEX "customers_cust_tenant_health" ON "customers" ("tenant_id","health_score");
+CREATE INDEX "customers_cust_deleted_at" ON "customers" ("tenant_id","deleted_at");
+CREATE INDEX "customers_del_idx" ON "customers" ("deleted_at");
+CREATE INDEX "customers_asaas_id_index" ON "customers" ("asaas_id");
+CREATE INDEX "customers_tenant_document_hash_idx" ON "customers" ("tenant_id","document_hash");
+CREATE INDEX "customers_deleted_at_idx" ON "customers" ("deleted_at");
 
 CREATE TABLE "data_export_jobs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2302,6 +2854,10 @@ CREATE TABLE "data_export_jobs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "data_export_jobs_analytics_dataset_id_foreign" ON "data_export_jobs" ("analytics_dataset_id");
+CREATE INDEX "data_export_jobs_created_by_foreign" ON "data_export_jobs" ("created_by");
+CREATE INDEX "data_export_jobs_tenant_status_idx" ON "data_export_jobs" ("tenant_id","status");
+CREATE INDEX "data_export_jobs_tenant_id_idx" ON "data_export_jobs" ("tenant_id");
 
 CREATE TABLE "data_masking_rules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2313,6 +2869,8 @@ CREATE TABLE "data_masking_rules" (
  "is_active" tinyint NOT NULL DEFAULT '1',
  "created_at" datetime NOT NULL
 );
+CREATE INDEX "data_masking_rules_tenant_id_index" ON "data_masking_rules" ("tenant_id");
+CREATE INDEX "data_masking_rules_tenant_id_idx" ON "data_masking_rules" ("tenant_id");
 
 CREATE TABLE "debt_renegotiation_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2323,6 +2881,10 @@ CREATE TABLE "debt_renegotiation_items" (
  "updated_at" datetime NULL DEFAULT NULL,
  "tenant_id" integer NOT NULL
 );
+CREATE INDEX "debt_renegotiation_items_dri_ar" ON "debt_renegotiation_items" ("account_receivable_id");
+CREATE INDEX "debt_renegotiation_items_debt_renegotiation_i_fk_idx" ON "debt_renegotiation_items" ("debt_renegotiation_id");
+CREATE INDEX "debt_renegotiation_items_account_receivable_i_fk_idx" ON "debt_renegotiation_items" ("account_receivable_id");
+CREATE INDEX "debt_renegotiation_items_tenant_id_idx" ON "debt_renegotiation_items" ("tenant_id");
 
 CREATE TABLE "debt_renegotiations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2344,6 +2906,12 @@ CREATE TABLE "debt_renegotiations" (
  "updated_at" datetime NULL DEFAULT NULL,
  "description" varchar(255) DEFAULT NULL
 );
+CREATE INDEX "debt_renegotiations_created_by_foreign" ON "debt_renegotiations" ("created_by");
+CREATE INDEX "debt_renegotiations_approved_by_foreign" ON "debt_renegotiations" ("approved_by");
+CREATE INDEX "debt_renegotiations_tid_idx" ON "debt_renegotiations" ("tenant_id");
+CREATE INDEX "debt_renegotiations_customer_id_fk_idx" ON "debt_renegotiations" ("customer_id");
+CREATE INDEX "debt_renegotiations_tid_st_idx" ON "debt_renegotiations" ("tenant_id","status");
+CREATE INDEX "debt_renegotiations_tenant_id_idx" ON "debt_renegotiations" ("tenant_id");
 
 CREATE TABLE "departments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2356,6 +2924,10 @@ CREATE TABLE "departments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "departments_parent_id_foreign" ON "departments" ("parent_id");
+CREATE INDEX "departments_manager_id_foreign" ON "departments" ("manager_id");
+CREATE INDEX "departments_tid_idx" ON "departments" ("tenant_id");
+CREATE INDEX "departments_tenant_id_idx" ON "departments" ("tenant_id");
 
 CREATE TABLE "depreciation_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2374,6 +2946,8 @@ CREATE TABLE "depreciation_logs" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "depreciation_logs_tenant_asset_month_unique" ON "depreciation_logs" ("tenant_id","asset_record_id","reference_month");
+CREATE INDEX "depreciation_logs_asset_record_id_foreign" ON "depreciation_logs" ("asset_record_id");
+CREATE INDEX "depreciation_logs_tenant_month_idx" ON "depreciation_logs" ("tenant_id","reference_month");
 
 CREATE TABLE "document_types" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2390,6 +2964,9 @@ CREATE TABLE "document_types" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "document_types_tid_slug_uq" ON "document_types" ("tenant_id","slug");
+CREATE INDEX "document_types_tid_idx" ON "document_types" ("tenant_id");
+CREATE INDEX "document_types_del_idx" ON "document_types" ("deleted_at");
+CREATE INDEX "document_types_deleted_at_idx" ON "document_types" ("deleted_at");
 
 CREATE TABLE "document_versions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2410,6 +2987,12 @@ CREATE TABLE "document_versions" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "document_versions_created_by_foreign" ON "document_versions" ("created_by");
+CREATE INDEX "document_versions_approved_by_foreign" ON "document_versions" ("approved_by");
+CREATE INDEX "document_versions_tenant_id_document_code_index" ON "document_versions" ("tenant_id","document_code");
+CREATE INDEX "document_versions_del_idx" ON "document_versions" ("deleted_at");
+CREATE INDEX "document_versions_tenant_id_idx" ON "document_versions" ("tenant_id");
+CREATE INDEX "document_versions_deleted_at_idx" ON "document_versions" ("deleted_at");
 
 CREATE TABLE "ecological_disposals" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2428,6 +3011,10 @@ CREATE TABLE "ecological_disposals" (
  "status" varchar(255) NOT NULL DEFAULT 'pending',
  "created_by" integer DEFAULT NULL
 );
+CREATE INDEX "ecological_disposals_product_id_foreign" ON "ecological_disposals" ("product_id");
+CREATE INDEX "ecological_disposals_created_by_foreign" ON "ecological_disposals" ("created_by");
+CREATE INDEX "ecological_disposals_tid_idx" ON "ecological_disposals" ("tenant_id");
+CREATE INDEX "ecological_disposals_tenant_id_idx" ON "ecological_disposals" ("tenant_id");
 
 CREATE TABLE "email_accounts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2451,6 +3038,7 @@ CREATE TABLE "email_accounts" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "email_accounts_tenant_id_email_address_unique" ON "email_accounts" ("tenant_id","email_address");
+CREATE INDEX "email_accounts_ea_tenant" ON "email_accounts" ("tenant_id");
 
 CREATE TABLE "email_activities" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2462,6 +3050,10 @@ CREATE TABLE "email_activities" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "email_activities_tid_idx" ON "email_activities" ("tenant_id");
+CREATE INDEX "email_activities_email_id_fk_idx" ON "email_activities" ("email_id");
+CREATE INDEX "email_activities_user_id_fk_idx" ON "email_activities" ("user_id");
+CREATE INDEX "email_activities_tenant_id_idx" ON "email_activities" ("tenant_id");
 
 CREATE TABLE "email_attachments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2473,6 +3065,7 @@ CREATE TABLE "email_attachments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "email_attachments_ea_email" ON "email_attachments" ("email_id");
 
 CREATE TABLE "email_campaigns" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2490,6 +3083,8 @@ CREATE TABLE "email_campaigns" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "email_campaigns_tenant_id_status_index" ON "email_campaigns" ("tenant_id","status");
+CREATE INDEX "email_campaigns_tenant_id_idx" ON "email_campaigns" ("tenant_id");
 
 CREATE TABLE "email_email_tag" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2497,6 +3092,10 @@ CREATE TABLE "email_email_tag" (
  "email_tag_id" integer NOT NULL,
  "tenant_id" integer DEFAULT NULL
 );
+CREATE INDEX "email_email_tag_email_id_foreign" ON "email_email_tag" ("email_id");
+CREATE INDEX "email_email_tag_email_tag_id_foreign" ON "email_email_tag" ("email_tag_id");
+CREATE INDEX "email_email_tag_tenant_idx" ON "email_email_tag" ("tenant_id");
+CREATE INDEX "email_email_tag_tenant_id_idx" ON "email_email_tag" ("tenant_id");
 
 CREATE TABLE "email_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2512,6 +3111,8 @@ CREATE TABLE "email_logs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "email_logs_tenant_status_idx" ON "email_logs" ("tenant_id","status");
+CREATE INDEX "email_logs_tenant_id_idx" ON "email_logs" ("tenant_id");
 
 CREATE TABLE "email_notes" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2522,6 +3123,10 @@ CREATE TABLE "email_notes" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "email_notes_email_id_foreign" ON "email_notes" ("email_id");
+CREATE INDEX "email_notes_user_id_foreign" ON "email_notes" ("user_id");
+CREATE INDEX "email_notes_tid_idx" ON "email_notes" ("tenant_id");
+CREATE INDEX "email_notes_tenant_id_idx" ON "email_notes" ("tenant_id");
 
 CREATE TABLE "email_rules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2535,6 +3140,8 @@ CREATE TABLE "email_rules" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "email_rules_tenant_id_is_active_priority_index" ON "email_rules" ("tenant_id","is_active","priority");
+CREATE INDEX "email_rules_tenant_id_idx" ON "email_rules" ("tenant_id");
 
 CREATE TABLE "email_signatures" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2547,6 +3154,10 @@ CREATE TABLE "email_signatures" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "email_signatures_user_id_foreign" ON "email_signatures" ("user_id");
+CREATE INDEX "email_signatures_email_account_id_foreign" ON "email_signatures" ("email_account_id");
+CREATE INDEX "email_signatures_tid_idx" ON "email_signatures" ("tenant_id");
+CREATE INDEX "email_signatures_tenant_id_idx" ON "email_signatures" ("tenant_id");
 
 CREATE TABLE "email_tags" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2556,6 +3167,8 @@ CREATE TABLE "email_tags" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "email_tags_tid_idx" ON "email_tags" ("tenant_id");
+CREATE INDEX "email_tags_tenant_id_idx" ON "email_tags" ("tenant_id");
 
 CREATE TABLE "email_templates" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2568,6 +3181,9 @@ CREATE TABLE "email_templates" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "email_templates_user_id_foreign" ON "email_templates" ("user_id");
+CREATE INDEX "email_templates_tid_idx" ON "email_templates" ("tenant_id");
+CREATE INDEX "email_templates_tenant_id_idx" ON "email_templates" ("tenant_id");
 
 CREATE TABLE "emails" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2615,6 +3231,20 @@ CREATE TABLE "emails" (
  "assigned_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "emails_message_id_unique" ON "emails" ("message_id");
+CREATE INDEX "emails_customer_id_foreign" ON "emails" ("customer_id");
+CREATE INDEX "emails_linked_type_linked_id_index" ON "emails" ("linked_type","linked_id");
+CREATE INDEX "emails_email_account_id_uid_index" ON "emails" ("email_account_id","uid");
+CREATE INDEX "emails_tenant_id_status_index" ON "emails" ("tenant_id","status");
+CREATE INDEX "emails_tenant_id_ai_category_index" ON "emails" ("tenant_id","ai_category");
+CREATE INDEX "emails_in_reply_to_index" ON "emails" ("in_reply_to");
+CREATE INDEX "emails_thread_id_index" ON "emails" ("thread_id");
+CREATE INDEX "emails_date_index" ON "emails" ("date");
+CREATE INDEX "emails_ai_category_index" ON "emails" ("ai_category");
+CREATE INDEX "emails_assigned_to_user_id_foreign" ON "emails" ("assigned_to_user_id");
+CREATE INDEX "emails_tracking_id_index" ON "emails" ("tracking_id");
+CREATE INDEX "emails_em_tenant_folder_date" ON "emails" ("tenant_id","folder","date");
+CREATE INDEX "emails_em_account" ON "emails" ("email_account_id");
+CREATE INDEX "emails_tenant_id_idx" ON "emails" ("tenant_id");
 
 CREATE TABLE "embedded_dashboards" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2628,6 +3258,9 @@ CREATE TABLE "embedded_dashboards" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "embedded_dashboards_created_by_foreign" ON "embedded_dashboards" ("created_by");
+CREATE INDEX "embedded_dashboards_tenant_order_idx" ON "embedded_dashboards" ("tenant_id","display_order");
+CREATE INDEX "embedded_dashboards_tenant_id_idx" ON "embedded_dashboards" ("tenant_id");
 
 CREATE TABLE "employee_benefits" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2644,6 +3277,9 @@ CREATE TABLE "employee_benefits" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "employee_benefits_tid_idx" ON "employee_benefits" ("tenant_id");
+CREATE INDEX "employee_benefits_user_id_fk_idx" ON "employee_benefits" ("user_id");
+CREATE INDEX "employee_benefits_tenant_id_idx" ON "employee_benefits" ("tenant_id");
 
 CREATE TABLE "employee_dependents" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2661,6 +3297,9 @@ CREATE TABLE "employee_dependents" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "employee_dependents_user_id_foreign" ON "employee_dependents" ("user_id");
+CREATE INDEX "employee_dependents_tenant_id_user_id_index" ON "employee_dependents" ("tenant_id","user_id");
+CREATE INDEX "employee_dependents_tenant_cpf_hash_idx" ON "employee_dependents" ("tenant_id","cpf_hash");
 
 CREATE TABLE "employee_documents" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2679,6 +3318,10 @@ CREATE TABLE "employee_documents" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "employee_documents_user_id_foreign" ON "employee_documents" ("user_id");
+CREATE INDEX "employee_documents_uploaded_by_foreign" ON "employee_documents" ("uploaded_by");
+CREATE INDEX "employee_documents_tid_idx" ON "employee_documents" ("tenant_id");
+CREATE INDEX "employee_documents_tenant_id_idx" ON "employee_documents" ("tenant_id");
 
 CREATE TABLE "epi_records" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2693,6 +3336,9 @@ CREATE TABLE "epi_records" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "epi_records_tenant_id_index" ON "epi_records" ("tenant_id");
+CREATE INDEX "epi_records_user_id_index" ON "epi_records" ("user_id");
+CREATE INDEX "epi_records_tenant_id_idx" ON "epi_records" ("tenant_id");
 
 CREATE TABLE "equipment_brands" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2709,6 +3355,9 @@ CREATE TABLE "equipment_brands" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "equipment_brands_tid_slug_uq" ON "equipment_brands" ("tenant_id","slug");
+CREATE INDEX "equipment_brands_tid_idx" ON "equipment_brands" ("tenant_id");
+CREATE INDEX "equipment_brands_del_idx" ON "equipment_brands" ("deleted_at");
+CREATE INDEX "equipment_brands_deleted_at_idx" ON "equipment_brands" ("deleted_at");
 
 CREATE TABLE "equipment_calibrations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2790,6 +3439,18 @@ CREATE TABLE "equipment_calibrations" (
  "icp_signature_status" varchar(255) DEFAULT NULL
 );
 CREATE UNIQUE INDEX "equipment_calibrations_verification_token_unique" ON "equipment_calibrations" ("verification_token");
+CREATE INDEX "equipment_calibrations_performed_by_foreign" ON "equipment_calibrations" ("performed_by");
+CREATE INDEX "equipment_calibrations_approved_by_foreign" ON "equipment_calibrations" ("approved_by");
+CREATE INDEX "equipment_calibrations_equipment_id_calibration_date_index" ON "equipment_calibrations" ("equipment_id","calibration_date");
+CREATE INDEX "equipment_calibrations_tenant_id_index" ON "equipment_calibrations" ("tenant_id");
+CREATE INDEX "equipment_calibrations_prefilled_from_id_foreign" ON "equipment_calibrations" ("prefilled_from_id");
+CREATE INDEX "equipment_calibrations_certificate_template_id_foreign" ON "equipment_calibrations" ("certificate_template_id");
+CREATE INDEX "equipment_calibrations_eq_cal_tenant_status_idx" ON "equipment_calibrations" ("tenant_id","status");
+CREATE INDEX "equipment_calibrations_eq_cal_tenant_equip_idx" ON "equipment_calibrations" ("tenant_id","equipment_id");
+CREATE INDEX "equipment_calibrations_work_order_id_fk_idx" ON "equipment_calibrations" ("work_order_id");
+CREATE INDEX "equipment_calibrations_decision_calculated_by_foreign" ON "equipment_calibrations" ("decision_calculated_by");
+CREATE INDEX "equipment_calibrations_eq_cal_decision_result_idx" ON "equipment_calibrations" ("tenant_id","decision_result");
+CREATE INDEX "equipment_calibrations_accreditation_scope_id_foreign" ON "equipment_calibrations" ("accreditation_scope_id");
 
 CREATE TABLE "equipment_categories" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2806,6 +3467,9 @@ CREATE TABLE "equipment_categories" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "equipment_categories_tid_slug_uq" ON "equipment_categories" ("tenant_id","slug");
+CREATE INDEX "equipment_categories_tid_idx" ON "equipment_categories" ("tenant_id");
+CREATE INDEX "equipment_categories_del_idx" ON "equipment_categories" ("deleted_at");
+CREATE INDEX "equipment_categories_deleted_at_idx" ON "equipment_categories" ("deleted_at");
 
 CREATE TABLE "equipment_documents" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2819,6 +3483,10 @@ CREATE TABLE "equipment_documents" (
  "updated_at" datetime NULL DEFAULT NULL,
  "tenant_id" integer NOT NULL
 );
+CREATE INDEX "equipment_documents_equipment_id_foreign" ON "equipment_documents" ("equipment_id");
+CREATE INDEX "equipment_documents_uploaded_by_foreign" ON "equipment_documents" ("uploaded_by");
+CREATE INDEX "equipment_documents_tenant_id_index" ON "equipment_documents" ("tenant_id");
+CREATE INDEX "equipment_documents_tenant_id_idx" ON "equipment_documents" ("tenant_id");
 
 CREATE TABLE "equipment_maintenances" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2835,6 +3503,11 @@ CREATE TABLE "equipment_maintenances" (
  "updated_at" datetime NULL DEFAULT NULL,
  "tenant_id" integer NOT NULL
 );
+CREATE INDEX "equipment_maintenances_equipment_id_foreign" ON "equipment_maintenances" ("equipment_id");
+CREATE INDEX "equipment_maintenances_performed_by_foreign" ON "equipment_maintenances" ("performed_by");
+CREATE INDEX "equipment_maintenances_work_order_id_foreign" ON "equipment_maintenances" ("work_order_id");
+CREATE INDEX "equipment_maintenances_tenant_id_index" ON "equipment_maintenances" ("tenant_id");
+CREATE INDEX "equipment_maintenances_tenant_id_idx" ON "equipment_maintenances" ("tenant_id");
 
 CREATE TABLE "equipment_model_product" (
  "equipment_model_id" integer NOT NULL,
@@ -2842,6 +3515,9 @@ CREATE TABLE "equipment_model_product" (
  "tenant_id" integer DEFAULT NULL,
  PRIMARY KEY ("equipment_model_id","product_id")
 );
+CREATE INDEX "equipment_model_product_product_id_foreign" ON "equipment_model_product" ("product_id");
+CREATE INDEX "equipment_model_product_equipment_model_prod_tenant_idx" ON "equipment_model_product" ("tenant_id");
+CREATE INDEX "equipment_model_product_tenant_id_idx" ON "equipment_model_product" ("tenant_id");
 
 CREATE TABLE "equipment_models" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2852,6 +3528,8 @@ CREATE TABLE "equipment_models" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "equipment_models_tenant_id_index" ON "equipment_models" ("tenant_id");
+CREATE INDEX "equipment_models_tenant_id_idx" ON "equipment_models" ("tenant_id");
 
 CREATE TABLE "equipment_types" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2868,6 +3546,9 @@ CREATE TABLE "equipment_types" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "equipment_types_tid_slug_uq" ON "equipment_types" ("tenant_id","slug");
+CREATE INDEX "equipment_types_tid_idx" ON "equipment_types" ("tenant_id");
+CREATE INDEX "equipment_types_del_idx" ON "equipment_types" ("deleted_at");
+CREATE INDEX "equipment_types_deleted_at_idx" ON "equipment_types" ("deleted_at");
 
 CREATE TABLE "equipments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2913,6 +3594,22 @@ CREATE TABLE "equipments" (
  "max_capacity" numeric DEFAULT NULL
 );
 CREATE UNIQUE INDEX "equipments_qr_token_unique" ON "equipments" ("qr_token");
+CREATE INDEX "equipments_customer_id_foreign" ON "equipments" ("customer_id");
+CREATE INDEX "equipments_responsible_user_id_foreign" ON "equipments" ("responsible_user_id");
+CREATE INDEX "equipments_tenant_id_code_index" ON "equipments" ("tenant_id","code");
+CREATE INDEX "equipments_tenant_id_status_index" ON "equipments" ("tenant_id","status");
+CREATE INDEX "equipments_tenant_id_next_calibration_at_index" ON "equipments" ("tenant_id","next_calibration_at");
+CREATE INDEX "equipments_tenant_id_customer_id_index" ON "equipments" ("tenant_id","customer_id");
+CREATE INDEX "equipments_serial_number_index" ON "equipments" ("serial_number");
+CREATE INDEX "equipments_eq_tenant_active" ON "equipments" ("tenant_id","is_active");
+CREATE INDEX "equipments_eq_tenant_calib" ON "equipments" ("tenant_id","next_calibration_at");
+CREATE INDEX "equipments_eq_tenant_status" ON "equipments" ("tenant_id","status");
+CREATE INDEX "equipments_equip_deleted_at" ON "equipments" ("tenant_id","deleted_at");
+CREATE INDEX "equipments_del_idx" ON "equipments" ("deleted_at");
+CREATE INDEX "equipments_equipment_model_id_fk_idx" ON "equipments" ("equipment_model_id");
+CREATE INDEX "equipments_equip_tid_cid_idx" ON "equipments" ("tenant_id","customer_id");
+CREATE INDEX "equipments_tenant_id_idx" ON "equipments" ("tenant_id");
+CREATE INDEX "equipments_deleted_at_idx" ON "equipments" ("deleted_at");
 
 CREATE TABLE "erp_sync_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2925,6 +3622,8 @@ CREATE TABLE "erp_sync_logs" (
  "synced_at" datetime NOT NULL,
  "created_by" integer DEFAULT NULL
 );
+CREATE INDEX "erp_sync_logs_tenant_id_index" ON "erp_sync_logs" ("tenant_id");
+CREATE INDEX "erp_sync_logs_tenant_id_idx" ON "erp_sync_logs" ("tenant_id");
 
 CREATE TABLE "escalation_rules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2938,6 +3637,8 @@ CREATE TABLE "escalation_rules" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "escalation_rules_sla_policy_id_foreign" ON "escalation_rules" ("sla_policy_id");
+CREATE INDEX "escalation_rules_tenant_id_idx" ON "escalation_rules" ("tenant_id");
 
 CREATE TABLE "esocial_certificates" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2952,6 +3653,8 @@ CREATE TABLE "esocial_certificates" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "esocial_certificates_tenant_id_is_active_index" ON "esocial_certificates" ("tenant_id","is_active");
+CREATE INDEX "esocial_certificates_tenant_id_idx" ON "esocial_certificates" ("tenant_id");
 
 CREATE TABLE "esocial_events" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2977,6 +3680,10 @@ CREATE TABLE "esocial_events" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "esocial_events_tenant_id_event_type_status_index" ON "esocial_events" ("tenant_id","event_type","status");
+CREATE INDEX "esocial_events_tenant_id_related_type_related_id_index" ON "esocial_events" ("tenant_id","related_type","related_id");
+CREATE INDEX "esocial_events_batch_id_index" ON "esocial_events" ("batch_id");
+CREATE INDEX "esocial_events_tenant_id_idx" ON "esocial_events" ("tenant_id");
 
 CREATE TABLE "esocial_rubrics" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3009,6 +3716,8 @@ CREATE TABLE "espelho_confirmations" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "espelho_confirmations_user_id_foreign" ON "espelho_confirmations" ("user_id");
+CREATE INDEX "espelho_confirmations_tenant_id_idx" ON "espelho_confirmations" ("tenant_id");
 
 CREATE TABLE "excentricity_tests" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3024,6 +3733,9 @@ CREATE TABLE "excentricity_tests" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "excentricity_tests_equipment_calibration_id_index" ON "excentricity_tests" ("equipment_calibration_id");
+CREATE INDEX "excentricity_tests_tid_idx" ON "excentricity_tests" ("tenant_id");
+CREATE INDEX "excentricity_tests_tenant_id_idx" ON "excentricity_tests" ("tenant_id");
 
 CREATE TABLE "expense_categories" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3038,6 +3750,12 @@ CREATE TABLE "expense_categories" (
  "default_affects_net_value" tinyint NOT NULL DEFAULT '0',
  "default_affects_technician_cash" tinyint NOT NULL DEFAULT '1'
 );
+CREATE INDEX "expense_categories_ec_deleted_at" ON "expense_categories" ("deleted_at");
+CREATE INDEX "expense_categories_tid_idx" ON "expense_categories" ("tenant_id");
+CREATE INDEX "expense_categories_del_idx" ON "expense_categories" ("deleted_at");
+CREATE INDEX "expense_categories_expcat_tid_act_idx" ON "expense_categories" ("tenant_id","active");
+CREATE INDEX "expense_categories_tenant_id_idx" ON "expense_categories" ("tenant_id");
+CREATE INDEX "expense_categories_deleted_at_idx" ON "expense_categories" ("deleted_at");
 
 CREATE TABLE "expense_status_history" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3050,6 +3768,9 @@ CREATE TABLE "expense_status_history" (
  "updated_at" datetime NULL DEFAULT NULL,
  "tenant_id" integer NOT NULL
 );
+CREATE INDEX "expense_status_history_changed_by_foreign" ON "expense_status_history" ("changed_by");
+CREATE INDEX "expense_status_history_expense_id_created_at_index" ON "expense_status_history" ("expense_id","created_at");
+CREATE INDEX "expense_status_history_tenant_id_idx" ON "expense_status_history" ("tenant_id");
 
 CREATE TABLE "expenses" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3084,6 +3805,20 @@ CREATE TABLE "expenses" (
  "reference_type" varchar(50) DEFAULT NULL,
  "reference_id" integer DEFAULT NULL
 );
+CREATE INDEX "expenses_tenant_id_status_expense_date_index" ON "expenses" ("tenant_id","status","expense_date");
+CREATE INDEX "expenses_chart_of_account_id_foreign" ON "expenses" ("chart_of_account_id");
+CREATE INDEX "expenses_cost_center_id_foreign" ON "expenses" ("cost_center_id");
+CREATE INDEX "expenses_exp_work_order" ON "expenses" ("work_order_id");
+CREATE INDEX "expenses_exp_created_by" ON "expenses" ("created_by");
+CREATE INDEX "expenses_exp_category" ON "expenses" ("expense_category_id");
+CREATE INDEX "expenses_approved_by_foreign" ON "expenses" ("approved_by");
+CREATE INDEX "expenses_exp_deleted_at" ON "expenses" ("tenant_id","deleted_at");
+CREATE INDEX "expenses_exp_reviewed_by" ON "expenses" ("reviewed_by");
+CREATE INDEX "expenses_del_idx" ON "expenses" ("deleted_at");
+CREATE INDEX "expenses_payroll_id_foreign" ON "expenses" ("payroll_id");
+CREATE INDEX "expenses_payroll_line_id_foreign" ON "expenses" ("payroll_line_id");
+CREATE INDEX "expenses_tenant_id_idx" ON "expenses" ("tenant_id");
+CREATE INDEX "expenses_deleted_at_idx" ON "expenses" ("deleted_at");
 
 CREATE TABLE "export_jobs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3099,6 +3834,8 @@ CREATE TABLE "export_jobs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "export_jobs_tenant_id_index" ON "export_jobs" ("tenant_id");
+CREATE INDEX "export_jobs_tenant_id_idx" ON "export_jobs" ("tenant_id");
 
 CREATE TABLE "failed_jobs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3126,6 +3863,11 @@ CREATE TABLE "financial_checks" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "financial_checks_tenant_id_status_due_date_index" ON "financial_checks" ("tenant_id","status","due_date");
+CREATE INDEX "financial_checks_fc_tenant_status_due" ON "financial_checks" ("tenant_id","status","due_date");
+CREATE INDEX "financial_checks_del_idx" ON "financial_checks" ("deleted_at");
+CREATE INDEX "financial_checks_tenant_id_idx" ON "financial_checks" ("tenant_id");
+CREATE INDEX "financial_checks_deleted_at_idx" ON "financial_checks" ("deleted_at");
 
 CREATE TABLE "fiscal_audit_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3139,6 +3881,11 @@ CREATE TABLE "fiscal_audit_logs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "fiscal_audit_logs_fiscal_note_id_foreign" ON "fiscal_audit_logs" ("fiscal_note_id");
+CREATE INDEX "fiscal_audit_logs_user_id_foreign" ON "fiscal_audit_logs" ("user_id");
+CREATE INDEX "fiscal_audit_logs_tenant_id_fiscal_note_id_index" ON "fiscal_audit_logs" ("tenant_id","fiscal_note_id");
+CREATE INDEX "fiscal_audit_logs_created_at_index" ON "fiscal_audit_logs" ("created_at");
+CREATE INDEX "fiscal_audit_logs_tenant_id_idx" ON "fiscal_audit_logs" ("tenant_id");
 
 CREATE TABLE "fiscal_events" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3155,6 +3902,10 @@ CREATE TABLE "fiscal_events" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "fiscal_events_user_id_foreign" ON "fiscal_events" ("user_id");
+CREATE INDEX "fiscal_events_fiscal_note_id_event_type_index" ON "fiscal_events" ("fiscal_note_id","event_type");
+CREATE INDEX "fiscal_events_tenant_id_created_at_index" ON "fiscal_events" ("tenant_id","created_at");
+CREATE INDEX "fiscal_events_tenant_id_idx" ON "fiscal_events" ("tenant_id");
 
 CREATE TABLE "fiscal_invoice_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3169,6 +3920,8 @@ CREATE TABLE "fiscal_invoice_items" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "fiscal_invoice_items_fii_tenant_invoice_idx" ON "fiscal_invoice_items" ("tenant_id","fiscal_invoice_id");
+CREATE INDEX "fiscal_invoice_items_tenant_id_idx" ON "fiscal_invoice_items" ("tenant_id");
 
 CREATE TABLE "fiscal_invoices" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3188,6 +3941,8 @@ CREATE TABLE "fiscal_invoices" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "fiscal_invoices_tenant_number_unique" ON "fiscal_invoices" ("tenant_id","number");
+CREATE INDEX "fiscal_invoices_finv_tenant_number_idx" ON "fiscal_invoices" ("tenant_id","number");
+CREATE INDEX "fiscal_invoices_deleted_at_idx" ON "fiscal_invoices" ("deleted_at");
 
 CREATE TABLE "fiscal_notes" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3230,6 +3985,19 @@ CREATE TABLE "fiscal_notes" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "fiscal_notes_access_key_unique" ON "fiscal_notes" ("access_key");
+CREATE INDEX "fiscal_notes_quote_id_foreign" ON "fiscal_notes" ("quote_id");
+CREATE INDEX "fiscal_notes_created_by_foreign" ON "fiscal_notes" ("created_by");
+CREATE INDEX "fiscal_notes_tenant_id_type_index" ON "fiscal_notes" ("tenant_id","type");
+CREATE INDEX "fiscal_notes_tenant_id_status_index" ON "fiscal_notes" ("tenant_id","status");
+CREATE INDEX "fiscal_notes_tenant_id_customer_id_index" ON "fiscal_notes" ("tenant_id","customer_id");
+CREATE INDEX "fiscal_notes_work_order_id_index" ON "fiscal_notes" ("work_order_id");
+CREATE INDEX "fiscal_notes_reference_index" ON "fiscal_notes" ("reference");
+CREATE INDEX "fiscal_notes_parent_note_id_foreign" ON "fiscal_notes" ("parent_note_id");
+CREATE INDEX "fiscal_notes_fn_tenant_status" ON "fiscal_notes" ("tenant_id","status");
+CREATE INDEX "fiscal_notes_fn_customer" ON "fiscal_notes" ("customer_id");
+CREATE INDEX "fiscal_notes_provider_id_index" ON "fiscal_notes" ("provider_id");
+CREATE INDEX "fiscal_notes_tenant_id_idx" ON "fiscal_notes" ("tenant_id");
+CREATE INDEX "fiscal_notes_deleted_at_idx" ON "fiscal_notes" ("deleted_at");
 
 CREATE TABLE "fiscal_scheduled_emissions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3247,6 +4015,15 @@ CREATE TABLE "fiscal_scheduled_emissions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "fiscal_scheduled_emissions_work_order_id_foreign" ON "fiscal_scheduled_emissions" ("work_order_id");
+CREATE INDEX "fiscal_scheduled_emissions_quote_id_foreign" ON "fiscal_scheduled_emissions" ("quote_id");
+CREATE INDEX "fiscal_scheduled_emissions_customer_id_foreign" ON "fiscal_scheduled_emissions" ("customer_id");
+CREATE INDEX "fiscal_scheduled_emissions_fiscal_note_id_foreign" ON "fiscal_scheduled_emissions" ("fiscal_note_id");
+CREATE INDEX "fiscal_scheduled_emissions_created_by_foreign" ON "fiscal_scheduled_emissions" ("created_by");
+CREATE INDEX "fiscal_scheduled_emissions_tenant_id_status_index" ON "fiscal_scheduled_emissions" ("tenant_id","status");
+CREATE INDEX "fiscal_scheduled_emissions_scheduled_at_index" ON "fiscal_scheduled_emissions" ("scheduled_at");
+CREATE INDEX "fiscal_scheduled_emissions_fse_tenant_customer_status" ON "fiscal_scheduled_emissions" ("tenant_id","customer_id","status");
+CREATE INDEX "fiscal_scheduled_emissions_tenant_id_idx" ON "fiscal_scheduled_emissions" ("tenant_id");
 
 CREATE TABLE "fiscal_templates" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3259,6 +4036,9 @@ CREATE TABLE "fiscal_templates" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "fiscal_templates_created_by_foreign" ON "fiscal_templates" ("created_by");
+CREATE INDEX "fiscal_templates_tenant_id_index" ON "fiscal_templates" ("tenant_id");
+CREATE INDEX "fiscal_templates_tenant_id_idx" ON "fiscal_templates" ("tenant_id");
 
 CREATE TABLE "fiscal_webhooks" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3272,6 +4052,8 @@ CREATE TABLE "fiscal_webhooks" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "fiscal_webhooks_tenant_id_index" ON "fiscal_webhooks" ("tenant_id");
+CREATE INDEX "fiscal_webhooks_tenant_id_idx" ON "fiscal_webhooks" ("tenant_id");
 
 CREATE TABLE "fleet_fuel_entries" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3287,6 +4069,8 @@ CREATE TABLE "fleet_fuel_entries" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "fleet_fuel_entries_fleet_fuel_tenant_idx" ON "fleet_fuel_entries" ("tenant_id","fleet_id");
+CREATE INDEX "fleet_fuel_entries_tenant_id_idx" ON "fleet_fuel_entries" ("tenant_id");
 
 CREATE TABLE "fleet_fuel_types" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3303,6 +4087,9 @@ CREATE TABLE "fleet_fuel_types" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "fleet_fuel_types_tid_slug_uq" ON "fleet_fuel_types" ("tenant_id","slug");
+CREATE INDEX "fleet_fuel_types_tid_idx" ON "fleet_fuel_types" ("tenant_id");
+CREATE INDEX "fleet_fuel_types_del_idx" ON "fleet_fuel_types" ("deleted_at");
+CREATE INDEX "fleet_fuel_types_deleted_at_idx" ON "fleet_fuel_types" ("deleted_at");
 
 CREATE TABLE "fleet_maintenances" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3319,6 +4106,8 @@ CREATE TABLE "fleet_maintenances" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "fleet_maintenances_fleet_maint_tenant_idx" ON "fleet_maintenances" ("tenant_id","fleet_id");
+CREATE INDEX "fleet_maintenances_tenant_id_idx" ON "fleet_maintenances" ("tenant_id");
 
 CREATE TABLE "fleet_telemetry" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3333,6 +4122,9 @@ CREATE TABLE "fleet_telemetry" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "fleet_telemetry_vehicle_id_foreign" ON "fleet_telemetry" ("vehicle_id");
+CREATE INDEX "fleet_telemetry_tid_idx" ON "fleet_telemetry" ("tenant_id");
+CREATE INDEX "fleet_telemetry_tenant_id_idx" ON "fleet_telemetry" ("tenant_id");
 
 CREATE TABLE "fleet_trips" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3350,6 +4142,8 @@ CREATE TABLE "fleet_trips" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "fleet_trips_fleet_trip_tenant_idx" ON "fleet_trips" ("tenant_id","fleet_id");
+CREATE INDEX "fleet_trips_tenant_id_idx" ON "fleet_trips" ("tenant_id");
 
 CREATE TABLE "fleet_vehicle_statuses" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3366,6 +4160,9 @@ CREATE TABLE "fleet_vehicle_statuses" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "fleet_vehicle_statuses_tid_slug_uq" ON "fleet_vehicle_statuses" ("tenant_id","slug");
+CREATE INDEX "fleet_vehicle_statuses_tid_idx" ON "fleet_vehicle_statuses" ("tenant_id");
+CREATE INDEX "fleet_vehicle_statuses_del_idx" ON "fleet_vehicle_statuses" ("deleted_at");
+CREATE INDEX "fleet_vehicle_statuses_deleted_at_idx" ON "fleet_vehicle_statuses" ("deleted_at");
 
 CREATE TABLE "fleet_vehicle_types" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3382,6 +4179,9 @@ CREATE TABLE "fleet_vehicle_types" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "fleet_vehicle_types_tid_slug_uq" ON "fleet_vehicle_types" ("tenant_id","slug");
+CREATE INDEX "fleet_vehicle_types_tid_idx" ON "fleet_vehicle_types" ("tenant_id");
+CREATE INDEX "fleet_vehicle_types_del_idx" ON "fleet_vehicle_types" ("deleted_at");
+CREATE INDEX "fleet_vehicle_types_deleted_at_idx" ON "fleet_vehicle_types" ("deleted_at");
 
 CREATE TABLE "fleet_vehicles" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3411,6 +4211,13 @@ CREATE TABLE "fleet_vehicles" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "fleet_vehicles_assigned_user_id_foreign" ON "fleet_vehicles" ("assigned_user_id");
+CREATE INDEX "fleet_vehicles_plate_index" ON "fleet_vehicles" ("plate");
+CREATE INDEX "fleet_vehicles_tid_idx" ON "fleet_vehicles" ("tenant_id");
+CREATE INDEX "fleet_vehicles_del_idx" ON "fleet_vehicles" ("deleted_at");
+CREATE INDEX "fleet_vehicles_tid_st_idx" ON "fleet_vehicles" ("tenant_id","status");
+CREATE INDEX "fleet_vehicles_tenant_id_idx" ON "fleet_vehicles" ("tenant_id");
+CREATE INDEX "fleet_vehicles_deleted_at_idx" ON "fleet_vehicles" ("deleted_at");
 
 CREATE TABLE "fleets" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3428,6 +4235,9 @@ CREATE TABLE "fleets" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "fleets_tenant_id_index" ON "fleets" ("tenant_id");
+CREATE INDEX "fleets_tenant_id_idx" ON "fleets" ("tenant_id");
+CREATE INDEX "fleets_deleted_at_idx" ON "fleets" ("deleted_at");
 
 CREATE TABLE "follow_up_channels" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3444,6 +4254,9 @@ CREATE TABLE "follow_up_channels" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "follow_up_channels_tid_slug_uq" ON "follow_up_channels" ("tenant_id","slug");
+CREATE INDEX "follow_up_channels_tid_idx" ON "follow_up_channels" ("tenant_id");
+CREATE INDEX "follow_up_channels_del_idx" ON "follow_up_channels" ("deleted_at");
+CREATE INDEX "follow_up_channels_deleted_at_idx" ON "follow_up_channels" ("deleted_at");
 
 CREATE TABLE "follow_up_statuses" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3460,6 +4273,9 @@ CREATE TABLE "follow_up_statuses" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "follow_up_statuses_tid_slug_uq" ON "follow_up_statuses" ("tenant_id","slug");
+CREATE INDEX "follow_up_statuses_tid_idx" ON "follow_up_statuses" ("tenant_id");
+CREATE INDEX "follow_up_statuses_del_idx" ON "follow_up_statuses" ("deleted_at");
+CREATE INDEX "follow_up_statuses_deleted_at_idx" ON "follow_up_statuses" ("deleted_at");
 
 CREATE TABLE "follow_ups" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3476,6 +4292,11 @@ CREATE TABLE "follow_ups" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "follow_ups_followable_type_followable_id_index" ON "follow_ups" ("followable_type","followable_id");
+CREATE INDEX "follow_ups_assigned_to_foreign" ON "follow_ups" ("assigned_to");
+CREATE INDEX "follow_ups_tid_idx" ON "follow_ups" ("tenant_id");
+CREATE INDEX "follow_ups_tid_st_idx" ON "follow_ups" ("tenant_id","status");
+CREATE INDEX "follow_ups_tenant_id_idx" ON "follow_ups" ("tenant_id");
 
 CREATE TABLE "fuel_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3497,6 +4318,10 @@ CREATE TABLE "fuel_logs" (
  "total_cost" numeric DEFAULT NULL,
  "created_by" integer DEFAULT NULL
 );
+CREATE INDEX "fuel_logs_tenant_date_idx" ON "fuel_logs" ("tenant_id","date");
+CREATE INDEX "fuel_logs_vehicle_date_idx" ON "fuel_logs" ("fleet_vehicle_id","date");
+CREATE INDEX "fuel_logs_driver_id_index" ON "fuel_logs" ("driver_id");
+CREATE INDEX "fuel_logs_tenant_id_idx" ON "fuel_logs" ("tenant_id");
 
 CREATE TABLE "fueling_fuel_types" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3513,6 +4338,9 @@ CREATE TABLE "fueling_fuel_types" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "fueling_fuel_types_tid_slug_uq" ON "fueling_fuel_types" ("tenant_id","slug");
+CREATE INDEX "fueling_fuel_types_tid_idx" ON "fueling_fuel_types" ("tenant_id");
+CREATE INDEX "fueling_fuel_types_del_idx" ON "fueling_fuel_types" ("deleted_at");
+CREATE INDEX "fueling_fuel_types_deleted_at_idx" ON "fueling_fuel_types" ("deleted_at");
 
 CREATE TABLE "fueling_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3540,6 +4368,13 @@ CREATE TABLE "fueling_logs" (
  "rejection_reason" varchar(500) DEFAULT NULL,
  "affects_technician_cash" tinyint NOT NULL DEFAULT '0'
 );
+CREATE INDEX "fueling_logs_user_id_foreign" ON "fueling_logs" ("user_id");
+CREATE INDEX "fueling_logs_work_order_id_foreign" ON "fueling_logs" ("work_order_id");
+CREATE INDEX "fueling_logs_approved_by_foreign" ON "fueling_logs" ("approved_by");
+CREATE INDEX "fueling_logs_tenant_id_user_id_fueling_date_index" ON "fueling_logs" ("tenant_id","user_id","fueling_date");
+CREATE INDEX "fueling_logs_del_idx" ON "fueling_logs" ("deleted_at");
+CREATE INDEX "fueling_logs_tenant_id_idx" ON "fueling_logs" ("tenant_id");
+CREATE INDEX "fueling_logs_deleted_at_idx" ON "fueling_logs" ("deleted_at");
 
 CREATE TABLE "fund_transfers" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3560,6 +4395,17 @@ CREATE TABLE "fund_transfers" (
  "from_account_id" integer DEFAULT NULL,
  "to_account_id" integer DEFAULT NULL
 );
+CREATE INDEX "fund_transfers_to_user_id_foreign" ON "fund_transfers" ("to_user_id");
+CREATE INDEX "fund_transfers_account_payable_id_foreign" ON "fund_transfers" ("account_payable_id");
+CREATE INDEX "fund_transfers_technician_cash_transaction_id_foreign" ON "fund_transfers" ("technician_cash_transaction_id");
+CREATE INDEX "fund_transfers_tenant_id_status_transfer_date_index" ON "fund_transfers" ("tenant_id","status","transfer_date");
+CREATE INDEX "fund_transfers_tenant_id_to_user_id_index" ON "fund_transfers" ("tenant_id","to_user_id");
+CREATE INDEX "fund_transfers_created_by_foreign" ON "fund_transfers" ("created_by");
+CREATE INDEX "fund_transfers_ft_deleted_at" ON "fund_transfers" ("tenant_id","deleted_at");
+CREATE INDEX "fund_transfers_del_idx" ON "fund_transfers" ("deleted_at");
+CREATE INDEX "fund_transfers_bank_account_id_fk_idx" ON "fund_transfers" ("bank_account_id");
+CREATE INDEX "fund_transfers_tenant_id_idx" ON "fund_transfers" ("tenant_id");
+CREATE INDEX "fund_transfers_deleted_at_idx" ON "fund_transfers" ("deleted_at");
 
 CREATE TABLE "funnel_email_automations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3573,6 +4419,9 @@ CREATE TABLE "funnel_email_automations" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "funnel_email_automations_tenant_id_pipeline_stage_id_index" ON "funnel_email_automations" ("tenant_id","pipeline_stage_id");
+CREATE INDEX "funnel_email_automations_pipeline_stage_id_foreign" ON "funnel_email_automations" ("pipeline_stage_id");
+CREATE INDEX "funnel_email_automations_tenant_id_idx" ON "funnel_email_automations" ("tenant_id");
 
 CREATE TABLE "gamification_badges" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3590,6 +4439,8 @@ CREATE TABLE "gamification_badges" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "gamification_badges_slug_unique" ON "gamification_badges" ("slug");
+CREATE INDEX "gamification_badges_gb_tenant_cat_idx" ON "gamification_badges" ("tenant_id","category");
+CREATE INDEX "gamification_badges_tenant_id_idx" ON "gamification_badges" ("tenant_id");
 
 CREATE TABLE "gamification_scores" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3612,6 +4463,7 @@ CREATE TABLE "gamification_scores" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "gs_tenant_user_period_uniq" ON "gamification_scores" ("tenant_id","user_id","period");
+CREATE INDEX "gamification_scores_user_id_foreign" ON "gamification_scores" ("user_id");
 
 CREATE TABLE "gamification_user_badges" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3623,6 +4475,10 @@ CREATE TABLE "gamification_user_badges" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "gub_user_badge_uniq" ON "gamification_user_badges" ("user_id","badge_id");
+CREATE INDEX "gamification_user_badges_badge_id_foreign" ON "gamification_user_badges" ("badge_id");
+CREATE INDEX "gamification_user_badges_tid_idx" ON "gamification_user_badges" ("tenant_id");
+CREATE INDEX "gamification_user_badges_tenant_id_index" ON "gamification_user_badges" ("tenant_id");
+CREATE INDEX "gamification_user_badges_tenant_id_idx" ON "gamification_user_badges" ("tenant_id");
 
 CREATE TABLE "geo_login_alerts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3636,6 +4492,9 @@ CREATE TABLE "geo_login_alerts" (
  "is_suspicious" tinyint NOT NULL DEFAULT '0',
  "created_at" datetime NOT NULL
 );
+CREATE INDEX "geo_login_alerts_tenant_id_index" ON "geo_login_alerts" ("tenant_id");
+CREATE INDEX "geo_login_alerts_user_id_index" ON "geo_login_alerts" ("user_id");
+CREATE INDEX "geo_login_alerts_tenant_id_idx" ON "geo_login_alerts" ("tenant_id");
 
 CREATE TABLE "geofence_locations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3651,6 +4510,9 @@ CREATE TABLE "geofence_locations" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "geofence_locations_linked_entity_type_linked_entity_id_index" ON "geofence_locations" ("linked_entity_type","linked_entity_id");
+CREATE INDEX "geofence_locations_tid_idx" ON "geofence_locations" ("tenant_id");
+CREATE INDEX "geofence_locations_tenant_id_idx" ON "geofence_locations" ("tenant_id");
 
 CREATE TABLE "holidays" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3686,6 +4548,8 @@ CREATE TABLE "hour_bank_policies" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "hour_bank_policies_tenant_id_is_active_index" ON "hour_bank_policies" ("tenant_id","is_active");
+CREATE INDEX "hour_bank_policies_deleted_at_idx" ON "hour_bank_policies" ("deleted_at");
 
 CREATE TABLE "hour_bank_transactions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3703,6 +4567,12 @@ CREATE TABLE "hour_bank_transactions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "hour_bank_transactions_user_id_foreign" ON "hour_bank_transactions" ("user_id");
+CREATE INDEX "hour_bank_transactions_journey_entry_id_foreign" ON "hour_bank_transactions" ("journey_entry_id");
+CREATE INDEX "hour_bank_transactions_tenant_id_user_id_index" ON "hour_bank_transactions" ("tenant_id","user_id");
+CREATE INDEX "hour_bank_transactions_tenant_id_user_id_type_index" ON "hour_bank_transactions" ("tenant_id","user_id","type");
+CREATE INDEX "hour_bank_transactions_tenant_id_reference_date_index" ON "hour_bank_transactions" ("tenant_id","reference_date");
+CREATE INDEX "hour_bank_transactions_tenant_id_idx" ON "hour_bank_transactions" ("tenant_id");
 
 CREATE TABLE "immutable_backups" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3716,6 +4586,8 @@ CREATE TABLE "immutable_backups" (
  "completed_at" datetime NULL DEFAULT NULL,
  "created_at" datetime NOT NULL
 );
+CREATE INDEX "immutable_backups_tenant_id_index" ON "immutable_backups" ("tenant_id");
+CREATE INDEX "immutable_backups_tenant_id_idx" ON "immutable_backups" ("tenant_id");
 
 CREATE TABLE "import_templates" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3743,6 +4615,10 @@ CREATE TABLE "important_dates" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "important_dates_customer_id_foreign" ON "important_dates" ("customer_id");
+CREATE INDEX "important_dates_impdate_tenant_date_idx" ON "important_dates" ("tenant_id","date");
+CREATE INDEX "important_dates_impdate_tenant_cust_idx" ON "important_dates" ("tenant_id","customer_id");
+CREATE INDEX "important_dates_tenant_id_idx" ON "important_dates" ("tenant_id");
 
 CREATE TABLE "imports" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3769,6 +4645,12 @@ CREATE TABLE "imports" (
  "rows_processed" int DEFAULT NULL,
  "rows_failed" int DEFAULT NULL
 );
+CREATE INDEX "imports_tenant_id_entity_type_index" ON "imports" ("tenant_id","entity_type");
+CREATE INDEX "imports_status_index" ON "imports" ("status");
+CREATE INDEX "imports_user_id_index" ON "imports" ("user_id");
+CREATE INDEX "imports_imp_tenant_status" ON "imports" ("tenant_id","status");
+CREATE INDEX "imports_user_id_fk_idx" ON "imports" ("user_id");
+CREATE INDEX "imports_tenant_id_idx" ON "imports" ("tenant_id");
 
 CREATE TABLE "inmetro_base_configs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3810,6 +4692,9 @@ CREATE TABLE "inmetro_competitor_snapshots" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "inmetro_competitor_snapshots_tenant_id_period_start_index" ON "inmetro_competitor_snapshots" ("tenant_id","period_start");
+CREATE INDEX "inmetro_competitor_snapshots_competitor_id_period_start_index" ON "inmetro_competitor_snapshots" ("competitor_id","period_start");
+CREATE INDEX "inmetro_competitor_snapshots_tenant_id_idx" ON "inmetro_competitor_snapshots" ("tenant_id");
 
 CREATE TABLE "inmetro_competitors" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3834,6 +4719,10 @@ CREATE TABLE "inmetro_competitors" (
  "website" varchar(255) DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "inmetro_competitors_city_state_index" ON "inmetro_competitors" ("city","state");
+CREATE INDEX "inmetro_competitors_tid_idx" ON "inmetro_competitors" ("tenant_id");
+CREATE INDEX "inmetro_competitors_tenant_id_idx" ON "inmetro_competitors" ("tenant_id");
+CREATE INDEX "inmetro_competitors_deleted_at_idx" ON "inmetro_competitors" ("deleted_at");
 
 CREATE TABLE "inmetro_compliance_checklists" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3846,6 +4735,8 @@ CREATE TABLE "inmetro_compliance_checklists" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "inmetro_compliance_checklists_tenant_id_instrument_type_index" ON "inmetro_compliance_checklists" ("tenant_id","instrument_type");
+CREATE INDEX "inmetro_compliance_checklists_tenant_id_idx" ON "inmetro_compliance_checklists" ("tenant_id");
 
 CREATE TABLE "inmetro_history" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3864,6 +4755,10 @@ CREATE TABLE "inmetro_history" (
  "updated_at" datetime NULL DEFAULT NULL,
  "competitor_id" integer DEFAULT NULL
 );
+CREATE INDEX "inmetro_history_instrument_id_foreign" ON "inmetro_history" ("instrument_id");
+CREATE INDEX "inmetro_history_event_date_index" ON "inmetro_history" ("event_date");
+CREATE INDEX "inmetro_history_competitor_id_foreign" ON "inmetro_history" ("competitor_id");
+CREATE INDEX "inmetro_history_tenant_id_idx" ON "inmetro_history" ("tenant_id");
 
 CREATE TABLE "inmetro_instruments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3887,6 +4782,11 @@ CREATE TABLE "inmetro_instruments" (
  "tenant_id" integer DEFAULT NULL,
  "type" varchar(50) DEFAULT NULL
 );
+CREATE INDEX "inmetro_instruments_location_id_foreign" ON "inmetro_instruments" ("location_id");
+CREATE INDEX "inmetro_instruments_next_verification_at_index" ON "inmetro_instruments" ("next_verification_at");
+CREATE INDEX "inmetro_instruments_inmetro_number_index" ON "inmetro_instruments" ("inmetro_number");
+CREATE INDEX "inmetro_instruments_linked_equipment_id_index" ON "inmetro_instruments" ("linked_equipment_id");
+CREATE INDEX "inmetro_instruments_tenant_id_idx" ON "inmetro_instruments" ("tenant_id");
 
 CREATE TABLE "inmetro_lead_interactions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3900,6 +4800,10 @@ CREATE TABLE "inmetro_lead_interactions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "inmetro_lead_interactions_user_id_foreign" ON "inmetro_lead_interactions" ("user_id");
+CREATE INDEX "inmetro_lead_interactions_owner_id_created_at_index" ON "inmetro_lead_interactions" ("owner_id","created_at");
+CREATE INDEX "inmetro_lead_interactions_tenant_id_created_at_index" ON "inmetro_lead_interactions" ("tenant_id","created_at");
+CREATE INDEX "inmetro_lead_interactions_tenant_id_idx" ON "inmetro_lead_interactions" ("tenant_id");
 
 CREATE TABLE "inmetro_lead_scores" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3917,6 +4821,8 @@ CREATE TABLE "inmetro_lead_scores" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "inmetro_lead_scores_owner_id_unique" ON "inmetro_lead_scores" ("owner_id");
+CREATE INDEX "inmetro_lead_scores_tenant_id_total_score_index" ON "inmetro_lead_scores" ("tenant_id","total_score");
+CREATE INDEX "inmetro_lead_scores_tenant_id_idx" ON "inmetro_lead_scores" ("tenant_id");
 
 CREATE TABLE "inmetro_locations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3939,6 +4845,9 @@ CREATE TABLE "inmetro_locations" (
  "updated_at" datetime NULL DEFAULT NULL,
  "tenant_id" integer NOT NULL
 );
+CREATE INDEX "inmetro_locations_owner_id_foreign" ON "inmetro_locations" ("owner_id");
+CREATE INDEX "inmetro_locations_address_city_address_state_index" ON "inmetro_locations" ("address_city","address_state");
+CREATE INDEX "inmetro_locations_tenant_id_idx" ON "inmetro_locations" ("tenant_id");
 
 CREATE TABLE "inmetro_owners" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3972,6 +4881,13 @@ CREATE TABLE "inmetro_owners" (
  "enrichment_data" text DEFAULT NULL
 );
 CREATE UNIQUE INDEX "inmetro_owners_tenant_id_document_unique" ON "inmetro_owners" ("tenant_id","document");
+CREATE INDEX "inmetro_owners_converted_to_customer_id_foreign" ON "inmetro_owners" ("converted_to_customer_id");
+CREATE INDEX "inmetro_owners_document_index" ON "inmetro_owners" ("document");
+CREATE INDEX "inmetro_owners_lead_score_index" ON "inmetro_owners" ("lead_score");
+CREATE INDEX "inmetro_owners_segment_index" ON "inmetro_owners" ("segment");
+CREATE INDEX "inmetro_owners_cnpj_root_index" ON "inmetro_owners" ("cnpj_root");
+CREATE INDEX "inmetro_owners_churn_risk_index" ON "inmetro_owners" ("churn_risk");
+CREATE INDEX "inmetro_owners_deleted_at_idx" ON "inmetro_owners" ("deleted_at");
 
 CREATE TABLE "inmetro_prospection_queue" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3987,6 +4903,10 @@ CREATE TABLE "inmetro_prospection_queue" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "inmetro_prospection_queue_owner_id_foreign" ON "inmetro_prospection_queue" ("owner_id");
+CREATE INDEX "inmetro_prospection_queue_tenant_id_queue_date_position_index" ON "inmetro_prospection_queue" ("tenant_id","queue_date","position");
+CREATE INDEX "inmetro_prospection_queue_assigned_to_queue_date_index" ON "inmetro_prospection_queue" ("assigned_to","queue_date");
+CREATE INDEX "inmetro_prospection_queue_tenant_id_idx" ON "inmetro_prospection_queue" ("tenant_id");
 
 CREATE TABLE "inmetro_seal_statuses" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4003,6 +4923,9 @@ CREATE TABLE "inmetro_seal_statuses" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "inmetro_seal_statuses_tid_slug_uq" ON "inmetro_seal_statuses" ("tenant_id","slug");
+CREATE INDEX "inmetro_seal_statuses_tid_idx" ON "inmetro_seal_statuses" ("tenant_id");
+CREATE INDEX "inmetro_seal_statuses_del_idx" ON "inmetro_seal_statuses" ("deleted_at");
+CREATE INDEX "inmetro_seal_statuses_deleted_at_idx" ON "inmetro_seal_statuses" ("deleted_at");
 
 CREATE TABLE "inmetro_seal_types" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4019,6 +4942,9 @@ CREATE TABLE "inmetro_seal_types" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "inmetro_seal_types_tid_slug_uq" ON "inmetro_seal_types" ("tenant_id","slug");
+CREATE INDEX "inmetro_seal_types_tid_idx" ON "inmetro_seal_types" ("tenant_id");
+CREATE INDEX "inmetro_seal_types_del_idx" ON "inmetro_seal_types" ("deleted_at");
+CREATE INDEX "inmetro_seal_types_deleted_at_idx" ON "inmetro_seal_types" ("deleted_at");
 
 CREATE TABLE "inmetro_seals" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4046,6 +4972,16 @@ CREATE TABLE "inmetro_seals" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "inmetro_seals_tenant_id_type_number_unique" ON "inmetro_seals" ("tenant_id","type","number");
+CREATE INDEX "inmetro_seals_work_order_id_foreign" ON "inmetro_seals" ("work_order_id");
+CREATE INDEX "inmetro_seals_equipment_id_foreign" ON "inmetro_seals" ("equipment_id");
+CREATE INDEX "inmetro_seals_tenant_id_status_type_index" ON "inmetro_seals" ("tenant_id","status","type");
+CREATE INDEX "inmetro_seals_assigned_to_status_index" ON "inmetro_seals" ("assigned_to","status");
+CREATE INDEX "inmetro_seals_del_idx" ON "inmetro_seals" ("deleted_at");
+CREATE INDEX "inmetro_seals_batch_id_foreign" ON "inmetro_seals" ("batch_id");
+CREATE INDEX "inmetro_seals_idx_seals_psei_status" ON "inmetro_seals" ("tenant_id","psei_status");
+CREATE INDEX "inmetro_seals_idx_seals_deadline_status" ON "inmetro_seals" ("tenant_id","deadline_status");
+CREATE INDEX "inmetro_seals_idx_seals_batch" ON "inmetro_seals" ("tenant_id","batch_id");
+CREATE INDEX "inmetro_seals_deleted_at_idx" ON "inmetro_seals" ("deleted_at");
 
 CREATE TABLE "inmetro_snapshots" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4056,6 +4992,8 @@ CREATE TABLE "inmetro_snapshots" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "inmetro_snapshots_imsnap_tenant_comp_idx" ON "inmetro_snapshots" ("tenant_id","competitor_id");
+CREATE INDEX "inmetro_snapshots_tenant_id_idx" ON "inmetro_snapshots" ("tenant_id");
 
 CREATE TABLE "inmetro_webhooks" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4069,6 +5007,8 @@ CREATE TABLE "inmetro_webhooks" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "inmetro_webhooks_tenant_id_event_type_index" ON "inmetro_webhooks" ("tenant_id","event_type");
+CREATE INDEX "inmetro_webhooks_tenant_id_idx" ON "inmetro_webhooks" ("tenant_id");
 
 CREATE TABLE "inmetro_win_loss" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4083,6 +5023,10 @@ CREATE TABLE "inmetro_win_loss" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "inmetro_win_loss_owner_id_foreign" ON "inmetro_win_loss" ("owner_id");
+CREATE INDEX "inmetro_win_loss_tenant_id_outcome_date_index" ON "inmetro_win_loss" ("tenant_id","outcome_date");
+CREATE INDEX "inmetro_win_loss_competitor_id_outcome_index" ON "inmetro_win_loss" ("competitor_id","outcome");
+CREATE INDEX "inmetro_win_loss_tenant_id_idx" ON "inmetro_win_loss" ("tenant_id");
 
 CREATE TABLE "inss_brackets" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4108,6 +5052,13 @@ CREATE TABLE "inventories" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "inventories_warehouse_id_foreign" ON "inventories" ("warehouse_id");
+CREATE INDEX "inventories_created_by_foreign" ON "inventories" ("created_by");
+CREATE INDEX "inventories_tid_idx" ON "inventories" ("tenant_id");
+CREATE INDEX "inventories_del_idx" ON "inventories" ("deleted_at");
+CREATE INDEX "inventories_tid_st_idx" ON "inventories" ("tenant_id","status");
+CREATE INDEX "inventories_tenant_id_idx" ON "inventories" ("tenant_id");
+CREATE INDEX "inventories_deleted_at_idx" ON "inventories" ("deleted_at");
 
 CREATE TABLE "inventory_count_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4120,6 +5071,9 @@ CREATE TABLE "inventory_count_items" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "inventory_count_items_inventory_count_id_foreign" ON "inventory_count_items" ("inventory_count_id");
+CREATE INDEX "inventory_count_items_product_id_foreign" ON "inventory_count_items" ("product_id");
+CREATE INDEX "inventory_count_items_counted_by_foreign" ON "inventory_count_items" ("counted_by");
 
 CREATE TABLE "inventory_counts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4132,6 +5086,11 @@ CREATE TABLE "inventory_counts" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "inventory_counts_warehouse_id_foreign" ON "inventory_counts" ("warehouse_id");
+CREATE INDEX "inventory_counts_started_by_foreign" ON "inventory_counts" ("started_by");
+CREATE INDEX "inventory_counts_tid_idx" ON "inventory_counts" ("tenant_id");
+CREATE INDEX "inventory_counts_tid_st_idx" ON "inventory_counts" ("tenant_id","status");
+CREATE INDEX "inventory_counts_tenant_id_idx" ON "inventory_counts" ("tenant_id");
 
 CREATE TABLE "inventory_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4147,6 +5106,12 @@ CREATE TABLE "inventory_items" (
  "updated_at" datetime NULL DEFAULT NULL,
  "tenant_id" integer DEFAULT NULL
 );
+CREATE INDEX "inventory_items_inventory_id_foreign" ON "inventory_items" ("inventory_id");
+CREATE INDEX "inventory_items_product_id_foreign" ON "inventory_items" ("product_id");
+CREATE INDEX "inventory_items_batch_id_foreign" ON "inventory_items" ("batch_id");
+CREATE INDEX "inventory_items_product_serial_id_foreign" ON "inventory_items" ("product_serial_id");
+CREATE INDEX "inventory_items_inv_items_tenant_idx" ON "inventory_items" ("tenant_id");
+CREATE INDEX "inventory_items_tenant_id_idx" ON "inventory_items" ("tenant_id");
 
 CREATE TABLE "inventory_tables_v3" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4154,6 +5119,7 @@ CREATE TABLE "inventory_tables_v3" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "inventory_tables_v3_tenant_id_idx" ON "inventory_tables_v3" ("tenant_id");
 
 CREATE TABLE "invoices" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4179,6 +5145,16 @@ CREATE TABLE "invoices" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "invoices_tenant_id_invoice_number_unique" ON "invoices" ("tenant_id","invoice_number");
+CREATE INDEX "invoices_created_by_foreign" ON "invoices" ("created_by");
+CREATE INDEX "invoices_inv_tenant_status" ON "invoices" ("tenant_id","status");
+CREATE INDEX "invoices_inv_tenant_customer" ON "invoices" ("tenant_id","customer_id");
+CREATE INDEX "invoices_inv_tenant_due" ON "invoices" ("tenant_id","due_date");
+CREATE INDEX "invoices_inv_deleted_at" ON "invoices" ("tenant_id","deleted_at");
+CREATE INDEX "invoices_del_idx" ON "invoices" ("deleted_at");
+CREATE INDEX "invoices_work_order_id_fk_idx" ON "invoices" ("work_order_id");
+CREATE INDEX "invoices_customer_id_fk_idx" ON "invoices" ("customer_id");
+CREATE INDEX "invoices_tid_st_idx" ON "invoices" ("tenant_id","status");
+CREATE INDEX "invoices_deleted_at_idx" ON "invoices" ("deleted_at");
 
 CREATE TABLE "irrf_brackets" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4222,6 +5198,11 @@ CREATE TABLE "job_postings" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "job_postings_department_id_foreign" ON "job_postings" ("department_id");
+CREATE INDEX "job_postings_position_id_foreign" ON "job_postings" ("position_id");
+CREATE INDEX "job_postings_tid_idx" ON "job_postings" ("tenant_id");
+CREATE INDEX "job_postings_tid_st_idx" ON "job_postings" ("tenant_id","status");
+CREATE INDEX "job_postings_tenant_id_idx" ON "job_postings" ("tenant_id");
 
 CREATE TABLE "jobs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4232,6 +5213,7 @@ CREATE TABLE "jobs" (
  "available_at" int NOT NULL,
  "created_at" int NOT NULL
 );
+CREATE INDEX "jobs_queue_index" ON "jobs" ("queue");
 
 CREATE TABLE "journey_approvals" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4246,6 +5228,11 @@ CREATE TABLE "journey_approvals" (
  "updated_at" datetime NULL DEFAULT NULL,
  "journey_entry_id" integer DEFAULT NULL
 );
+CREATE INDEX "journey_approvals_journey_day_id_foreign" ON "journey_approvals" ("journey_day_id");
+CREATE INDEX "journey_approvals_approver_id_foreign" ON "journey_approvals" ("approver_id");
+CREATE INDEX "journey_approvals_tenant_id_journey_day_id_level_index" ON "journey_approvals" ("tenant_id","journey_day_id","level");
+CREATE INDEX "journey_approvals_tenant_id_status_index" ON "journey_approvals" ("tenant_id","status");
+CREATE INDEX "journey_approvals_journey_entry_id_foreign" ON "journey_approvals" ("journey_entry_id");
 
 CREATE TABLE "journey_blocks" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4271,6 +5258,16 @@ CREATE TABLE "journey_blocks" (
  "deleted_at" datetime NULL DEFAULT NULL,
  "journey_entry_id" integer DEFAULT NULL
 );
+CREATE INDEX "journey_blocks_user_id_foreign" ON "journey_blocks" ("user_id");
+CREATE INDEX "journey_blocks_work_order_id_foreign" ON "journey_blocks" ("work_order_id");
+CREATE INDEX "journey_blocks_time_clock_entry_id_foreign" ON "journey_blocks" ("time_clock_entry_id");
+CREATE INDEX "journey_blocks_fleet_trip_id_foreign" ON "journey_blocks" ("fleet_trip_id");
+CREATE INDEX "journey_blocks_schedule_id_foreign" ON "journey_blocks" ("schedule_id");
+CREATE INDEX "journey_blocks_adjusted_by_foreign" ON "journey_blocks" ("adjusted_by");
+CREATE INDEX "journey_blocks_tenant_id_user_id_started_at_index" ON "journey_blocks" ("tenant_id","user_id","started_at");
+CREATE INDEX "journey_blocks_journey_day_id_classification_index" ON "journey_blocks" ("journey_day_id","classification");
+CREATE INDEX "journey_blocks_journey_entry_id_foreign" ON "journey_blocks" ("journey_entry_id");
+CREATE INDEX "journey_blocks_deleted_at_idx" ON "journey_blocks" ("deleted_at");
 
 CREATE TABLE "journey_days" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4298,6 +5295,11 @@ CREATE TABLE "journey_days" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "journey_days_tenant_id_user_id_reference_date_unique" ON "journey_days" ("tenant_id","user_id","reference_date");
+CREATE INDEX "journey_days_user_id_foreign" ON "journey_days" ("user_id");
+CREATE INDEX "journey_days_operational_approver_id_foreign" ON "journey_days" ("operational_approver_id");
+CREATE INDEX "journey_days_hr_approver_id_foreign" ON "journey_days" ("hr_approver_id");
+CREATE INDEX "journey_days_tenant_id_reference_date_index" ON "journey_days" ("tenant_id","reference_date");
+CREATE INDEX "journey_days_deleted_at_idx" ON "journey_days" ("deleted_at");
 
 CREATE TABLE "journey_entries" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4340,6 +5342,12 @@ CREATE TABLE "journey_entries" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "journey_entries_user_id_date_unique" ON "journey_entries" ("user_id","date");
+CREATE INDEX "journey_entries_journey_rule_id_foreign" ON "journey_entries" ("journey_rule_id");
+CREATE INDEX "journey_entries_tid_idx" ON "journey_entries" ("tenant_id");
+CREATE INDEX "journey_entries_operational_approver_id_foreign" ON "journey_entries" ("operational_approver_id");
+CREATE INDEX "journey_entries_hr_approver_id_foreign" ON "journey_entries" ("hr_approver_id");
+CREATE INDEX "journey_entries_deleted_at_idx" ON "journey_entries" ("deleted_at");
+CREATE INDEX "journey_entries_tenant_id_idx" ON "journey_entries" ("tenant_id");
 
 CREATE TABLE "journey_policies" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4368,6 +5376,8 @@ CREATE TABLE "journey_policies" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "journey_policies_tenant_id_is_active_index" ON "journey_policies" ("tenant_id","is_active");
+CREATE INDEX "journey_policies_deleted_at_idx" ON "journey_policies" ("deleted_at");
 
 CREATE TABLE "journey_rules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4420,6 +5430,9 @@ CREATE TABLE "journey_rules" (
  "requires_two_level_approval" tinyint NOT NULL DEFAULT '1',
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "journey_rules_tid_idx" ON "journey_rules" ("tenant_id");
+CREATE INDEX "journey_rules_tenant_id_idx" ON "journey_rules" ("tenant_id");
+CREATE INDEX "journey_rules_deleted_at_idx" ON "journey_rules" ("deleted_at");
 
 CREATE TABLE "kiosk_sessions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4436,6 +5449,10 @@ CREATE TABLE "kiosk_sessions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "kiosk_sessions_user_id_foreign" ON "kiosk_sessions" ("user_id");
+CREATE INDEX "kiosk_sessions_tenant_id_status_index" ON "kiosk_sessions" ("tenant_id","status");
+CREATE INDEX "kiosk_sessions_device_identifier_status_index" ON "kiosk_sessions" ("device_identifier","status");
+CREATE INDEX "kiosk_sessions_tenant_id_idx" ON "kiosk_sessions" ("tenant_id");
 
 CREATE TABLE "knowledge_base_articles" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4449,6 +5466,9 @@ CREATE TABLE "knowledge_base_articles" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "knowledge_base_articles_tenant_id_index" ON "knowledge_base_articles" ("tenant_id");
+CREATE INDEX "knowledge_base_articles_category_index" ON "knowledge_base_articles" ("category");
+CREATE INDEX "knowledge_base_articles_tenant_id_idx" ON "knowledge_base_articles" ("tenant_id");
 
 CREATE TABLE "lab_logbook_entries" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4462,6 +5482,9 @@ CREATE TABLE "lab_logbook_entries" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "lab_logbook_entries_user_id_foreign" ON "lab_logbook_entries" ("user_id");
+CREATE INDEX "lab_logbook_entries_tid_idx" ON "lab_logbook_entries" ("tenant_id");
+CREATE INDEX "lab_logbook_entries_tenant_id_idx" ON "lab_logbook_entries" ("tenant_id");
 
 CREATE TABLE "lead_sources" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4478,6 +5501,9 @@ CREATE TABLE "lead_sources" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "lead_sources_tid_slug_uq" ON "lead_sources" ("tenant_id","slug");
+CREATE INDEX "lead_sources_tid_idx" ON "lead_sources" ("tenant_id");
+CREATE INDEX "lead_sources_del_idx" ON "lead_sources" ("deleted_at");
+CREATE INDEX "lead_sources_deleted_at_idx" ON "lead_sources" ("deleted_at");
 
 CREATE TABLE "leave_requests" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4496,6 +5522,11 @@ CREATE TABLE "leave_requests" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "leave_requests_approved_by_foreign" ON "leave_requests" ("approved_by");
+CREATE INDEX "leave_requests_tenant_id_status_index" ON "leave_requests" ("tenant_id","status");
+CREATE INDEX "leave_requests_lr_tenant_user_status" ON "leave_requests" ("tenant_id","user_id","status");
+CREATE INDEX "leave_requests_user_id_fk_idx" ON "leave_requests" ("user_id");
+CREATE INDEX "leave_requests_tenant_id_idx" ON "leave_requests" ("tenant_id");
 
 CREATE TABLE "lgpd_anonymization_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4509,6 +5540,9 @@ CREATE TABLE "lgpd_anonymization_logs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "lgpd_anonymization_logs_executed_by_foreign" ON "lgpd_anonymization_logs" ("executed_by");
+CREATE INDEX "lgpd_anonymization_logs_entity_type_entity_id_index" ON "lgpd_anonymization_logs" ("entity_type","entity_id");
+CREATE INDEX "lgpd_anonymization_logs_tenant_id_idx" ON "lgpd_anonymization_logs" ("tenant_id");
 
 CREATE TABLE "lgpd_consent_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4529,6 +5563,8 @@ CREATE TABLE "lgpd_consent_logs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "lgpd_consent_logs_holder_type_holder_id_index" ON "lgpd_consent_logs" ("holder_type","holder_id");
+CREATE INDEX "lgpd_consent_logs_tenant_id_idx" ON "lgpd_consent_logs" ("tenant_id");
 
 CREATE TABLE "lgpd_data_requests" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4550,6 +5586,9 @@ CREATE TABLE "lgpd_data_requests" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "lgpd_data_requests_protocol_unique" ON "lgpd_data_requests" ("protocol");
+CREATE INDEX "lgpd_data_requests_responded_by_foreign" ON "lgpd_data_requests" ("responded_by");
+CREATE INDEX "lgpd_data_requests_created_by_foreign" ON "lgpd_data_requests" ("created_by");
+CREATE INDEX "lgpd_data_requests_tenant_id_idx" ON "lgpd_data_requests" ("tenant_id");
 
 CREATE TABLE "lgpd_data_treatments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4565,6 +5604,8 @@ CREATE TABLE "lgpd_data_treatments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "lgpd_data_treatments_created_by_foreign" ON "lgpd_data_treatments" ("created_by");
+CREATE INDEX "lgpd_data_treatments_tenant_id_idx" ON "lgpd_data_treatments" ("tenant_id");
 
 CREATE TABLE "lgpd_dpo_configs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4578,6 +5619,7 @@ CREATE TABLE "lgpd_dpo_configs" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "lgpd_dpo_configs_tenant_id_unique" ON "lgpd_dpo_configs" ("tenant_id");
+CREATE INDEX "lgpd_dpo_configs_updated_by_foreign" ON "lgpd_dpo_configs" ("updated_by");
 
 CREATE TABLE "lgpd_security_incidents" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4599,6 +5641,8 @@ CREATE TABLE "lgpd_security_incidents" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "lgpd_security_incidents_protocol_unique" ON "lgpd_security_incidents" ("protocol");
+CREATE INDEX "lgpd_security_incidents_reported_by_foreign" ON "lgpd_security_incidents" ("reported_by");
+CREATE INDEX "lgpd_security_incidents_tenant_id_idx" ON "lgpd_security_incidents" ("tenant_id");
 
 CREATE TABLE "linearity_tests" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4617,6 +5661,8 @@ CREATE TABLE "linearity_tests" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "linearity_tests_equipment_calibration_id_foreign" ON "linearity_tests" ("equipment_calibration_id");
+CREATE INDEX "linearity_tests_tenant_id_equipment_calibration_id_index" ON "linearity_tests" ("tenant_id","equipment_calibration_id");
 
 CREATE TABLE "maintenance_reports" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4642,6 +5688,12 @@ CREATE TABLE "maintenance_reports" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "maintenance_reports_work_order_id_foreign" ON "maintenance_reports" ("work_order_id");
+CREATE INDEX "maintenance_reports_equipment_id_foreign" ON "maintenance_reports" ("equipment_id");
+CREATE INDEX "maintenance_reports_performed_by_foreign" ON "maintenance_reports" ("performed_by");
+CREATE INDEX "maintenance_reports_approved_by_foreign" ON "maintenance_reports" ("approved_by");
+CREATE INDEX "maintenance_reports_tenant_id_work_order_id_index" ON "maintenance_reports" ("tenant_id","work_order_id");
+CREATE INDEX "maintenance_reports_tenant_id_equipment_id_index" ON "maintenance_reports" ("tenant_id","equipment_id");
 
 CREATE TABLE "maintenance_types" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4658,6 +5710,9 @@ CREATE TABLE "maintenance_types" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "maintenance_types_tid_slug_uq" ON "maintenance_types" ("tenant_id","slug");
+CREATE INDEX "maintenance_types_tid_idx" ON "maintenance_types" ("tenant_id");
+CREATE INDEX "maintenance_types_del_idx" ON "maintenance_types" ("deleted_at");
+CREATE INDEX "maintenance_types_deleted_at_idx" ON "maintenance_types" ("deleted_at");
 
 CREATE TABLE "management_review_actions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4671,6 +5726,8 @@ CREATE TABLE "management_review_actions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "management_review_actions_responsible_id_foreign" ON "management_review_actions" ("responsible_id");
+CREATE INDEX "management_review_actions_mgmt_rev_actions_review_idx" ON "management_review_actions" ("management_review_id","status");
 
 CREATE TABLE "management_reviews" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4685,6 +5742,9 @@ CREATE TABLE "management_reviews" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "management_reviews_created_by_foreign" ON "management_reviews" ("created_by");
+CREATE INDEX "management_reviews_tenant_id_meeting_date_index" ON "management_reviews" ("tenant_id","meeting_date");
+CREATE INDEX "management_reviews_tenant_id_idx" ON "management_reviews" ("tenant_id");
 
 CREATE TABLE "marketing_integrations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4719,6 +5779,9 @@ CREATE TABLE "marketplace_requests" (
  "created_by" integer DEFAULT NULL,
  "created_at" datetime NOT NULL
 );
+CREATE INDEX "marketplace_requests_tenant_id_index" ON "marketplace_requests" ("tenant_id");
+CREATE INDEX "marketplace_requests_partner_id_index" ON "marketplace_requests" ("partner_id");
+CREATE INDEX "marketplace_requests_tenant_id_idx" ON "marketplace_requests" ("tenant_id");
 
 CREATE TABLE "material_request_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4730,6 +5793,8 @@ CREATE TABLE "material_request_items" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "material_request_items_material_request_id_foreign" ON "material_request_items" ("material_request_id");
+CREATE INDEX "material_request_items_product_id_foreign" ON "material_request_items" ("product_id");
 
 CREATE TABLE "material_requests" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4749,6 +5814,14 @@ CREATE TABLE "material_requests" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "material_requests_reference_unique" ON "material_requests" ("reference");
+CREATE INDEX "material_requests_requester_id_foreign" ON "material_requests" ("requester_id");
+CREATE INDEX "material_requests_tenant_id_index" ON "material_requests" ("tenant_id");
+CREATE INDEX "material_requests_work_order_id_foreign" ON "material_requests" ("work_order_id");
+CREATE INDEX "material_requests_warehouse_id_foreign" ON "material_requests" ("warehouse_id");
+CREATE INDEX "material_requests_del_idx" ON "material_requests" ("deleted_at");
+CREATE INDEX "material_requests_tid_st_idx" ON "material_requests" ("tenant_id","status");
+CREATE INDEX "material_requests_tenant_id_idx" ON "material_requests" ("tenant_id");
+CREATE INDEX "material_requests_deleted_at_idx" ON "material_requests" ("deleted_at");
 
 CREATE TABLE "measurement_uncertainties" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4769,6 +5842,11 @@ CREATE TABLE "measurement_uncertainties" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "measurement_uncertainties_created_by_foreign" ON "measurement_uncertainties" ("created_by");
+CREATE INDEX "measurement_uncertainties_equipment_id_foreign" ON "measurement_uncertainties" ("equipment_id");
+CREATE INDEX "measurement_uncertainties_calibration_id_foreign" ON "measurement_uncertainties" ("calibration_id");
+CREATE INDEX "measurement_uncertainties_tid_idx" ON "measurement_uncertainties" ("tenant_id");
+CREATE INDEX "measurement_uncertainties_tenant_id_idx" ON "measurement_uncertainties" ("tenant_id");
 
 CREATE TABLE "measurement_units" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4787,6 +5865,9 @@ CREATE TABLE "measurement_units" (
  "unit_type" varchar(30) DEFAULT NULL
 );
 CREATE UNIQUE INDEX "measurement_units_tid_slug_uq" ON "measurement_units" ("tenant_id","slug");
+CREATE INDEX "measurement_units_tid_idx" ON "measurement_units" ("tenant_id");
+CREATE INDEX "measurement_units_del_idx" ON "measurement_units" ("deleted_at");
+CREATE INDEX "measurement_units_deleted_at_idx" ON "measurement_units" ("deleted_at");
 
 CREATE TABLE "migrations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4818,6 +5899,9 @@ CREATE TABLE "mobile_notifications" (
  "read" tinyint NOT NULL DEFAULT '0',
  "created_at" datetime NOT NULL
 );
+CREATE INDEX "mobile_notifications_user_id_index" ON "mobile_notifications" ("user_id");
+CREATE INDEX "mobile_notifications_entity_id_index" ON "mobile_notifications" ("entity_id");
+CREATE INDEX "mobile_notifications_tenant_id_idx" ON "mobile_notifications" ("tenant_id");
 
 CREATE TABLE "model_has_permissions" (
  "permission_id" integer NOT NULL,
@@ -4826,6 +5910,10 @@ CREATE TABLE "model_has_permissions" (
  "tenant_id" integer NOT NULL,
  PRIMARY KEY ("tenant_id","permission_id","model_id","model_type")
 );
+CREATE INDEX "model_has_permissions_model_id_model_type_index" ON "model_has_permissions" ("model_id","model_type");
+CREATE INDEX "model_has_permissions_permission_id_foreign" ON "model_has_permissions" ("permission_id");
+CREATE INDEX "model_has_permissions_team_foreign_key_index" ON "model_has_permissions" ("tenant_id");
+CREATE INDEX "model_has_permissions_tenant_id_idx" ON "model_has_permissions" ("tenant_id");
 
 CREATE TABLE "model_has_roles" (
  "role_id" integer NOT NULL,
@@ -4834,6 +5922,10 @@ CREATE TABLE "model_has_roles" (
  "tenant_id" integer NOT NULL,
  PRIMARY KEY ("tenant_id","role_id","model_id","model_type")
 );
+CREATE INDEX "model_has_roles_model_id_model_type_index" ON "model_has_roles" ("model_id","model_type");
+CREATE INDEX "model_has_roles_role_id_foreign" ON "model_has_roles" ("role_id");
+CREATE INDEX "model_has_roles_team_foreign_key_index" ON "model_has_roles" ("tenant_id");
+CREATE INDEX "model_has_roles_tenant_id_idx" ON "model_has_roles" ("tenant_id");
 
 CREATE TABLE "nfse_emissions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4849,6 +5941,9 @@ CREATE TABLE "nfse_emissions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "nfse_emissions_tenant_id_index" ON "nfse_emissions" ("tenant_id");
+CREATE INDEX "nfse_emissions_work_order_id_index" ON "nfse_emissions" ("work_order_id");
+CREATE INDEX "nfse_emissions_tenant_id_idx" ON "nfse_emissions" ("tenant_id");
 
 CREATE TABLE "non_conformances" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4873,6 +5968,14 @@ CREATE TABLE "non_conformances" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "non_conformances_number_unique" ON "non_conformances" ("number");
+CREATE INDEX "non_conformances_responsible_id_foreign" ON "non_conformances" ("responsible_id");
+CREATE INDEX "non_conformances_reported_by_foreign" ON "non_conformances" ("reported_by");
+CREATE INDEX "non_conformances_closed_by_foreign" ON "non_conformances" ("closed_by");
+CREATE INDEX "non_conformances_equipment_id_foreign" ON "non_conformances" ("equipment_id");
+CREATE INDEX "non_conformances_work_order_id_foreign" ON "non_conformances" ("work_order_id");
+CREATE INDEX "non_conformances_tid_idx" ON "non_conformances" ("tenant_id");
+CREATE INDEX "non_conformances_tid_st_idx" ON "non_conformances" ("tenant_id","status");
+CREATE INDEX "non_conformances_tenant_id_idx" ON "non_conformances" ("tenant_id");
 
 CREATE TABLE "non_conformities" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4898,6 +6001,12 @@ CREATE TABLE "non_conformities" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "non_conformities_nc_number_unique" ON "non_conformities" ("nc_number");
+CREATE INDEX "non_conformities_reported_by_foreign" ON "non_conformities" ("reported_by");
+CREATE INDEX "non_conformities_assigned_to_foreign" ON "non_conformities" ("assigned_to");
+CREATE INDEX "non_conformities_capa_record_id_foreign" ON "non_conformities" ("capa_record_id");
+CREATE INDEX "non_conformities_quality_audit_id_foreign" ON "non_conformities" ("quality_audit_id");
+CREATE INDEX "non_conformities_tenant_id_idx" ON "non_conformities" ("tenant_id");
+CREATE INDEX "non_conformities_deleted_at_idx" ON "non_conformities" ("deleted_at");
 
 CREATE TABLE "notification_channels" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4910,6 +6019,8 @@ CREATE TABLE "notification_channels" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "notification_channels_tenant_id_index" ON "notification_channels" ("tenant_id");
+CREATE INDEX "notification_channels_tenant_id_idx" ON "notification_channels" ("tenant_id");
 
 CREATE TABLE "notifications" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4928,6 +6039,12 @@ CREATE TABLE "notifications" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "notifications_notifiable_type_notifiable_id_index" ON "notifications" ("notifiable_type","notifiable_id");
+CREATE INDEX "notifications_user_id_read_at_created_at_index" ON "notifications" ("user_id","read_at","created_at");
+CREATE INDEX "notifications_notif_tenant_user_read_idx" ON "notifications" ("tenant_id","notifiable_id","read_at");
+CREATE INDEX "notifications_notif_user_read" ON "notifications" ("user_id","read_at");
+CREATE INDEX "notifications_notif_tenant_created" ON "notifications" ("tenant_id","created_at");
+CREATE INDEX "notifications_tenant_id_idx" ON "notifications" ("tenant_id");
 
 CREATE TABLE "nps_responses" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4939,6 +6056,10 @@ CREATE TABLE "nps_responses" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "nps_responses_work_order_id_foreign" ON "nps_responses" ("work_order_id");
+CREATE INDEX "nps_responses_customer_id_foreign" ON "nps_responses" ("customer_id");
+CREATE INDEX "nps_responses_tenant_id_score_index" ON "nps_responses" ("tenant_id","score");
+CREATE INDEX "nps_responses_tenant_id_idx" ON "nps_responses" ("tenant_id");
 
 CREATE TABLE "nps_surveys" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4950,6 +6071,10 @@ CREATE TABLE "nps_surveys" (
  "comment" text,
  "created_at" datetime NOT NULL
 );
+CREATE INDEX "nps_surveys_tenant_id_index" ON "nps_surveys" ("tenant_id");
+CREATE INDEX "nps_surveys_customer_id_index" ON "nps_surveys" ("customer_id");
+CREATE INDEX "nps_surveys_work_order_id_foreign" ON "nps_surveys" ("work_order_id");
+CREATE INDEX "nps_surveys_tenant_id_idx" ON "nps_surveys" ("tenant_id");
 
 CREATE TABLE "numbering_sequences" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4964,6 +6089,8 @@ CREATE TABLE "numbering_sequences" (
  "entity_type" varchar(50) DEFAULT NULL
 );
 CREATE UNIQUE INDEX "numbering_sequences_tenant_id_branch_id_entity_unique" ON "numbering_sequences" ("tenant_id","branch_id","entity");
+CREATE INDEX "numbering_sequences_branch_id_foreign" ON "numbering_sequences" ("branch_id");
+CREATE INDEX "numbering_sequences_numseq_tid_ent_idx" ON "numbering_sequences" ("tenant_id","entity");
 
 CREATE TABLE "offline_map_regions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4978,6 +6105,8 @@ CREATE TABLE "offline_map_regions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "offline_map_regions_tenant_id_is_active_index" ON "offline_map_regions" ("tenant_id","is_active");
+CREATE INDEX "offline_map_regions_tenant_id_idx" ON "offline_map_regions" ("tenant_id");
 
 CREATE TABLE "offline_sync_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4994,6 +6123,9 @@ CREATE TABLE "offline_sync_logs" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "offline_sync_logs_uuid_unique" ON "offline_sync_logs" ("uuid");
+CREATE INDEX "offline_sync_logs_user_id_foreign" ON "offline_sync_logs" ("user_id");
+CREATE INDEX "offline_sync_logs_tenant_id_user_id_index" ON "offline_sync_logs" ("tenant_id","user_id");
+CREATE INDEX "offline_sync_logs_uuid_index" ON "offline_sync_logs" ("uuid");
 
 CREATE TABLE "on_call_schedules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5005,6 +6137,7 @@ CREATE TABLE "on_call_schedules" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "on_call_schedules_tenant_id_date_shift_unique" ON "on_call_schedules" ("tenant_id","date","shift");
+CREATE INDEX "on_call_schedules_user_id_foreign" ON "on_call_schedules" ("user_id");
 
 CREATE TABLE "onboarding_checklist_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5020,6 +6153,11 @@ CREATE TABLE "onboarding_checklist_items" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "onboarding_checklist_items_onboarding_checklist_id_foreign" ON "onboarding_checklist_items" ("onboarding_checklist_id");
+CREATE INDEX "onboarding_checklist_items_responsible_id_foreign" ON "onboarding_checklist_items" ("responsible_id");
+CREATE INDEX "onboarding_checklist_items_completed_by_foreign" ON "onboarding_checklist_items" ("completed_by");
+CREATE INDEX "onboarding_checklist_items_tenant_id_index" ON "onboarding_checklist_items" ("tenant_id");
+CREATE INDEX "onboarding_checklist_items_tenant_id_idx" ON "onboarding_checklist_items" ("tenant_id");
 
 CREATE TABLE "onboarding_checklists" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5032,6 +6170,10 @@ CREATE TABLE "onboarding_checklists" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "onboarding_checklists_user_id_foreign" ON "onboarding_checklists" ("user_id");
+CREATE INDEX "onboarding_checklists_onboarding_template_id_foreign" ON "onboarding_checklists" ("onboarding_template_id");
+CREATE INDEX "onboarding_checklists_tid_idx" ON "onboarding_checklists" ("tenant_id");
+CREATE INDEX "onboarding_checklists_tenant_id_idx" ON "onboarding_checklists" ("tenant_id");
 
 CREATE TABLE "onboarding_processes" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5044,6 +6186,11 @@ CREATE TABLE "onboarding_processes" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "onboarding_processes_user_id_foreign" ON "onboarding_processes" ("user_id");
+CREATE INDEX "onboarding_processes_tid_idx" ON "onboarding_processes" ("tenant_id");
+CREATE INDEX "onboarding_processes_tid_st_idx" ON "onboarding_processes" ("tenant_id","status");
+CREATE INDEX "onboarding_processes_template_id_index" ON "onboarding_processes" ("template_id");
+CREATE INDEX "onboarding_processes_tenant_id_idx" ON "onboarding_processes" ("tenant_id");
 
 CREATE TABLE "onboarding_steps" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5056,6 +6203,7 @@ CREATE TABLE "onboarding_steps" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "onboarding_steps_onboarding_process_id_foreign" ON "onboarding_steps" ("onboarding_process_id");
 
 CREATE TABLE "onboarding_template_types" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5072,6 +6220,9 @@ CREATE TABLE "onboarding_template_types" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "onboarding_template_types_tid_slug_uq" ON "onboarding_template_types" ("tenant_id","slug");
+CREATE INDEX "onboarding_template_types_tid_idx" ON "onboarding_template_types" ("tenant_id");
+CREATE INDEX "onboarding_template_types_del_idx" ON "onboarding_template_types" ("deleted_at");
+CREATE INDEX "onboarding_template_types_deleted_at_idx" ON "onboarding_template_types" ("deleted_at");
 
 CREATE TABLE "onboarding_templates" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5083,6 +6234,8 @@ CREATE TABLE "onboarding_templates" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "onboarding_templates_tid_idx" ON "onboarding_templates" ("tenant_id");
+CREATE INDEX "onboarding_templates_tenant_id_idx" ON "onboarding_templates" ("tenant_id");
 
 CREATE TABLE "online_payments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5095,6 +6248,10 @@ CREATE TABLE "online_payments" (
  "paid_at" datetime NULL DEFAULT NULL,
  "created_at" datetime NOT NULL
 );
+CREATE INDEX "online_payments_tenant_id_index" ON "online_payments" ("tenant_id");
+CREATE INDEX "online_payments_receivable_id_index" ON "online_payments" ("receivable_id");
+CREATE INDEX "online_payments_gateway_id_index" ON "online_payments" ("gateway_id");
+CREATE INDEX "online_payments_tenant_id_idx" ON "online_payments" ("tenant_id");
 
 CREATE TABLE "operational_snapshots" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5108,6 +6265,9 @@ CREATE TABLE "operational_snapshots" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "operational_snapshots_status_index" ON "operational_snapshots" ("status");
+CREATE INDEX "operational_snapshots_captured_at_index" ON "operational_snapshots" ("captured_at");
+CREATE INDEX "operational_snapshots_tenant_id_idx" ON "operational_snapshots" ("tenant_id");
 
 CREATE TABLE "overnight_stays" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5124,6 +6284,9 @@ CREATE TABLE "overnight_stays" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "overnight_stays_travel_request_id_foreign" ON "overnight_stays" ("travel_request_id");
+CREATE INDEX "overnight_stays_user_id_foreign" ON "overnight_stays" ("user_id");
+CREATE INDEX "overnight_stays_tenant_id_travel_request_id_index" ON "overnight_stays" ("tenant_id","travel_request_id");
 
 CREATE TABLE "partial_payments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5137,6 +6300,10 @@ CREATE TABLE "partial_payments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "partial_payments_created_by_foreign" ON "partial_payments" ("created_by");
+CREATE INDEX "partial_payments_tid_idx" ON "partial_payments" ("tenant_id");
+CREATE INDEX "partial_payments_account_receivable_i_fk_idx" ON "partial_payments" ("account_receivable_id");
+CREATE INDEX "partial_payments_tenant_id_idx" ON "partial_payments" ("tenant_id");
 
 CREATE TABLE "parts_kit_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5149,6 +6316,8 @@ CREATE TABLE "parts_kit_items" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "parts_kit_items_parts_kit_id_index" ON "parts_kit_items" ("parts_kit_id");
+CREATE INDEX "parts_kit_items_reference_id_index" ON "parts_kit_items" ("reference_id");
 
 CREATE TABLE "parts_kits" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5160,6 +6329,10 @@ CREATE TABLE "parts_kits" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "parts_kits_tenant_id_index" ON "parts_kits" ("tenant_id");
+CREATE INDEX "parts_kits_del_idx" ON "parts_kits" ("deleted_at");
+CREATE INDEX "parts_kits_tenant_id_idx" ON "parts_kits" ("tenant_id");
+CREATE INDEX "parts_kits_deleted_at_idx" ON "parts_kits" ("deleted_at");
 
 CREATE TABLE "password_policies" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5221,6 +6394,8 @@ CREATE TABLE "payment_receipts" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "payment_receipts_tenant_id_receipt_number_unique" ON "payment_receipts" ("tenant_id","receipt_number");
+CREATE INDEX "payment_receipts_payment_id_foreign" ON "payment_receipts" ("payment_id");
+CREATE INDEX "payment_receipts_generated_by_foreign" ON "payment_receipts" ("generated_by");
 
 CREATE TABLE "payment_terms" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5237,6 +6412,9 @@ CREATE TABLE "payment_terms" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "payment_terms_tid_slug_uq" ON "payment_terms" ("tenant_id","slug");
+CREATE INDEX "payment_terms_tid_idx" ON "payment_terms" ("tenant_id");
+CREATE INDEX "payment_terms_del_idx" ON "payment_terms" ("deleted_at");
+CREATE INDEX "payment_terms_deleted_at_idx" ON "payment_terms" ("deleted_at");
 
 CREATE TABLE "payments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5256,6 +6434,14 @@ CREATE TABLE "payments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "payments_payable_type_payable_id_index" ON "payments" ("payable_type","payable_id");
+CREATE INDEX "payments_pay_tenant_payable" ON "payments" ("tenant_id","payable_type","payable_id");
+CREATE INDEX "payments_pay_tenant_date" ON "payments" ("tenant_id","payment_date");
+CREATE INDEX "payments_received_by_foreign" ON "payments" ("received_by");
+CREATE INDEX "payments_tid_idx" ON "payments" ("tenant_id");
+CREATE INDEX "payments_pay_tid_pdate_idx" ON "payments" ("tenant_id","payment_date");
+CREATE INDEX "payments_idx_payments_external_id" ON "payments" ("external_id");
+CREATE INDEX "payments_tenant_id_idx" ON "payments" ("tenant_id");
 
 CREATE TABLE "payroll_lines" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5302,6 +6488,9 @@ CREATE TABLE "payroll_lines" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "payroll_lines_user_id_foreign" ON "payroll_lines" ("user_id");
+CREATE INDEX "payroll_lines_payroll_id_user_id_index" ON "payroll_lines" ("payroll_id","user_id");
+CREATE INDEX "payroll_lines_tenant_id_idx" ON "payroll_lines" ("tenant_id");
 
 CREATE TABLE "payrolls" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5325,6 +6514,8 @@ CREATE TABLE "payrolls" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "payrolls_tenant_id_reference_month_type_unique" ON "payrolls" ("tenant_id","reference_month","type");
+CREATE INDEX "payrolls_calculated_by_foreign" ON "payrolls" ("calculated_by");
+CREATE INDEX "payrolls_approved_by_foreign" ON "payrolls" ("approved_by");
 
 CREATE TABLE "payslips" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5339,6 +6530,10 @@ CREATE TABLE "payslips" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "payslips_payroll_line_id_foreign" ON "payslips" ("payroll_line_id");
+CREATE INDEX "payslips_user_id_foreign" ON "payslips" ("user_id");
+CREATE INDEX "payslips_tenant_id_user_id_reference_month_index" ON "payslips" ("tenant_id","user_id","reference_month");
+CREATE INDEX "payslips_tenant_id_idx" ON "payslips" ("tenant_id");
 
 CREATE TABLE "performance_reviews" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5359,6 +6554,11 @@ CREATE TABLE "performance_reviews" (
  "updated_at" datetime NULL DEFAULT NULL,
  "title" varchar(255) DEFAULT NULL
 );
+CREATE INDEX "performance_reviews_tid_idx" ON "performance_reviews" ("tenant_id");
+CREATE INDEX "performance_reviews_user_id_fk_idx" ON "performance_reviews" ("user_id");
+CREATE INDEX "performance_reviews_reviewer_id_fk_idx" ON "performance_reviews" ("reviewer_id");
+CREATE INDEX "performance_reviews_tid_st_idx" ON "performance_reviews" ("tenant_id","status");
+CREATE INDEX "performance_reviews_tenant_id_idx" ON "performance_reviews" ("tenant_id");
 
 CREATE TABLE "permission_groups" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5368,6 +6568,7 @@ CREATE TABLE "permission_groups" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "permission_groups_slug_index" ON "permission_groups" ("slug");
 
 CREATE TABLE "permissions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5379,6 +6580,7 @@ CREATE TABLE "permissions" (
  "criticality" varchar NOT NULL DEFAULT 'MED'
 );
 CREATE UNIQUE INDEX "permissions_name_guard_name_unique" ON "permissions" ("name","guard_name");
+CREATE INDEX "permissions_group_id_foreign" ON "permissions" ("group_id");
 
 CREATE TABLE "personal_access_tokens" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5393,6 +6595,7 @@ CREATE TABLE "personal_access_tokens" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "personal_access_tokens_token_unique" ON "personal_access_tokens" ("token");
+CREATE INDEX "personal_access_tokens_tokenable_type_tokenable_id_index" ON "personal_access_tokens" ("tokenable_type","tokenable_id");
 
 CREATE TABLE "photo_annotations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5403,6 +6606,10 @@ CREATE TABLE "photo_annotations" (
  "annotations" text NOT NULL,
  "created_at" datetime NOT NULL
 );
+CREATE INDEX "photo_annotations_tenant_id_index" ON "photo_annotations" ("tenant_id");
+CREATE INDEX "photo_annotations_work_order_id_index" ON "photo_annotations" ("work_order_id");
+CREATE INDEX "photo_annotations_user_id_foreign" ON "photo_annotations" ("user_id");
+CREATE INDEX "photo_annotations_tenant_id_idx" ON "photo_annotations" ("tenant_id");
 
 CREATE TABLE "portal_guest_links" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5419,6 +6626,10 @@ CREATE TABLE "portal_guest_links" (
  "consumed_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "portal_guest_links_token_unique" ON "portal_guest_links" ("token");
+CREATE INDEX "portal_guest_links_entity_type_entity_id_index" ON "portal_guest_links" ("entity_type","entity_id");
+CREATE INDEX "portal_guest_links_created_by_foreign" ON "portal_guest_links" ("created_by");
+CREATE INDEX "portal_guest_links_tenant_id_entity_type_entity_id_index" ON "portal_guest_links" ("tenant_id","entity_type","entity_id");
+CREATE INDEX "portal_guest_links_tenant_id_idx" ON "portal_guest_links" ("tenant_id");
 
 CREATE TABLE "portal_ticket_comments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5430,6 +6641,8 @@ CREATE TABLE "portal_ticket_comments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "portal_ticket_comments_ptc_tenant_ticket_idx" ON "portal_ticket_comments" ("tenant_id","portal_ticket_id");
+CREATE INDEX "portal_ticket_comments_tenant_id_idx" ON "portal_ticket_comments" ("tenant_id");
 
 CREATE TABLE "portal_ticket_messages" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5440,6 +6653,8 @@ CREATE TABLE "portal_ticket_messages" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "portal_ticket_messages_portal_ticket_id_index" ON "portal_ticket_messages" ("portal_ticket_id");
+CREATE INDEX "portal_ticket_messages_user_id_index" ON "portal_ticket_messages" ("user_id");
 
 CREATE TABLE "portal_tickets" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5462,6 +6677,12 @@ CREATE TABLE "portal_tickets" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "portal_tickets_tenant_id_index" ON "portal_tickets" ("tenant_id");
+CREATE INDEX "portal_tickets_customer_id_index" ON "portal_tickets" ("customer_id");
+CREATE INDEX "portal_tickets_created_by_index" ON "portal_tickets" ("created_by");
+CREATE INDEX "portal_tickets_equipment_id_index" ON "portal_tickets" ("equipment_id");
+CREATE INDEX "portal_tickets_assigned_to_index" ON "portal_tickets" ("assigned_to");
+CREATE INDEX "portal_tickets_tenant_id_idx" ON "portal_tickets" ("tenant_id");
 
 CREATE TABLE "portal_white_label" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5488,6 +6709,9 @@ CREATE TABLE "positions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "positions_department_id_foreign" ON "positions" ("department_id");
+CREATE INDEX "positions_tid_idx" ON "positions" ("tenant_id");
+CREATE INDEX "positions_tenant_id_idx" ON "positions" ("tenant_id");
 
 CREATE TABLE "price_histories" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5504,6 +6728,11 @@ CREATE TABLE "price_histories" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "price_histories_priceable_type_priceable_id_index" ON "price_histories" ("priceable_type","priceable_id");
+CREATE INDEX "price_histories_changed_by_foreign" ON "price_histories" ("changed_by");
+CREATE INDEX "price_histories_idx_price_hist_type_id_created" ON "price_histories" ("priceable_type","priceable_id","created_at");
+CREATE INDEX "price_histories_tid_idx" ON "price_histories" ("tenant_id");
+CREATE INDEX "price_histories_tenant_id_idx" ON "price_histories" ("tenant_id");
 
 CREATE TABLE "price_table_adjustment_types" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5520,6 +6749,9 @@ CREATE TABLE "price_table_adjustment_types" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "price_table_adjustment_types_tid_slug_uq" ON "price_table_adjustment_types" ("tenant_id","slug");
+CREATE INDEX "price_table_adjustment_types_tid_idx" ON "price_table_adjustment_types" ("tenant_id");
+CREATE INDEX "price_table_adjustment_types_del_idx" ON "price_table_adjustment_types" ("deleted_at");
+CREATE INDEX "price_table_adjustment_types_deleted_at_idx" ON "price_table_adjustment_types" ("deleted_at");
 
 CREATE TABLE "price_table_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5530,6 +6762,8 @@ CREATE TABLE "price_table_items" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "price_table_items_price_table_id_foreign" ON "price_table_items" ("price_table_id");
+CREATE INDEX "price_table_items_priceable_type_priceable_id_index" ON "price_table_items" ("priceable_type","priceable_id");
 
 CREATE TABLE "price_tables" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5546,6 +6780,10 @@ CREATE TABLE "price_tables" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "price_tables_tid_idx" ON "price_tables" ("tenant_id");
+CREATE INDEX "price_tables_del_idx" ON "price_tables" ("deleted_at");
+CREATE INDEX "price_tables_tenant_id_idx" ON "price_tables" ("tenant_id");
+CREATE INDEX "price_tables_deleted_at_idx" ON "price_tables" ("deleted_at");
 
 CREATE TABLE "print_jobs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5559,6 +6797,10 @@ CREATE TABLE "print_jobs" (
  "printed_at" datetime NULL DEFAULT NULL,
  "created_at" datetime NOT NULL
 );
+CREATE INDEX "print_jobs_tenant_id_index" ON "print_jobs" ("tenant_id");
+CREATE INDEX "print_jobs_user_id_index" ON "print_jobs" ("user_id");
+CREATE INDEX "print_jobs_document_id_index" ON "print_jobs" ("document_id");
+CREATE INDEX "print_jobs_tenant_id_idx" ON "print_jobs" ("tenant_id");
 
 CREATE TABLE "privacy_consents" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5570,6 +6812,9 @@ CREATE TABLE "privacy_consents" (
  "user_agent" text,
  "consented_at" datetime NOT NULL
 );
+CREATE INDEX "privacy_consents_tenant_id_index" ON "privacy_consents" ("tenant_id");
+CREATE INDEX "privacy_consents_user_id_index" ON "privacy_consents" ("user_id");
+CREATE INDEX "privacy_consents_tenant_id_idx" ON "privacy_consents" ("tenant_id");
 
 CREATE TABLE "product_categories" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5580,6 +6825,7 @@ CREATE TABLE "product_categories" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "product_categories_tenant_id_name_unique" ON "product_categories" ("tenant_id","name");
+CREATE INDEX "product_categories_pcat_tid_act_idx" ON "product_categories" ("tenant_id","is_active");
 
 CREATE TABLE "product_kits" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5589,6 +6835,8 @@ CREATE TABLE "product_kits" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "product_kits_parent_id_foreign" ON "product_kits" ("parent_id");
+CREATE INDEX "product_kits_child_id_foreign" ON "product_kits" ("child_id");
 
 CREATE TABLE "product_serials" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5602,6 +6850,10 @@ CREATE TABLE "product_serials" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "ps_unique" ON "product_serials" ("tenant_id","serial_number");
+CREATE INDEX "product_serials_del_idx" ON "product_serials" ("deleted_at");
+CREATE INDEX "product_serials_product_id_fk_idx" ON "product_serials" ("product_id");
+CREATE INDEX "product_serials_warehouse_id_fk_idx" ON "product_serials" ("warehouse_id");
+CREATE INDEX "product_serials_deleted_at_idx" ON "product_serials" ("deleted_at");
 
 CREATE TABLE "products" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5646,6 +6898,13 @@ CREATE TABLE "products" (
 CREATE UNIQUE INDEX "products_tenant_id_code_unique" ON "products" ("tenant_id","code");
 CREATE UNIQUE INDEX "products_qr_hash_unique" ON "products" ("qr_hash");
 CREATE UNIQUE INDEX "products_sku_unique" ON "products" ("sku");
+CREATE INDEX "products_tenant_id_name_index" ON "products" ("tenant_id","name");
+CREATE INDEX "products_default_supplier_id_foreign" ON "products" ("default_supplier_id");
+CREATE INDEX "products_prod_tenant_category" ON "products" ("tenant_id","category_id");
+CREATE INDEX "products_prod_deleted_at" ON "products" ("tenant_id","deleted_at");
+CREATE INDEX "products_del_idx" ON "products" ("deleted_at");
+CREATE INDEX "products_category_id_fk_idx" ON "products" ("category_id");
+CREATE INDEX "products_deleted_at_idx" ON "products" ("deleted_at");
 
 CREATE TABLE "project_milestones" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5668,6 +6927,10 @@ CREATE TABLE "project_milestones" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "project_milestones_project_id_foreign" ON "project_milestones" ("project_id");
+CREATE INDEX "project_milestones_invoice_id_foreign" ON "project_milestones" ("invoice_id");
+CREATE INDEX "project_milestones_tenant_project_idx" ON "project_milestones" ("tenant_id","project_id");
+CREATE INDEX "project_milestones_tenant_id_idx" ON "project_milestones" ("tenant_id");
 
 CREATE TABLE "project_resources" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5684,6 +6947,10 @@ CREATE TABLE "project_resources" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "project_resources_project_id_foreign" ON "project_resources" ("project_id");
+CREATE INDEX "project_resources_user_id_foreign" ON "project_resources" ("user_id");
+CREATE INDEX "project_resources_tenant_project_idx" ON "project_resources" ("tenant_id","project_id");
+CREATE INDEX "project_resources_tenant_id_idx" ON "project_resources" ("tenant_id");
 
 CREATE TABLE "project_time_entries" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5699,6 +6966,12 @@ CREATE TABLE "project_time_entries" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "project_time_entries_project_id_foreign" ON "project_time_entries" ("project_id");
+CREATE INDEX "project_time_entries_project_resource_id_foreign" ON "project_time_entries" ("project_resource_id");
+CREATE INDEX "project_time_entries_milestone_id_foreign" ON "project_time_entries" ("milestone_id");
+CREATE INDEX "project_time_entries_work_order_id_foreign" ON "project_time_entries" ("work_order_id");
+CREATE INDEX "project_time_entries_tenant_project_idx" ON "project_time_entries" ("tenant_id","project_id");
+CREATE INDEX "project_time_entries_tenant_id_idx" ON "project_time_entries" ("tenant_id");
 
 CREATE TABLE "projects" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5727,6 +7000,11 @@ CREATE TABLE "projects" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "prj_tenant_code_uq" ON "projects" ("tenant_id","code");
+CREATE INDEX "projects_customer_id_foreign" ON "projects" ("customer_id");
+CREATE INDEX "projects_crm_deal_id_foreign" ON "projects" ("crm_deal_id");
+CREATE INDEX "projects_created_by_foreign" ON "projects" ("created_by");
+CREATE INDEX "projects_manager_id_foreign" ON "projects" ("manager_id");
+CREATE INDEX "projects_deleted_at_idx" ON "projects" ("deleted_at");
 
 CREATE TABLE "psei_submissions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5749,6 +7027,14 @@ CREATE TABLE "psei_submissions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "psei_submissions_seal_id_foreign" ON "psei_submissions" ("seal_id");
+CREATE INDEX "psei_submissions_work_order_id_foreign" ON "psei_submissions" ("work_order_id");
+CREATE INDEX "psei_submissions_equipment_id_foreign" ON "psei_submissions" ("equipment_id");
+CREATE INDEX "psei_submissions_submitted_by_foreign" ON "psei_submissions" ("submitted_by");
+CREATE INDEX "psei_submissions_tenant_id_status_index" ON "psei_submissions" ("tenant_id","status");
+CREATE INDEX "psei_submissions_tenant_id_seal_id_index" ON "psei_submissions" ("tenant_id","seal_id");
+CREATE INDEX "psei_submissions_idx_psei_retry" ON "psei_submissions" ("status","next_retry_at");
+CREATE INDEX "psei_submissions_tenant_id_idx" ON "psei_submissions" ("tenant_id");
 
 CREATE TABLE "purchase_quotation_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5761,6 +7047,10 @@ CREATE TABLE "purchase_quotation_items" (
  "updated_at" datetime NULL DEFAULT NULL,
  "tenant_id" integer DEFAULT NULL
 );
+CREATE INDEX "purchase_quotation_items_purchase_quotation_id_foreign" ON "purchase_quotation_items" ("purchase_quotation_id");
+CREATE INDEX "purchase_quotation_items_product_id_foreign" ON "purchase_quotation_items" ("product_id");
+CREATE INDEX "purchase_quotation_items_pqi_tenant_quotation_idx" ON "purchase_quotation_items" ("tenant_id","purchase_quotation_id");
+CREATE INDEX "purchase_quotation_items_tenant_id_idx" ON "purchase_quotation_items" ("tenant_id");
 
 CREATE TABLE "purchase_quotations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5780,6 +7070,14 @@ CREATE TABLE "purchase_quotations" (
  "approved_by" integer DEFAULT NULL,
  "approved_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "purchase_quotations_supplier_id_foreign" ON "purchase_quotations" ("supplier_id");
+CREATE INDEX "purchase_quotations_requested_by_foreign" ON "purchase_quotations" ("requested_by");
+CREATE INDEX "purchase_quotations_approved_by_foreign" ON "purchase_quotations" ("approved_by");
+CREATE INDEX "purchase_quotations_tid_idx" ON "purchase_quotations" ("tenant_id");
+CREATE INDEX "purchase_quotations_del_idx" ON "purchase_quotations" ("deleted_at");
+CREATE INDEX "purchase_quotations_tid_st_idx" ON "purchase_quotations" ("tenant_id","status");
+CREATE INDEX "purchase_quotations_tenant_id_idx" ON "purchase_quotations" ("tenant_id");
+CREATE INDEX "purchase_quotations_deleted_at_idx" ON "purchase_quotations" ("deleted_at");
 
 CREATE TABLE "purchase_quote_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5791,6 +7089,8 @@ CREATE TABLE "purchase_quote_items" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "purchase_quote_items_purchase_quote_id_foreign" ON "purchase_quote_items" ("purchase_quote_id");
+CREATE INDEX "purchase_quote_items_product_id_foreign" ON "purchase_quote_items" ("product_id");
 
 CREATE TABLE "purchase_quote_suppliers" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5805,6 +7105,8 @@ CREATE TABLE "purchase_quote_suppliers" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "purchase_quote_suppliers_purchase_quote_id_foreign" ON "purchase_quote_suppliers" ("purchase_quote_id");
+CREATE INDEX "purchase_quote_suppliers_supplier_id_foreign" ON "purchase_quote_suppliers" ("supplier_id");
 
 CREATE TABLE "purchase_quotes" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5821,6 +7123,12 @@ CREATE TABLE "purchase_quotes" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "purchase_quotes_reference_unique" ON "purchase_quotes" ("reference");
+CREATE INDEX "purchase_quotes_tenant_id_index" ON "purchase_quotes" ("tenant_id");
+CREATE INDEX "purchase_quotes_approved_supplier_id_foreign" ON "purchase_quotes" ("approved_supplier_id");
+CREATE INDEX "purchase_quotes_del_idx" ON "purchase_quotes" ("deleted_at");
+CREATE INDEX "purchase_quotes_tid_st_idx" ON "purchase_quotes" ("tenant_id","status");
+CREATE INDEX "purchase_quotes_tenant_id_idx" ON "purchase_quotes" ("tenant_id");
+CREATE INDEX "purchase_quotes_deleted_at_idx" ON "purchase_quotes" ("deleted_at");
 
 CREATE TABLE "push_subscriptions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5834,6 +7142,10 @@ CREATE TABLE "push_subscriptions" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "push_sub_user_endpoint_unique" ON "push_subscriptions" ("user_id","endpoint");
+CREATE INDEX "push_subscriptions_user_id_index" ON "push_subscriptions" ("user_id");
+CREATE INDEX "push_subscriptions_tenant_id_index" ON "push_subscriptions" ("tenant_id");
+CREATE INDEX "push_subscriptions_ps_user" ON "push_subscriptions" ("user_id");
+CREATE INDEX "push_subscriptions_tenant_id_idx" ON "push_subscriptions" ("tenant_id");
 
 CREATE TABLE "qa_alerts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5847,6 +7159,11 @@ CREATE TABLE "qa_alerts" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "qa_alerts_calibration_id_foreign" ON "qa_alerts" ("calibration_id");
+CREATE INDEX "qa_alerts_reviewed_by_foreign" ON "qa_alerts" ("reviewed_by");
+CREATE INDEX "qa_alerts_tid_idx" ON "qa_alerts" ("tenant_id");
+CREATE INDEX "qa_alerts_tid_st_idx" ON "qa_alerts" ("tenant_id","status");
+CREATE INDEX "qa_alerts_tenant_id_idx" ON "qa_alerts" ("tenant_id");
 
 CREATE TABLE "qr_scans" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5858,6 +7175,8 @@ CREATE TABLE "qr_scans" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "qr_scans_work_order_id_index" ON "qr_scans" ("work_order_id");
+CREATE INDEX "qr_scans_tenant_id_idx" ON "qr_scans" ("tenant_id");
 
 CREATE TABLE "quality_audit_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5872,6 +7191,7 @@ CREATE TABLE "quality_audit_items" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "quality_audit_items_quality_audit_id_foreign" ON "quality_audit_items" ("quality_audit_id");
 
 CREATE TABLE "quality_audits" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5890,6 +7210,10 @@ CREATE TABLE "quality_audits" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "quality_audits_auditor_id_foreign" ON "quality_audits" ("auditor_id");
+CREATE INDEX "quality_audits_tid_idx" ON "quality_audits" ("tenant_id");
+CREATE INDEX "quality_audits_tid_st_idx" ON "quality_audits" ("tenant_id","status");
+CREATE INDEX "quality_audits_tenant_id_idx" ON "quality_audits" ("tenant_id");
 
 CREATE TABLE "quality_corrective_actions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5908,6 +7232,11 @@ CREATE TABLE "quality_corrective_actions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "quality_corrective_actions_tenant_id_index" ON "quality_corrective_actions" ("tenant_id");
+CREATE INDEX "quality_corrective_actions_quality_audit_id_index" ON "quality_corrective_actions" ("quality_audit_id");
+CREATE INDEX "quality_corrective_actions_quality_audit_item_id_index" ON "quality_corrective_actions" ("quality_audit_item_id");
+CREATE INDEX "quality_corrective_actions_responsible_id_index" ON "quality_corrective_actions" ("responsible_id");
+CREATE INDEX "quality_corrective_actions_tenant_id_idx" ON "quality_corrective_actions" ("tenant_id");
 
 CREATE TABLE "quality_procedures" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5926,6 +7255,13 @@ CREATE TABLE "quality_procedures" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "quality_procedures_approved_by_foreign" ON "quality_procedures" ("approved_by");
+CREATE INDEX "quality_procedures_code_index" ON "quality_procedures" ("code");
+CREATE INDEX "quality_procedures_tid_idx" ON "quality_procedures" ("tenant_id");
+CREATE INDEX "quality_procedures_del_idx" ON "quality_procedures" ("deleted_at");
+CREATE INDEX "quality_procedures_tid_st_idx" ON "quality_procedures" ("tenant_id","status");
+CREATE INDEX "quality_procedures_tenant_id_idx" ON "quality_procedures" ("tenant_id");
+CREATE INDEX "quality_procedures_deleted_at_idx" ON "quality_procedures" ("deleted_at");
 
 CREATE TABLE "quick_notes" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5941,6 +7277,12 @@ CREATE TABLE "quick_notes" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "quick_notes_customer_id_foreign" ON "quick_notes" ("customer_id");
+CREATE INDEX "quick_notes_user_id_foreign" ON "quick_notes" ("user_id");
+CREATE INDEX "quick_notes_deal_id_foreign" ON "quick_notes" ("deal_id");
+CREATE INDEX "quick_notes_qn_tenant_cust_idx" ON "quick_notes" ("tenant_id","customer_id");
+CREATE INDEX "quick_notes_qn_tenant_user_idx" ON "quick_notes" ("tenant_id","user_id");
+CREATE INDEX "quick_notes_tenant_id_idx" ON "quick_notes" ("tenant_id");
 
 CREATE TABLE "quote_approval_thresholds" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5953,6 +7295,8 @@ CREATE TABLE "quote_approval_thresholds" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "quote_approval_thresholds_tenant_id_is_active_index" ON "quote_approval_thresholds" ("tenant_id","is_active");
+CREATE INDEX "quote_approval_thresholds_tenant_id_idx" ON "quote_approval_thresholds" ("tenant_id");
 
 CREATE TABLE "quote_emails" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5972,6 +7316,10 @@ CREATE TABLE "quote_emails" (
  "failed_at" datetime NULL DEFAULT NULL,
  "error_message" text
 );
+CREATE INDEX "quote_emails_quote_id_foreign" ON "quote_emails" ("quote_id");
+CREATE INDEX "quote_emails_sent_by_foreign" ON "quote_emails" ("sent_by");
+CREATE INDEX "quote_emails_tenant_id_quote_id_index" ON "quote_emails" ("tenant_id","quote_id");
+CREATE INDEX "quote_emails_tenant_id_idx" ON "quote_emails" ("tenant_id");
 
 CREATE TABLE "quote_equipments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5983,6 +7331,10 @@ CREATE TABLE "quote_equipments" (
  "updated_at" datetime NULL DEFAULT NULL,
  "tenant_id" integer NOT NULL
 );
+CREATE INDEX "quote_equipments_tenant_id_index" ON "quote_equipments" ("tenant_id");
+CREATE INDEX "quote_equipments_quote_id_fk_idx" ON "quote_equipments" ("quote_id");
+CREATE INDEX "quote_equipments_equipment_id_fk_idx" ON "quote_equipments" ("equipment_id");
+CREATE INDEX "quote_equipments_tenant_id_idx" ON "quote_equipments" ("tenant_id");
 
 CREATE TABLE "quote_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6005,6 +7357,11 @@ CREATE TABLE "quote_items" (
  "quote_id" integer DEFAULT NULL,
  "total" numeric DEFAULT NULL
 );
+CREATE INDEX "quote_items_quote_equipment_id_foreign" ON "quote_items" ("quote_equipment_id");
+CREATE INDEX "quote_items_tenant_id_index" ON "quote_items" ("tenant_id");
+CREATE INDEX "quote_items_product_id_fk_idx" ON "quote_items" ("product_id");
+CREATE INDEX "quote_items_service_id_fk_idx" ON "quote_items" ("service_id");
+CREATE INDEX "quote_items_tenant_id_idx" ON "quote_items" ("tenant_id");
 
 CREATE TABLE "quote_photos" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6017,6 +7374,10 @@ CREATE TABLE "quote_photos" (
  "updated_at" datetime NULL DEFAULT NULL,
  "tenant_id" integer NOT NULL
 );
+CREATE INDEX "quote_photos_quote_equipment_id_foreign" ON "quote_photos" ("quote_equipment_id");
+CREATE INDEX "quote_photos_quote_item_id_foreign" ON "quote_photos" ("quote_item_id");
+CREATE INDEX "quote_photos_tenant_id_index" ON "quote_photos" ("tenant_id");
+CREATE INDEX "quote_photos_tenant_id_idx" ON "quote_photos" ("tenant_id");
 
 CREATE TABLE "quote_quote_tag" (
  "quote_id" integer NOT NULL,
@@ -6024,6 +7385,9 @@ CREATE TABLE "quote_quote_tag" (
  "tenant_id" integer DEFAULT NULL,
  PRIMARY KEY ("quote_id","quote_tag_id")
 );
+CREATE INDEX "quote_quote_tag_quote_tag_id_foreign" ON "quote_quote_tag" ("quote_tag_id");
+CREATE INDEX "quote_quote_tag_tenant_idx" ON "quote_quote_tag" ("tenant_id");
+CREATE INDEX "quote_quote_tag_tenant_id_idx" ON "quote_quote_tag" ("tenant_id");
 
 CREATE TABLE "quote_sources" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6040,6 +7404,9 @@ CREATE TABLE "quote_sources" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "quote_sources_tid_slug_uq" ON "quote_sources" ("tenant_id","slug");
+CREATE INDEX "quote_sources_tid_idx" ON "quote_sources" ("tenant_id");
+CREATE INDEX "quote_sources_del_idx" ON "quote_sources" ("deleted_at");
+CREATE INDEX "quote_sources_deleted_at_idx" ON "quote_sources" ("deleted_at");
 
 CREATE TABLE "quote_tags" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6064,6 +7431,8 @@ CREATE TABLE "quote_templates" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "quote_templates_tenant_id_is_active_index" ON "quote_templates" ("tenant_id","is_active");
+CREATE INDEX "quote_templates_tenant_id_idx" ON "quote_templates" ("tenant_id");
 
 CREATE TABLE "quotes" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6137,6 +7506,24 @@ CREATE TABLE "quotes" (
 );
 CREATE UNIQUE INDEX "quotes_tenant_id_quote_number_unique" ON "quotes" ("tenant_id","quote_number");
 CREATE UNIQUE INDEX "quotes_magic_token_unique" ON "quotes" ("magic_token");
+CREATE INDEX "quotes_customer_id_foreign" ON "quotes" ("customer_id");
+CREATE INDEX "quotes_tenant_id_status_index" ON "quotes" ("tenant_id","status");
+CREATE INDEX "quotes_internal_approved_by_foreign" ON "quotes" ("internal_approved_by");
+CREATE INDEX "quotes_price_table_id_foreign" ON "quotes" ("price_table_id");
+CREATE INDEX "quotes_tenant_id_customer_id_index" ON "quotes" ("tenant_id","customer_id");
+CREATE INDEX "quotes_template_id_foreign" ON "quotes" ("template_id");
+CREATE INDEX "quotes_opportunity_id_foreign" ON "quotes" ("opportunity_id");
+CREATE INDEX "quotes_qt_tenant_created_idx" ON "quotes" ("tenant_id","created_at");
+CREATE INDEX "quotes_created_by_foreign" ON "quotes" ("created_by");
+CREATE INDEX "quotes_qt_tenant_status" ON "quotes" ("tenant_id","status");
+CREATE INDEX "quotes_qt_tenant_customer" ON "quotes" ("tenant_id","customer_id");
+CREATE INDEX "quotes_qt_tenant_seller" ON "quotes" ("tenant_id","seller_id");
+CREATE INDEX "quotes_qt_deleted_at" ON "quotes" ("tenant_id","deleted_at");
+CREATE INDEX "quotes_del_idx" ON "quotes" ("deleted_at");
+CREATE INDEX "quotes_seller_id_fk_idx" ON "quotes" ("seller_id");
+CREATE INDEX "quotes_parent_quote_id_fk_idx" ON "quotes" ("parent_quote_id");
+CREATE INDEX "quotes_level2_approved_by_foreign" ON "quotes" ("level2_approved_by");
+CREATE INDEX "quotes_deleted_at_idx" ON "quotes" ("deleted_at");
 
 CREATE TABLE "raw_data_backups" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6150,6 +7537,8 @@ CREATE TABLE "raw_data_backups" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "raw_data_backups_tid_idx" ON "raw_data_backups" ("tenant_id");
+CREATE INDEX "raw_data_backups_tenant_id_idx" ON "raw_data_backups" ("tenant_id");
 
 CREATE TABLE "recall_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6160,6 +7549,11 @@ CREATE TABLE "recall_logs" (
  "status" varchar(255) NOT NULL DEFAULT 'sent',
  "created_at" datetime NOT NULL
 );
+CREATE INDEX "recall_logs_equipment_id_foreign" ON "recall_logs" ("equipment_id");
+CREATE INDEX "recall_logs_customer_id_foreign" ON "recall_logs" ("customer_id");
+CREATE INDEX "recall_logs_tid_idx" ON "recall_logs" ("tenant_id");
+CREATE INDEX "recall_logs_tid_st_idx" ON "recall_logs" ("tenant_id","status");
+CREATE INDEX "recall_logs_tenant_id_idx" ON "recall_logs" ("tenant_id");
 
 CREATE TABLE "reconciliation_rules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6182,6 +7576,11 @@ CREATE TABLE "reconciliation_rules" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "reconciliation_rules_customer_id_foreign" ON "reconciliation_rules" ("customer_id");
+CREATE INDEX "reconciliation_rules_supplier_id_foreign" ON "reconciliation_rules" ("supplier_id");
+CREATE INDEX "reconciliation_rules_tenant_id_is_active_priority_index" ON "reconciliation_rules" ("tenant_id","is_active","priority");
+CREATE INDEX "reconciliation_rules_target_id_index" ON "reconciliation_rules" ("target_id");
+CREATE INDEX "reconciliation_rules_tenant_id_idx" ON "reconciliation_rules" ("tenant_id");
 
 CREATE TABLE "recurring_commissions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6195,6 +7594,11 @@ CREATE TABLE "recurring_commissions" (
  "updated_at" datetime NULL DEFAULT NULL,
  "frequency" varchar(20) DEFAULT NULL
 );
+CREATE INDEX "recurring_commissions_commission_rule_id_foreign" ON "recurring_commissions" ("commission_rule_id");
+CREATE INDEX "recurring_commissions_recurring_contract_id_foreign" ON "recurring_commissions" ("recurring_contract_id");
+CREATE INDEX "recurring_commissions_tenant_id_status_index" ON "recurring_commissions" ("tenant_id","status");
+CREATE INDEX "recurring_commissions_user_id_foreign" ON "recurring_commissions" ("user_id");
+CREATE INDEX "recurring_commissions_tenant_id_idx" ON "recurring_commissions" ("tenant_id");
 
 CREATE TABLE "recurring_contract_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6207,6 +7611,9 @@ CREATE TABLE "recurring_contract_items" (
  "updated_at" datetime NULL DEFAULT NULL,
  "tenant_id" integer NOT NULL
 );
+CREATE INDEX "recurring_contract_items_tenant_id_index" ON "recurring_contract_items" ("tenant_id");
+CREATE INDEX "recurring_contract_items_recurring_contract_i_fk_idx" ON "recurring_contract_items" ("recurring_contract_id");
+CREATE INDEX "recurring_contract_items_tenant_id_idx" ON "recurring_contract_items" ("tenant_id");
 
 CREATE TABLE "recurring_contracts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6232,6 +7639,15 @@ CREATE TABLE "recurring_contracts" (
  "adjustment_index" varchar(255) DEFAULT NULL,
  "next_adjustment_date" date DEFAULT NULL
 );
+CREATE INDEX "recurring_contracts_equipment_id_foreign" ON "recurring_contracts" ("equipment_id");
+CREATE INDEX "recurring_contracts_assigned_to_foreign" ON "recurring_contracts" ("assigned_to");
+CREATE INDEX "recurring_contracts_created_by_foreign" ON "recurring_contracts" ("created_by");
+CREATE INDEX "recurring_contracts_rc_customer" ON "recurring_contracts" ("customer_id");
+CREATE INDEX "recurring_contracts_rcon_deleted_at" ON "recurring_contracts" ("tenant_id","deleted_at");
+CREATE INDEX "recurring_contracts_tid_idx" ON "recurring_contracts" ("tenant_id");
+CREATE INDEX "recurring_contracts_del_idx" ON "recurring_contracts" ("deleted_at");
+CREATE INDEX "recurring_contracts_tenant_id_idx" ON "recurring_contracts" ("tenant_id");
+CREATE INDEX "recurring_contracts_deleted_at_idx" ON "recurring_contracts" ("deleted_at");
 
 CREATE TABLE "referral_codes" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6245,6 +7661,9 @@ CREATE TABLE "referral_codes" (
  "created_at" datetime NOT NULL
 );
 CREATE UNIQUE INDEX "referral_codes_code_unique" ON "referral_codes" ("code");
+CREATE INDEX "referral_codes_tenant_id_index" ON "referral_codes" ("tenant_id");
+CREATE INDEX "referral_codes_referrer_id_index" ON "referral_codes" ("referrer_id");
+CREATE INDEX "referral_codes_tenant_id_idx" ON "referral_codes" ("tenant_id");
 
 CREATE TABLE "repair_seal_alerts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6262,6 +7681,14 @@ CREATE TABLE "repair_seal_alerts" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "repair_seal_alerts_seal_id_foreign" ON "repair_seal_alerts" ("seal_id");
+CREATE INDEX "repair_seal_alerts_technician_id_foreign" ON "repair_seal_alerts" ("technician_id");
+CREATE INDEX "repair_seal_alerts_work_order_id_foreign" ON "repair_seal_alerts" ("work_order_id");
+CREATE INDEX "repair_seal_alerts_acknowledged_by_foreign" ON "repair_seal_alerts" ("acknowledged_by");
+CREATE INDEX "repair_seal_alerts_resolved_by_foreign" ON "repair_seal_alerts" ("resolved_by");
+CREATE INDEX "repair_seal_alerts_idx_alerts_tech_resolved" ON "repair_seal_alerts" ("tenant_id","technician_id","resolved_at");
+CREATE INDEX "repair_seal_alerts_idx_alerts_type_resolved" ON "repair_seal_alerts" ("tenant_id","alert_type","resolved_at");
+CREATE INDEX "repair_seal_alerts_tenant_id_idx" ON "repair_seal_alerts" ("tenant_id");
 
 CREATE TABLE "repair_seal_assignments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6275,6 +7702,13 @@ CREATE TABLE "repair_seal_assignments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "repair_seal_assignments_seal_id_foreign" ON "repair_seal_assignments" ("seal_id");
+CREATE INDEX "repair_seal_assignments_technician_id_foreign" ON "repair_seal_assignments" ("technician_id");
+CREATE INDEX "repair_seal_assignments_assigned_by_foreign" ON "repair_seal_assignments" ("assigned_by");
+CREATE INDEX "repair_seal_assignments_previous_technician_id_foreign" ON "repair_seal_assignments" ("previous_technician_id");
+CREATE INDEX "repair_seal_assignments_tenant_id_seal_id_index" ON "repair_seal_assignments" ("tenant_id","seal_id");
+CREATE INDEX "repair_seal_assignments_idx_assignments_tech_date" ON "repair_seal_assignments" ("tenant_id","technician_id","created_at");
+CREATE INDEX "repair_seal_assignments_tenant_id_idx" ON "repair_seal_assignments" ("tenant_id");
 
 CREATE TABLE "repair_seal_batches" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6297,6 +7731,9 @@ CREATE TABLE "repair_seal_batches" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "repair_seal_batches_tenant_id_batch_code_unique" ON "repair_seal_batches" ("tenant_id","batch_code");
+CREATE INDEX "repair_seal_batches_received_by_foreign" ON "repair_seal_batches" ("received_by");
+CREATE INDEX "repair_seal_batches_tenant_id_type_index" ON "repair_seal_batches" ("tenant_id","type");
+CREATE INDEX "repair_seal_batches_deleted_at_idx" ON "repair_seal_batches" ("deleted_at");
 
 CREATE TABLE "repeatability_tests" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6321,6 +7758,9 @@ CREATE TABLE "repeatability_tests" (
  "updated_at" datetime NULL DEFAULT NULL,
  "range_value" numeric DEFAULT NULL
 );
+CREATE INDEX "repeatability_tests_equipment_calibration_id_foreign" ON "repeatability_tests" ("equipment_calibration_id");
+CREATE INDEX "repeatability_tests_tid_idx" ON "repeatability_tests" ("tenant_id");
+CREATE INDEX "repeatability_tests_tenant_id_idx" ON "repeatability_tests" ("tenant_id");
 
 CREATE TABLE "rescissions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6366,6 +7806,11 @@ CREATE TABLE "rescissions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "rescissions_user_id_foreign" ON "rescissions" ("user_id");
+CREATE INDEX "rescissions_calculated_by_foreign" ON "rescissions" ("calculated_by");
+CREATE INDEX "rescissions_approved_by_foreign" ON "rescissions" ("approved_by");
+CREATE INDEX "rescissions_tenant_id_user_id_index" ON "rescissions" ("tenant_id","user_id");
+CREATE INDEX "rescissions_tenant_id_idx" ON "rescissions" ("tenant_id");
 
 CREATE TABLE "retention_samples" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6382,6 +7827,9 @@ CREATE TABLE "retention_samples" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "retention_samples_work_order_id_foreign" ON "retention_samples" ("work_order_id");
+CREATE INDEX "retention_samples_tid_idx" ON "retention_samples" ("tenant_id");
+CREATE INDEX "retention_samples_tenant_id_idx" ON "retention_samples" ("tenant_id");
 
 CREATE TABLE "returned_used_item_dispositions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6398,6 +7846,9 @@ CREATE TABLE "returned_used_item_dispositions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "returned_used_item_dispositions_used_stock_item_id_foreign" ON "returned_used_item_dispositions" ("used_stock_item_id");
+CREATE INDEX "returned_used_item_dispositions_registered_by_foreign" ON "returned_used_item_dispositions" ("registered_by");
+CREATE INDEX "returned_used_item_dispositions_repair_provider_id_foreign" ON "returned_used_item_dispositions" ("repair_provider_id");
 
 CREATE TABLE "rma_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6409,6 +7860,8 @@ CREATE TABLE "rma_items" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "rma_items_rma_request_id_foreign" ON "rma_items" ("rma_request_id");
+CREATE INDEX "rma_items_product_id_foreign" ON "rma_items" ("product_id");
 
 CREATE TABLE "rma_requests" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6428,12 +7881,21 @@ CREATE TABLE "rma_requests" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "rma_requests_rma_number_unique" ON "rma_requests" ("rma_number");
+CREATE INDEX "rma_requests_tenant_id_index" ON "rma_requests" ("tenant_id");
+CREATE INDEX "rma_requests_customer_id_foreign" ON "rma_requests" ("customer_id");
+CREATE INDEX "rma_requests_supplier_id_foreign" ON "rma_requests" ("supplier_id");
+CREATE INDEX "rma_requests_work_order_id_foreign" ON "rma_requests" ("work_order_id");
+CREATE INDEX "rma_requests_del_idx" ON "rma_requests" ("deleted_at");
+CREATE INDEX "rma_requests_tid_st_idx" ON "rma_requests" ("tenant_id","status");
+CREATE INDEX "rma_requests_tenant_id_idx" ON "rma_requests" ("tenant_id");
+CREATE INDEX "rma_requests_deleted_at_idx" ON "rma_requests" ("deleted_at");
 
 CREATE TABLE "role_has_permissions" (
  "permission_id" integer NOT NULL,
  "role_id" integer NOT NULL,
  PRIMARY KEY ("permission_id","role_id")
 );
+CREATE INDEX "role_has_permissions_role_id_foreign" ON "role_has_permissions" ("role_id");
 
 CREATE TABLE "roles" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6447,6 +7909,7 @@ CREATE TABLE "roles" (
 );
 CREATE UNIQUE INDEX "roles_tenant_id_name_guard_name_unique" ON "roles" ("tenant_id","name","guard_name");
 CREATE UNIQUE INDEX "roles_name_guard_name_tenant_id_unique" ON "roles" ("name","guard_name","tenant_id");
+CREATE INDEX "roles_team_foreign_key_index" ON "roles" ("tenant_id");
 
 CREATE TABLE "route_plans" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6460,6 +7923,9 @@ CREATE TABLE "route_plans" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "route_plans_technician_id_foreign" ON "route_plans" ("technician_id");
+CREATE INDEX "route_plans_tid_idx" ON "route_plans" ("tenant_id");
+CREATE INDEX "route_plans_tenant_id_idx" ON "route_plans" ("tenant_id");
 
 CREATE TABLE "routes_planning" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6473,6 +7939,10 @@ CREATE TABLE "routes_planning" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "routes_planning_tech_id_foreign" ON "routes_planning" ("tech_id");
+CREATE INDEX "routes_planning_vehicle_id_foreign" ON "routes_planning" ("vehicle_id");
+CREATE INDEX "routes_planning_tid_idx" ON "routes_planning" ("tenant_id");
+CREATE INDEX "routes_planning_tenant_id_idx" ON "routes_planning" ("tenant_id");
 
 CREATE TABLE "rr_studies" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6489,6 +7959,10 @@ CREATE TABLE "rr_studies" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "rr_studies_created_by_foreign" ON "rr_studies" ("created_by");
+CREATE INDEX "rr_studies_tenant_id_index" ON "rr_studies" ("tenant_id");
+CREATE INDEX "rr_studies_instrument_id_index" ON "rr_studies" ("instrument_id");
+CREATE INDEX "rr_studies_tenant_id_idx" ON "rr_studies" ("tenant_id");
 
 CREATE TABLE "saas_plans" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6527,6 +8001,9 @@ CREATE TABLE "saas_subscriptions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "saas_subscriptions_plan_id_foreign" ON "saas_subscriptions" ("plan_id");
+CREATE INDEX "saas_subscriptions_created_by_foreign" ON "saas_subscriptions" ("created_by");
+CREATE INDEX "saas_subscriptions_tenant_id_idx" ON "saas_subscriptions" ("tenant_id");
 
 CREATE TABLE "satisfaction_surveys" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6542,6 +8019,10 @@ CREATE TABLE "satisfaction_surveys" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "satisfaction_surveys_customer_id_foreign" ON "satisfaction_surveys" ("customer_id");
+CREATE INDEX "satisfaction_surveys_work_order_id_foreign" ON "satisfaction_surveys" ("work_order_id");
+CREATE INDEX "satisfaction_surveys_tid_idx" ON "satisfaction_surveys" ("tenant_id");
+CREATE INDEX "satisfaction_surveys_tenant_id_idx" ON "satisfaction_surveys" ("tenant_id");
 
 CREATE TABLE "scale_readings" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6556,6 +8037,9 @@ CREATE TABLE "scale_readings" (
  "reading_at" datetime NULL DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "scale_readings_tenant_id_work_order_id_index" ON "scale_readings" ("tenant_id","work_order_id");
+CREATE INDEX "scale_readings_work_order_id_foreign" ON "scale_readings" ("work_order_id");
+CREATE INDEX "scale_readings_tenant_id_idx" ON "scale_readings" ("tenant_id");
 
 CREATE TABLE "scheduled_appointments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6568,6 +8052,9 @@ CREATE TABLE "scheduled_appointments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "scheduled_appointments_tenant_id_index" ON "scheduled_appointments" ("tenant_id");
+CREATE INDEX "scheduled_appointments_customer_id_index" ON "scheduled_appointments" ("customer_id");
+CREATE INDEX "scheduled_appointments_tenant_id_idx" ON "scheduled_appointments" ("tenant_id");
 
 CREATE TABLE "scheduled_report_exports" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6583,6 +8070,9 @@ CREATE TABLE "scheduled_report_exports" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "scheduled_report_exports_created_by_foreign" ON "scheduled_report_exports" ("created_by");
+CREATE INDEX "scheduled_report_exports_tid_idx" ON "scheduled_report_exports" ("tenant_id");
+CREATE INDEX "scheduled_report_exports_tenant_id_idx" ON "scheduled_report_exports" ("tenant_id");
 
 CREATE TABLE "scheduled_reports" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6600,6 +8090,9 @@ CREATE TABLE "scheduled_reports" (
  "updated_at" datetime NULL DEFAULT NULL,
  "name" varchar(255) DEFAULT NULL
 );
+CREATE INDEX "scheduled_reports_created_by_foreign" ON "scheduled_reports" ("created_by");
+CREATE INDEX "scheduled_reports_tid_idx" ON "scheduled_reports" ("tenant_id");
+CREATE INDEX "scheduled_reports_tenant_id_idx" ON "scheduled_reports" ("tenant_id");
 
 CREATE TABLE "schedules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6617,6 +8110,18 @@ CREATE TABLE "schedules" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "schedules_tenant_id_technician_id_scheduled_start_index" ON "schedules" ("tenant_id","technician_id","scheduled_start");
+CREATE INDEX "schedules_sched_tenant_status" ON "schedules" ("tenant_id","status");
+CREATE INDEX "schedules_sched_tenant_customer" ON "schedules" ("tenant_id","customer_id");
+CREATE INDEX "schedules_sched_work_order" ON "schedules" ("work_order_id");
+CREATE INDEX "schedules_technician_id_foreign" ON "schedules" ("technician_id");
+CREATE INDEX "schedules_sched_deleted_at" ON "schedules" ("deleted_at");
+CREATE INDEX "schedules_del_idx" ON "schedules" ("deleted_at");
+CREATE INDEX "schedules_work_order_id_fk_idx" ON "schedules" ("work_order_id");
+CREATE INDEX "schedules_customer_id_fk_idx" ON "schedules" ("customer_id");
+CREATE INDEX "schedules_tid_st_idx" ON "schedules" ("tenant_id","status");
+CREATE INDEX "schedules_tenant_id_idx" ON "schedules" ("tenant_id");
+CREATE INDEX "schedules_deleted_at_idx" ON "schedules" ("deleted_at");
 
 CREATE TABLE "seal_applications" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6630,6 +8135,11 @@ CREATE TABLE "seal_applications" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "seal_applications_tenant_id_work_order_id_index" ON "seal_applications" ("tenant_id","work_order_id");
+CREATE INDEX "seal_applications_tenant_id_index" ON "seal_applications" ("tenant_id");
+CREATE INDEX "seal_applications_work_order_id_index" ON "seal_applications" ("work_order_id");
+CREATE INDEX "seal_applications_equipment_id_index" ON "seal_applications" ("equipment_id");
+CREATE INDEX "seal_applications_tenant_id_idx" ON "seal_applications" ("tenant_id");
 
 CREATE TABLE "search_index" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6642,6 +8152,8 @@ CREATE TABLE "search_index" (
  "url" varchar(255) DEFAULT NULL,
  "indexed_at" datetime NOT NULL
 );
+CREATE INDEX "search_index_idx_search_tenant_type_id" ON "search_index" ("tenant_id","searchable_type","searchable_id");
+CREATE INDEX "search_index_tenant_id_idx" ON "search_index" ("tenant_id");
 
 CREATE TABLE "self_service_quote_requests" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6654,6 +8166,8 @@ CREATE TABLE "self_service_quote_requests" (
  "status" varchar(255) NOT NULL DEFAULT 'pending',
  "created_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "self_service_quote_requests_tenant_id_status_index" ON "self_service_quote_requests" ("tenant_id","status");
+CREATE INDEX "self_service_quote_requests_tenant_id_idx" ON "self_service_quote_requests" ("tenant_id");
 
 CREATE TABLE "sensor_readings" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6666,6 +8180,8 @@ CREATE TABLE "sensor_readings" (
  "reading_at" datetime NULL DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "sensor_readings_idx_lab_sensor_reading" ON "sensor_readings" ("tenant_id","sensor_id","reading_at");
+CREATE INDEX "sensor_readings_tenant_id_idx" ON "sensor_readings" ("tenant_id");
 
 CREATE TABLE "serial_numbers" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6680,6 +8196,7 @@ CREATE TABLE "serial_numbers" (
  "location" varchar(255) DEFAULT NULL
 );
 CREATE UNIQUE INDEX "serial_numbers_tenant_id_serial_unique" ON "serial_numbers" ("tenant_id","serial");
+CREATE INDEX "serial_numbers_product_id_foreign" ON "serial_numbers" ("product_id");
 
 CREATE TABLE "service_call_comments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6690,6 +8207,10 @@ CREATE TABLE "service_call_comments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "service_call_comments_service_call_id_index" ON "service_call_comments" ("service_call_id");
+CREATE INDEX "service_call_comments_scc_tenant_sc_idx" ON "service_call_comments" ("tenant_id","service_call_id");
+CREATE INDEX "service_call_comments_user_id_fk_idx" ON "service_call_comments" ("user_id");
+CREATE INDEX "service_call_comments_tenant_id_idx" ON "service_call_comments" ("tenant_id");
 
 CREATE TABLE "service_call_equipments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6700,6 +8221,10 @@ CREATE TABLE "service_call_equipments" (
  "updated_at" datetime NULL DEFAULT NULL,
  "tenant_id" integer DEFAULT NULL
 );
+CREATE INDEX "service_call_equipments_equipment_id_foreign" ON "service_call_equipments" ("equipment_id");
+CREATE INDEX "service_call_equipments_service_call_equip_tenant_idx" ON "service_call_equipments" ("tenant_id");
+CREATE INDEX "service_call_equipments_sce_service_call" ON "service_call_equipments" ("service_call_id");
+CREATE INDEX "service_call_equipments_tenant_id_idx" ON "service_call_equipments" ("tenant_id");
 
 CREATE TABLE "service_call_templates" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6712,6 +8237,8 @@ CREATE TABLE "service_call_templates" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "service_call_templates_tenant_id_is_active_index" ON "service_call_templates" ("tenant_id","is_active");
+CREATE INDEX "service_call_templates_tenant_id_idx" ON "service_call_templates" ("tenant_id");
 
 CREATE TABLE "service_calls" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6748,6 +8275,24 @@ CREATE TABLE "service_calls" (
  "sla_resolution_breached" tinyint NOT NULL DEFAULT '0',
  "google_maps_link" varchar(500) DEFAULT NULL
 );
+CREATE INDEX "service_calls_customer_id_foreign" ON "service_calls" ("customer_id");
+CREATE INDEX "service_calls_driver_id_foreign" ON "service_calls" ("driver_id");
+CREATE INDEX "service_calls_tenant_id_status_index" ON "service_calls" ("tenant_id","status");
+CREATE INDEX "service_calls_created_by_foreign" ON "service_calls" ("created_by");
+CREATE INDEX "service_calls_tenant_id_customer_id_index" ON "service_calls" ("tenant_id","customer_id");
+CREATE INDEX "service_calls_tenant_id_scheduled_date_index" ON "service_calls" ("tenant_id","scheduled_date");
+CREATE INDEX "service_calls_sla_policy_id_foreign" ON "service_calls" ("sla_policy_id");
+CREATE INDEX "service_calls_template_id_foreign" ON "service_calls" ("template_id");
+CREATE INDEX "service_calls_sc_tenant_tech_status" ON "service_calls" ("tenant_id","technician_id","status");
+CREATE INDEX "service_calls_sc_tenant_customer" ON "service_calls" ("tenant_id","customer_id");
+CREATE INDEX "service_calls_sc_tenant_driver" ON "service_calls" ("tenant_id","driver_id");
+CREATE INDEX "service_calls_sc_deleted_at" ON "service_calls" ("tenant_id","deleted_at");
+CREATE INDEX "service_calls_del_idx" ON "service_calls" ("deleted_at");
+CREATE INDEX "service_calls_quote_id_fk_idx" ON "service_calls" ("quote_id");
+CREATE INDEX "service_calls_technician_id_fk_idx" ON "service_calls" ("technician_id");
+CREATE INDEX "service_calls_contract_id_fk_idx" ON "service_calls" ("contract_id");
+CREATE INDEX "service_calls_tenant_id_idx" ON "service_calls" ("tenant_id");
+CREATE INDEX "service_calls_deleted_at_idx" ON "service_calls" ("deleted_at");
 
 CREATE TABLE "service_catalog_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6760,6 +8305,8 @@ CREATE TABLE "service_catalog_items" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "service_catalog_items_svc_cat_item_order_idx" ON "service_catalog_items" ("service_catalog_id","sort_order");
+CREATE INDEX "service_catalog_items_service_id_foreign" ON "service_catalog_items" ("service_id");
 
 CREATE TABLE "service_catalogs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6773,6 +8320,8 @@ CREATE TABLE "service_catalogs" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "service_catalogs_slug_unique" ON "service_catalogs" ("slug");
+CREATE INDEX "service_catalogs_svc_cat_tenant_slug_idx" ON "service_catalogs" ("tenant_id","slug");
+CREATE INDEX "service_catalogs_tenant_id_idx" ON "service_catalogs" ("tenant_id");
 
 CREATE TABLE "service_categories" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6783,6 +8332,7 @@ CREATE TABLE "service_categories" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "service_categories_tenant_id_name_unique" ON "service_categories" ("tenant_id","name");
+CREATE INDEX "service_categories_scat_tid_act_idx" ON "service_categories" ("tenant_id","is_active");
 
 CREATE TABLE "service_checklist_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6794,6 +8344,7 @@ CREATE TABLE "service_checklist_items" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "service_checklist_items_checklist_id_foreign" ON "service_checklist_items" ("checklist_id");
 
 CREATE TABLE "service_checklists" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6804,6 +8355,9 @@ CREATE TABLE "service_checklists" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "service_checklists_scl_tenant" ON "service_checklists" ("tenant_id");
+CREATE INDEX "service_checklists_tid_idx" ON "service_checklists" ("tenant_id");
+CREATE INDEX "service_checklists_tenant_id_idx" ON "service_checklists" ("tenant_id");
 
 CREATE TABLE "service_skills" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6815,6 +8369,9 @@ CREATE TABLE "service_skills" (
  "tenant_id" integer DEFAULT NULL
 );
 CREATE UNIQUE INDEX "service_skills_service_id_skill_id_unique" ON "service_skills" ("service_id","skill_id");
+CREATE INDEX "service_skills_skill_id_foreign" ON "service_skills" ("skill_id");
+CREATE INDEX "service_skills_tenant_idx" ON "service_skills" ("tenant_id");
+CREATE INDEX "service_skills_tenant_id_idx" ON "service_skills" ("tenant_id");
 
 CREATE TABLE "service_types" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6831,6 +8388,9 @@ CREATE TABLE "service_types" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "service_types_tid_slug_uq" ON "service_types" ("tenant_id","slug");
+CREATE INDEX "service_types_tid_idx" ON "service_types" ("tenant_id");
+CREATE INDEX "service_types_del_idx" ON "service_types" ("deleted_at");
+CREATE INDEX "service_types_deleted_at_idx" ON "service_types" ("deleted_at");
 
 CREATE TABLE "services" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6847,6 +8407,10 @@ CREATE TABLE "services" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "services_tenant_id_code_unique" ON "services" ("tenant_id","code");
+CREATE INDEX "services_category_id_foreign" ON "services" ("category_id");
+CREATE INDEX "services_tenant_id_name_index" ON "services" ("tenant_id","name");
+CREATE INDEX "services_del_idx" ON "services" ("deleted_at");
+CREATE INDEX "services_deleted_at_idx" ON "services" ("deleted_at");
 
 CREATE TABLE "sessions" (
  "id" varchar(255) NOT NULL,
@@ -6857,6 +8421,8 @@ CREATE TABLE "sessions" (
  "last_activity" int NOT NULL,
  PRIMARY KEY ("id")
 );
+CREATE INDEX "sessions_user_id_index" ON "sessions" ("user_id");
+CREATE INDEX "sessions_last_activity_index" ON "sessions" ("last_activity");
 
 CREATE TABLE "skill_requirements" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6867,6 +8433,10 @@ CREATE TABLE "skill_requirements" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "skill_requirements_position_id_foreign" ON "skill_requirements" ("position_id");
+CREATE INDEX "skill_requirements_skill_id_foreign" ON "skill_requirements" ("skill_id");
+CREATE INDEX "skill_requirements_tenant_id_index" ON "skill_requirements" ("tenant_id");
+CREATE INDEX "skill_requirements_tenant_id_idx" ON "skill_requirements" ("tenant_id");
 
 CREATE TABLE "skills" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6877,6 +8447,8 @@ CREATE TABLE "skills" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "skills_tid_idx" ON "skills" ("tenant_id");
+CREATE INDEX "skills_tenant_id_idx" ON "skills" ("tenant_id");
 
 CREATE TABLE "sla_policies" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6889,6 +8461,9 @@ CREATE TABLE "sla_policies" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "sla_policies_sla_tenant_active" ON "sla_policies" ("tenant_id","is_active");
+CREATE INDEX "sla_policies_tid_idx" ON "sla_policies" ("tenant_id");
+CREATE INDEX "sla_policies_tenant_id_idx" ON "sla_policies" ("tenant_id");
 
 CREATE TABLE "sla_violations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6901,6 +8476,9 @@ CREATE TABLE "sla_violations" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "sla_violations_portal_ticket_id_foreign" ON "sla_violations" ("portal_ticket_id");
+CREATE INDEX "sla_violations_sla_policy_id_foreign" ON "sla_violations" ("sla_policy_id");
+CREATE INDEX "sla_violations_tenant_id_idx" ON "sla_violations" ("tenant_id");
 
 CREATE TABLE "sso_configurations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6914,6 +8492,7 @@ CREATE TABLE "sso_configurations" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "sso_configurations_tenant_id_provider_unique" ON "sso_configurations" ("tenant_id","provider");
+CREATE INDEX "sso_configurations_tenant_id_index" ON "sso_configurations" ("tenant_id");
 
 CREATE TABLE "standard_weights" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6945,6 +8524,12 @@ CREATE TABLE "standard_weights" (
  "expected_failure_date" date DEFAULT NULL
 );
 CREATE UNIQUE INDEX "standard_weights_tenant_id_code_unique" ON "standard_weights" ("tenant_id","code");
+CREATE INDEX "standard_weights_tenant_id_status_index" ON "standard_weights" ("tenant_id","status");
+CREATE INDEX "standard_weights_tenant_id_certificate_expiry_index" ON "standard_weights" ("tenant_id","certificate_expiry");
+CREATE INDEX "standard_weights_assigned_to_vehicle_id_foreign" ON "standard_weights" ("assigned_to_vehicle_id");
+CREATE INDEX "standard_weights_assigned_to_user_id_foreign" ON "standard_weights" ("assigned_to_user_id");
+CREATE INDEX "standard_weights_del_idx" ON "standard_weights" ("deleted_at");
+CREATE INDEX "standard_weights_deleted_at_idx" ON "standard_weights" ("deleted_at");
 
 CREATE TABLE "stock_demand_forecasts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6958,6 +8543,9 @@ CREATE TABLE "stock_demand_forecasts" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "stock_demand_forecasts_product_id_foreign" ON "stock_demand_forecasts" ("product_id");
+CREATE INDEX "stock_demand_forecasts_tenant_id_forecast_date_index" ON "stock_demand_forecasts" ("tenant_id","forecast_date");
+CREATE INDEX "stock_demand_forecasts_tenant_id_idx" ON "stock_demand_forecasts" ("tenant_id");
 
 CREATE TABLE "stock_disposal_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6970,6 +8558,9 @@ CREATE TABLE "stock_disposal_items" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "stock_disposal_items_stock_disposal_id_foreign" ON "stock_disposal_items" ("stock_disposal_id");
+CREATE INDEX "stock_disposal_items_product_id_foreign" ON "stock_disposal_items" ("product_id");
+CREATE INDEX "stock_disposal_items_batch_id_index" ON "stock_disposal_items" ("batch_id");
 
 CREATE TABLE "stock_disposals" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6991,6 +8582,12 @@ CREATE TABLE "stock_disposals" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "stock_disposals_reference_unique" ON "stock_disposals" ("reference");
+CREATE INDEX "stock_disposals_tenant_id_index" ON "stock_disposals" ("tenant_id");
+CREATE INDEX "stock_disposals_warehouse_id_foreign" ON "stock_disposals" ("warehouse_id");
+CREATE INDEX "stock_disposals_del_idx" ON "stock_disposals" ("deleted_at");
+CREATE INDEX "stock_disposals_tid_st_idx" ON "stock_disposals" ("tenant_id","status");
+CREATE INDEX "stock_disposals_tenant_id_idx" ON "stock_disposals" ("tenant_id");
+CREATE INDEX "stock_disposals_deleted_at_idx" ON "stock_disposals" ("deleted_at");
 
 CREATE TABLE "stock_movements" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7012,6 +8609,24 @@ CREATE TABLE "stock_movements" (
  "scanned_via_qr" tinyint NOT NULL DEFAULT '0',
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "stock_movements_product_id_foreign" ON "stock_movements" ("product_id");
+CREATE INDEX "stock_movements_created_by_foreign" ON "stock_movements" ("created_by");
+CREATE INDEX "stock_movements_tenant_id_product_id_index" ON "stock_movements" ("tenant_id","product_id");
+CREATE INDEX "stock_movements_tenant_id_type_index" ON "stock_movements" ("tenant_id","type");
+CREATE INDEX "stock_movements_tenant_id_created_at_index" ON "stock_movements" ("tenant_id","created_at");
+CREATE INDEX "stock_movements_batch_id_foreign" ON "stock_movements" ("batch_id");
+CREATE INDEX "stock_movements_product_serial_id_foreign" ON "stock_movements" ("product_serial_id");
+CREATE INDEX "stock_movements_target_warehouse_id_foreign" ON "stock_movements" ("target_warehouse_id");
+CREATE INDEX "stock_movements_stk_mov_tenant_idx" ON "stock_movements" ("tenant_id");
+CREATE INDEX "stock_movements_stk_mov_tenant_type_idx" ON "stock_movements" ("tenant_id","type");
+CREATE INDEX "stock_movements_stk_mov_tenant_created_idx" ON "stock_movements" ("tenant_id","created_at");
+CREATE INDEX "stock_movements_stk_mov_tenant_product" ON "stock_movements" ("tenant_id","product_id");
+CREATE INDEX "stock_movements_stk_mov_tenant_warehouse" ON "stock_movements" ("tenant_id","warehouse_id");
+CREATE INDEX "stock_movements_del_idx" ON "stock_movements" ("deleted_at");
+CREATE INDEX "stock_movements_work_order_id_fk_idx" ON "stock_movements" ("work_order_id");
+CREATE INDEX "stock_movements_warehouse_id_fk_idx" ON "stock_movements" ("warehouse_id");
+CREATE INDEX "stock_movements_tenant_id_idx" ON "stock_movements" ("tenant_id");
+CREATE INDEX "stock_movements_deleted_at_idx" ON "stock_movements" ("deleted_at");
 
 CREATE TABLE "stock_transfer_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7020,6 +8635,8 @@ CREATE TABLE "stock_transfer_items" (
  "quantity" numeric NOT NULL,
  "created_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "stock_transfer_items_stock_transfer_id_fk_idx" ON "stock_transfer_items" ("stock_transfer_id");
+CREATE INDEX "stock_transfer_items_product_id_fk_idx" ON "stock_transfer_items" ("product_id");
 
 CREATE TABLE "stock_transfers" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7040,6 +8657,14 @@ CREATE TABLE "stock_transfers" (
  "product_id" integer DEFAULT NULL,
  "quantity" numeric DEFAULT NULL
 );
+CREATE INDEX "stock_transfers_to_user_id_foreign" ON "stock_transfers" ("to_user_id");
+CREATE INDEX "stock_transfers_accepted_by_foreign" ON "stock_transfers" ("accepted_by");
+CREATE INDEX "stock_transfers_rejected_by_foreign" ON "stock_transfers" ("rejected_by");
+CREATE INDEX "stock_transfers_tid_idx" ON "stock_transfers" ("tenant_id");
+CREATE INDEX "stock_transfers_from_warehouse_id_fk_idx" ON "stock_transfers" ("from_warehouse_id");
+CREATE INDEX "stock_transfers_to_warehouse_id_fk_idx" ON "stock_transfers" ("to_warehouse_id");
+CREATE INDEX "stock_transfers_tid_st_idx" ON "stock_transfers" ("tenant_id","status");
+CREATE INDEX "stock_transfers_tenant_id_idx" ON "stock_transfers" ("tenant_id");
 
 CREATE TABLE "supplier_contract_payment_frequencies" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7056,6 +8681,9 @@ CREATE TABLE "supplier_contract_payment_frequencies" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "supp_ctrt_pay_freq_tid_slug_uq" ON "supplier_contract_payment_frequencies" ("tenant_id","slug");
+CREATE INDEX "supplier_contract_payment_frequencies_supp_ctrt_pay_freq_tid_idx" ON "supplier_contract_payment_frequencies" ("tenant_id");
+CREATE INDEX "supplier_contract_payment_frequencies_del_idx" ON "supplier_contract_payment_frequencies" ("deleted_at");
+CREATE INDEX "supplier_contract_payment_frequencies_deleted_at_idx" ON "supplier_contract_payment_frequencies" ("deleted_at");
 
 CREATE TABLE "supplier_contracts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7075,6 +8703,11 @@ CREATE TABLE "supplier_contracts" (
  "title" varchar(255) DEFAULT NULL,
  "alert_days_before" int DEFAULT NULL
 );
+CREATE INDEX "supplier_contracts_supplier_id_foreign" ON "supplier_contracts" ("supplier_id");
+CREATE INDEX "supplier_contracts_tenant_id_status_index" ON "supplier_contracts" ("tenant_id","status");
+CREATE INDEX "supplier_contracts_del_idx" ON "supplier_contracts" ("deleted_at");
+CREATE INDEX "supplier_contracts_tenant_id_idx" ON "supplier_contracts" ("tenant_id");
+CREATE INDEX "supplier_contracts_deleted_at_idx" ON "supplier_contracts" ("deleted_at");
 
 CREATE TABLE "suppliers" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7100,6 +8733,11 @@ CREATE TABLE "suppliers" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "suppliers_tenant_id_name_index" ON "suppliers" ("tenant_id","name");
+CREATE INDEX "suppliers_sup_deleted_at" ON "suppliers" ("tenant_id","deleted_at");
+CREATE INDEX "suppliers_del_idx" ON "suppliers" ("deleted_at");
+CREATE INDEX "suppliers_deleted_at_idx" ON "suppliers" ("deleted_at");
+CREATE INDEX "suppliers_tenant_document_hash_idx" ON "suppliers" ("tenant_id","document_hash");
 
 CREATE TABLE "support_tickets" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7114,6 +8752,9 @@ CREATE TABLE "support_tickets" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "support_tickets_tenant_id_index" ON "support_tickets" ("tenant_id");
+CREATE INDEX "support_tickets_customer_id_index" ON "support_tickets" ("customer_id");
+CREATE INDEX "support_tickets_tenant_id_idx" ON "support_tickets" ("tenant_id");
 
 CREATE TABLE "survey_responses" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7127,6 +8768,8 @@ CREATE TABLE "survey_responses" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "survey_responses_survey_resp_tenant_idx" ON "survey_responses" ("tenant_id","survey_id");
+CREATE INDEX "survey_responses_tenant_id_idx" ON "survey_responses" ("tenant_id");
 
 CREATE TABLE "surveys" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7142,6 +8785,9 @@ CREATE TABLE "surveys" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "surveys_tenant_id_index" ON "surveys" ("tenant_id");
+CREATE INDEX "surveys_tenant_id_idx" ON "surveys" ("tenant_id");
+CREATE INDEX "surveys_deleted_at_idx" ON "surveys" ("deleted_at");
 
 CREATE TABLE "sync_conflict_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7155,6 +8801,10 @@ CREATE TABLE "sync_conflict_logs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "sync_conflict_logs_tenant_id_index" ON "sync_conflict_logs" ("tenant_id");
+CREATE INDEX "sync_conflict_logs_user_id_index" ON "sync_conflict_logs" ("user_id");
+CREATE INDEX "sync_conflict_logs_work_order_id_index" ON "sync_conflict_logs" ("work_order_id");
+CREATE INDEX "sync_conflict_logs_tenant_id_idx" ON "sync_conflict_logs" ("tenant_id");
 
 CREATE TABLE "sync_queue" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7168,6 +8818,10 @@ CREATE TABLE "sync_queue" (
  "synced_at" datetime NULL DEFAULT NULL,
  "created_at" datetime NOT NULL
 );
+CREATE INDEX "sync_queue_tenant_id_index" ON "sync_queue" ("tenant_id");
+CREATE INDEX "sync_queue_user_id_index" ON "sync_queue" ("user_id");
+CREATE INDEX "sync_queue_entity_id_index" ON "sync_queue" ("entity_id");
+CREATE INDEX "sync_queue_tenant_id_idx" ON "sync_queue" ("tenant_id");
 
 CREATE TABLE "sync_queue_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7185,6 +8839,10 @@ CREATE TABLE "sync_queue_items" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "sync_queue_items_user_id_foreign" ON "sync_queue_items" ("user_id");
+CREATE INDEX "sync_queue_items_tenant_id_user_id_status_index" ON "sync_queue_items" ("tenant_id","user_id","status");
+CREATE INDEX "sync_queue_items_status_priority_index" ON "sync_queue_items" ("status","priority");
+CREATE INDEX "sync_queue_items_tenant_id_idx" ON "sync_queue_items" ("tenant_id");
 
 CREATE TABLE "system_alerts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7204,6 +8862,10 @@ CREATE TABLE "system_alerts" (
  "updated_at" datetime NULL DEFAULT NULL,
  "escalated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "system_alerts_alertable_type_alertable_id_index" ON "system_alerts" ("alertable_type","alertable_id");
+CREATE INDEX "system_alerts_acknowledged_by_foreign" ON "system_alerts" ("acknowledged_by");
+CREATE INDEX "system_alerts_tenant_id_alert_type_status_index" ON "system_alerts" ("tenant_id","alert_type","status");
+CREATE INDEX "system_alerts_tenant_id_idx" ON "system_alerts" ("tenant_id");
 
 CREATE TABLE "system_revisions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7217,6 +8879,10 @@ CREATE TABLE "system_revisions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "system_revisions_user_id_foreign" ON "system_revisions" ("user_id");
+CREATE INDEX "system_revisions_model_type_model_id_index" ON "system_revisions" ("model_type","model_id");
+CREATE INDEX "system_revisions_tid_idx" ON "system_revisions" ("tenant_id");
+CREATE INDEX "system_revisions_tenant_id_idx" ON "system_revisions" ("tenant_id");
 
 CREATE TABLE "system_settings" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7244,6 +8910,11 @@ CREATE TABLE "tax_calculations" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "tax_calculations_calculated_by_foreign" ON "tax_calculations" ("calculated_by");
+CREATE INDEX "tax_calculations_tenant_id_index" ON "tax_calculations" ("tenant_id");
+CREATE INDEX "tax_calculations_work_order_id_index" ON "tax_calculations" ("work_order_id");
+CREATE INDEX "tax_calculations_invoice_id_index" ON "tax_calculations" ("invoice_id");
+CREATE INDEX "tax_calculations_tenant_id_idx" ON "tax_calculations" ("tenant_id");
 
 CREATE TABLE "tech_cash_advances" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7259,6 +8930,11 @@ CREATE TABLE "tech_cash_advances" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "tech_cash_advances_tech_id_foreign" ON "tech_cash_advances" ("tech_id");
+CREATE INDEX "tech_cash_advances_approved_by_foreign" ON "tech_cash_advances" ("approved_by");
+CREATE INDEX "tech_cash_advances_tid_idx" ON "tech_cash_advances" ("tenant_id");
+CREATE INDEX "tech_cash_advances_tid_st_idx" ON "tech_cash_advances" ("tenant_id","status");
+CREATE INDEX "tech_cash_advances_tenant_id_idx" ON "tech_cash_advances" ("tenant_id");
 
 CREATE TABLE "technician_cash_funds" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7272,6 +8948,8 @@ CREATE TABLE "technician_cash_funds" (
  "status" varchar(30) NOT NULL DEFAULT 'active'
 );
 CREATE UNIQUE INDEX "technician_cash_funds_tenant_id_user_id_unique" ON "technician_cash_funds" ("tenant_id","user_id");
+CREATE INDEX "technician_cash_funds_user_id_foreign" ON "technician_cash_funds" ("user_id");
+CREATE INDEX "technician_cash_funds_tcf_tenant_user" ON "technician_cash_funds" ("tenant_id","user_id");
 
 CREATE TABLE "technician_cash_transactions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7289,6 +8967,12 @@ CREATE TABLE "technician_cash_transactions" (
  "tenant_id" integer NOT NULL,
  "payment_method" varchar(20) NOT NULL DEFAULT 'cash'
 );
+CREATE INDEX "technician_cash_transactions_expense_id_foreign" ON "technician_cash_transactions" ("expense_id");
+CREATE INDEX "technician_cash_transactions_work_order_id_foreign" ON "technician_cash_transactions" ("work_order_id");
+CREATE INDEX "technician_cash_transactions_fund_id_transaction_date_index" ON "technician_cash_transactions" ("fund_id","transaction_date");
+CREATE INDEX "technician_cash_transactions_tenant_id_index" ON "technician_cash_transactions" ("tenant_id");
+CREATE INDEX "technician_cash_transactions_created_by_foreign" ON "technician_cash_transactions" ("created_by");
+CREATE INDEX "technician_cash_transactions_tenant_id_idx" ON "technician_cash_transactions" ("tenant_id");
 
 CREATE TABLE "technician_certifications" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7307,6 +8991,10 @@ CREATE TABLE "technician_certifications" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "technician_certifications_user_id_foreign" ON "technician_certifications" ("user_id");
+CREATE INDEX "technician_certifications_tenant_id_user_id_type_index" ON "technician_certifications" ("tenant_id","user_id","type");
+CREATE INDEX "technician_certifications_tenant_id_expires_at_index" ON "technician_certifications" ("tenant_id","expires_at");
+CREATE INDEX "technician_certifications_deleted_at_idx" ON "technician_certifications" ("deleted_at");
 
 CREATE TABLE "technician_feedbacks" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7321,6 +9009,9 @@ CREATE TABLE "technician_feedbacks" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "technician_feedbacks_tenant_id_user_id_date_unique" ON "technician_feedbacks" ("tenant_id","user_id","date");
+CREATE INDEX "technician_feedbacks_tenant_id_index" ON "technician_feedbacks" ("tenant_id");
+CREATE INDEX "technician_feedbacks_user_id_index" ON "technician_feedbacks" ("user_id");
+CREATE INDEX "technician_feedbacks_work_order_id_index" ON "technician_feedbacks" ("work_order_id");
 
 CREATE TABLE "technician_fund_requests" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7335,6 +9026,11 @@ CREATE TABLE "technician_fund_requests" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "technician_fund_requests_tech_fund_req_tenant_user_idx" ON "technician_fund_requests" ("tenant_id","user_id");
+CREATE INDEX "technician_fund_requests_tech_fund_req_tenant_status_idx" ON "technician_fund_requests" ("tenant_id","status");
+CREATE INDEX "technician_fund_requests_user_id_foreign" ON "technician_fund_requests" ("user_id");
+CREATE INDEX "technician_fund_requests_approved_by_foreign" ON "technician_fund_requests" ("approved_by");
+CREATE INDEX "technician_fund_requests_tenant_id_idx" ON "technician_fund_requests" ("tenant_id");
 
 CREATE TABLE "technician_skills" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7349,6 +9045,10 @@ CREATE TABLE "technician_skills" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "technician_skills_user_id_foreign" ON "technician_skills" ("user_id");
+CREATE INDEX "technician_skills_tenant_id_user_id_index" ON "technician_skills" ("tenant_id","user_id");
+CREATE INDEX "technician_skills_tenant_id_skill_name_index" ON "technician_skills" ("tenant_id","skill_name");
+CREATE INDEX "technician_skills_tenant_id_idx" ON "technician_skills" ("tenant_id");
 
 CREATE TABLE "telescope_entries" (
  "sequence" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7361,12 +9061,17 @@ CREATE TABLE "telescope_entries" (
  "created_at" datetime DEFAULT NULL
 );
 CREATE UNIQUE INDEX "telescope_entries_uuid_unique" ON "telescope_entries" ("uuid");
+CREATE INDEX "telescope_entries_batch_id_index" ON "telescope_entries" ("batch_id");
+CREATE INDEX "telescope_entries_family_hash_index" ON "telescope_entries" ("family_hash");
+CREATE INDEX "telescope_entries_created_at_index" ON "telescope_entries" ("created_at");
+CREATE INDEX "telescope_entries_type_should_display_on_index_index" ON "telescope_entries" ("type","should_display_on_index");
 
 CREATE TABLE "telescope_entries_tags" (
  "entry_uuid" char(36) NOT NULL,
  "tag" varchar(255) NOT NULL,
  PRIMARY KEY ("entry_uuid","tag")
 );
+CREATE INDEX "telescope_entries_tags_tag_index" ON "telescope_entries_tags" ("tag");
 
 CREATE TABLE "telescope_monitoring" (
  "tag" varchar(255) NOT NULL,
@@ -7382,6 +9087,7 @@ CREATE TABLE "tenant_holidays" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "tenant_holidays_tenant_id_date_unique" ON "tenant_holidays" ("tenant_id","date");
+CREATE INDEX "tenant_holidays_tenant_id_index" ON "tenant_holidays" ("tenant_id");
 
 CREATE TABLE "tenant_settings" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7439,6 +9145,8 @@ CREATE TABLE "tenants" (
  "rep_p_developer_cnpj" varchar(14) DEFAULT NULL,
  "timezone" varchar(50) NOT NULL DEFAULT 'America/Sao_Paulo'
 );
+CREATE INDEX "tenants_current_plan_id_foreign" ON "tenants" ("current_plan_id");
+CREATE INDEX "tenants_deleted_at_idx" ON "tenants" ("deleted_at");
 
 CREATE TABLE "ticket_categories" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7451,6 +9159,8 @@ CREATE TABLE "ticket_categories" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "ticket_categories_sla_policy_id_foreign" ON "ticket_categories" ("sla_policy_id");
+CREATE INDEX "ticket_categories_tenant_id_idx" ON "ticket_categories" ("tenant_id");
 
 CREATE TABLE "time_clock_adjustments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7469,6 +9179,11 @@ CREATE TABLE "time_clock_adjustments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "time_clock_adjustments_time_clock_entry_id_foreign" ON "time_clock_adjustments" ("time_clock_entry_id");
+CREATE INDEX "time_clock_adjustments_requested_by_foreign" ON "time_clock_adjustments" ("requested_by");
+CREATE INDEX "time_clock_adjustments_approved_by_foreign" ON "time_clock_adjustments" ("approved_by");
+CREATE INDEX "time_clock_adjustments_tenant_id_status_index" ON "time_clock_adjustments" ("tenant_id","status");
+CREATE INDEX "time_clock_adjustments_tenant_id_idx" ON "time_clock_adjustments" ("tenant_id");
 
 CREATE TABLE "time_clock_audit_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7482,6 +9197,13 @@ CREATE TABLE "time_clock_audit_logs" (
  "metadata" text DEFAULT NULL,
  "created_at" datetime NOT NULL
 );
+CREATE INDEX "time_clock_audit_logs_performed_by_foreign" ON "time_clock_audit_logs" ("performed_by");
+CREATE INDEX "time_clock_audit_logs_tenant_id_time_clock_entry_id_index" ON "time_clock_audit_logs" ("tenant_id","time_clock_entry_id");
+CREATE INDEX "time_clock_audit_logs_tenant_id_action_index" ON "time_clock_audit_logs" ("tenant_id","action");
+CREATE INDEX "time_clock_audit_logs_tenant_id_created_at_index" ON "time_clock_audit_logs" ("tenant_id","created_at");
+CREATE INDEX "time_clock_audit_logs_time_clock_entry_id_foreign" ON "time_clock_audit_logs" ("time_clock_entry_id");
+CREATE INDEX "time_clock_audit_logs_time_clock_adjustment_id_foreign" ON "time_clock_audit_logs" ("time_clock_adjustment_id");
+CREATE INDEX "time_clock_audit_logs_tenant_id_idx" ON "time_clock_audit_logs" ("tenant_id");
 
 CREATE TABLE "time_clock_entries" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7533,6 +9255,12 @@ CREATE TABLE "time_clock_entries" (
  "location_spoofing_detected" tinyint NOT NULL DEFAULT '0'
 );
 CREATE UNIQUE INDEX "time_clock_entries_tenant_nsr_unique" ON "time_clock_entries" ("tenant_id","nsr");
+CREATE INDEX "time_clock_entries_user_id_foreign" ON "time_clock_entries" ("user_id");
+CREATE INDEX "time_clock_entries_approved_by_foreign" ON "time_clock_entries" ("approved_by");
+CREATE INDEX "time_clock_entries_work_order_id_foreign" ON "time_clock_entries" ("work_order_id");
+CREATE INDEX "time_clock_entries_geofence_location_id_foreign" ON "time_clock_entries" ("geofence_location_id");
+CREATE INDEX "time_clock_entries_tenant_id_user_id_clock_in_index" ON "time_clock_entries" ("tenant_id","user_id","clock_in");
+CREATE INDEX "time_clock_entries_archived_at_index" ON "time_clock_entries" ("archived_at");
 
 CREATE TABLE "time_entries" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7549,6 +9277,14 @@ CREATE TABLE "time_entries" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "time_entries_schedule_id_foreign" ON "time_entries" ("schedule_id");
+CREATE INDEX "time_entries_tenant_id_technician_id_started_at_index" ON "time_entries" ("tenant_id","technician_id","started_at");
+CREATE INDEX "time_entries_te_work_order" ON "time_entries" ("work_order_id");
+CREATE INDEX "time_entries_technician_id_foreign" ON "time_entries" ("technician_id");
+CREATE INDEX "time_entries_te_deleted_at" ON "time_entries" ("deleted_at");
+CREATE INDEX "time_entries_del_idx" ON "time_entries" ("deleted_at");
+CREATE INDEX "time_entries_tenant_id_idx" ON "time_entries" ("tenant_id");
+CREATE INDEX "time_entries_deleted_at_idx" ON "time_entries" ("deleted_at");
 
 CREATE TABLE "toll_transactions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7561,6 +9297,9 @@ CREATE TABLE "toll_transactions" (
  "route" varchar(255) DEFAULT NULL,
  "created_at" datetime NOT NULL
 );
+CREATE INDEX "toll_transactions_tenant_id_index" ON "toll_transactions" ("tenant_id");
+CREATE INDEX "toll_transactions_vehicle_id_index" ON "toll_transactions" ("vehicle_id");
+CREATE INDEX "toll_transactions_tenant_id_idx" ON "toll_transactions" ("tenant_id");
 
 CREATE TABLE "tool_calibrations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7577,6 +9316,9 @@ CREATE TABLE "tool_calibrations" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "tool_calibrations_tool_inventory_id_next_due_date_index" ON "tool_calibrations" ("tool_inventory_id","next_due_date");
+CREATE INDEX "tool_calibrations_tid_idx" ON "tool_calibrations" ("tenant_id");
+CREATE INDEX "tool_calibrations_tenant_id_idx" ON "tool_calibrations" ("tenant_id");
 
 CREATE TABLE "tool_checkouts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7592,6 +9334,12 @@ CREATE TABLE "tool_checkouts" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "tool_checkouts_tool_id_foreign" ON "tool_checkouts" ("tool_id");
+CREATE INDEX "tool_checkouts_user_id_foreign" ON "tool_checkouts" ("user_id");
+CREATE INDEX "tool_checkouts_idx_tool_tenant_tool_checked" ON "tool_checkouts" ("tenant_id","tool_id","checked_in_at");
+CREATE INDEX "tool_checkouts_del_idx" ON "tool_checkouts" ("deleted_at");
+CREATE INDEX "tool_checkouts_tenant_id_idx" ON "tool_checkouts" ("tenant_id");
+CREATE INDEX "tool_checkouts_deleted_at_idx" ON "tool_checkouts" ("deleted_at");
 
 CREATE TABLE "tool_inventories" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7609,6 +9357,13 @@ CREATE TABLE "tool_inventories" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "tool_inventories_assigned_to_foreign" ON "tool_inventories" ("assigned_to");
+CREATE INDEX "tool_inventories_fleet_vehicle_id_foreign" ON "tool_inventories" ("fleet_vehicle_id");
+CREATE INDEX "tool_inventories_tid_idx" ON "tool_inventories" ("tenant_id");
+CREATE INDEX "tool_inventories_del_idx" ON "tool_inventories" ("deleted_at");
+CREATE INDEX "tool_inventories_tid_st_idx" ON "tool_inventories" ("tenant_id","status");
+CREATE INDEX "tool_inventories_tenant_id_idx" ON "tool_inventories" ("tenant_id");
+CREATE INDEX "tool_inventories_deleted_at_idx" ON "tool_inventories" ("deleted_at");
 
 CREATE TABLE "traffic_fines" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7625,6 +9380,11 @@ CREATE TABLE "traffic_fines" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "traffic_fines_fleet_vehicle_id_foreign" ON "traffic_fines" ("fleet_vehicle_id");
+CREATE INDEX "traffic_fines_driver_id_foreign" ON "traffic_fines" ("driver_id");
+CREATE INDEX "traffic_fines_tid_idx" ON "traffic_fines" ("tenant_id");
+CREATE INDEX "traffic_fines_tid_st_idx" ON "traffic_fines" ("tenant_id","status");
+CREATE INDEX "traffic_fines_tenant_id_idx" ON "traffic_fines" ("tenant_id");
 
 CREATE TABLE "training_courses" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7637,6 +9397,8 @@ CREATE TABLE "training_courses" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "training_courses_tid_idx" ON "training_courses" ("tenant_id");
+CREATE INDEX "training_courses_tenant_id_idx" ON "training_courses" ("tenant_id");
 
 CREATE TABLE "training_enrollments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7652,6 +9414,11 @@ CREATE TABLE "training_enrollments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "training_enrollments_user_id_foreign" ON "training_enrollments" ("user_id");
+CREATE INDEX "training_enrollments_course_id_foreign" ON "training_enrollments" ("course_id");
+CREATE INDEX "training_enrollments_tid_idx" ON "training_enrollments" ("tenant_id");
+CREATE INDEX "training_enrollments_tid_st_idx" ON "training_enrollments" ("tenant_id","status");
+CREATE INDEX "training_enrollments_tenant_id_idx" ON "training_enrollments" ("tenant_id");
 
 CREATE TABLE "trainings" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7674,6 +9441,11 @@ CREATE TABLE "trainings" (
  "cost" numeric DEFAULT NULL,
  "instructor" varchar(255) DEFAULT NULL
 );
+CREATE INDEX "trainings_user_id_foreign" ON "trainings" ("user_id");
+CREATE INDEX "trainings_train_tenant" ON "trainings" ("tenant_id");
+CREATE INDEX "trainings_tid_idx" ON "trainings" ("tenant_id");
+CREATE INDEX "trainings_tid_st_idx" ON "trainings" ("tenant_id","status");
+CREATE INDEX "trainings_tenant_id_idx" ON "trainings" ("tenant_id");
 
 CREATE TABLE "travel_advances" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7688,6 +9460,10 @@ CREATE TABLE "travel_advances" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "travel_advances_travel_request_id_foreign" ON "travel_advances" ("travel_request_id");
+CREATE INDEX "travel_advances_user_id_foreign" ON "travel_advances" ("user_id");
+CREATE INDEX "travel_advances_approved_by_foreign" ON "travel_advances" ("approved_by");
+CREATE INDEX "travel_advances_tenant_id_travel_request_id_index" ON "travel_advances" ("tenant_id","travel_request_id");
 
 CREATE TABLE "travel_expense_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7701,6 +9477,7 @@ CREATE TABLE "travel_expense_items" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "travel_expense_items_travel_expense_report_id_foreign" ON "travel_expense_items" ("travel_expense_report_id");
 
 CREATE TABLE "travel_expense_reports" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7715,6 +9492,10 @@ CREATE TABLE "travel_expense_reports" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "travel_expense_reports_travel_request_id_foreign" ON "travel_expense_reports" ("travel_request_id");
+CREATE INDEX "travel_expense_reports_user_id_foreign" ON "travel_expense_reports" ("created_by");
+CREATE INDEX "travel_expense_reports_approved_by_foreign" ON "travel_expense_reports" ("approved_by");
+CREATE INDEX "travel_expense_reports_tenant_id_travel_request_id_index" ON "travel_expense_reports" ("tenant_id","travel_request_id");
 
 CREATE TABLE "travel_requests" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7743,6 +9524,12 @@ CREATE TABLE "travel_requests" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "travel_requests_user_id_foreign" ON "travel_requests" ("user_id");
+CREATE INDEX "travel_requests_approved_by_foreign" ON "travel_requests" ("approved_by");
+CREATE INDEX "travel_requests_fleet_vehicle_id_foreign" ON "travel_requests" ("fleet_vehicle_id");
+CREATE INDEX "travel_requests_tenant_id_user_id_status_index" ON "travel_requests" ("tenant_id","user_id","status");
+CREATE INDEX "travel_requests_tenant_id_departure_date_index" ON "travel_requests" ("tenant_id","departure_date");
+CREATE INDEX "travel_requests_deleted_at_idx" ON "travel_requests" ("deleted_at");
 
 CREATE TABLE "tv_camera_types" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7759,6 +9546,9 @@ CREATE TABLE "tv_camera_types" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "tv_camera_types_tid_slug_uq" ON "tv_camera_types" ("tenant_id","slug");
+CREATE INDEX "tv_camera_types_tid_idx" ON "tv_camera_types" ("tenant_id");
+CREATE INDEX "tv_camera_types_del_idx" ON "tv_camera_types" ("deleted_at");
+CREATE INDEX "tv_camera_types_deleted_at_idx" ON "tv_camera_types" ("deleted_at");
 
 CREATE TABLE "tv_dashboard_configs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7779,6 +9569,8 @@ CREATE TABLE "tv_dashboard_configs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "tv_dashboard_configs_tenant_id_is_default_index" ON "tv_dashboard_configs" ("tenant_id","is_default");
+CREATE INDEX "tv_dashboard_configs_tenant_id_idx" ON "tv_dashboard_configs" ("tenant_id");
 
 CREATE TABLE "used_stock_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7798,6 +9590,14 @@ CREATE TABLE "used_stock_items" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "used_stock_items_work_order_id_foreign" ON "used_stock_items" ("work_order_id");
+CREATE INDEX "used_stock_items_work_order_item_id_foreign" ON "used_stock_items" ("work_order_item_id");
+CREATE INDEX "used_stock_items_product_id_foreign" ON "used_stock_items" ("product_id");
+CREATE INDEX "used_stock_items_technician_warehouse_id_foreign" ON "used_stock_items" ("technician_warehouse_id");
+CREATE INDEX "used_stock_items_reported_by_foreign" ON "used_stock_items" ("reported_by");
+CREATE INDEX "used_stock_items_confirmed_by_foreign" ON "used_stock_items" ("confirmed_by");
+CREATE INDEX "used_stock_items_used_stock_tenant_status_idx" ON "used_stock_items" ("tenant_id","status");
+CREATE INDEX "used_stock_items_tenant_id_idx" ON "used_stock_items" ("tenant_id");
 
 CREATE TABLE "user_2fa" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7811,6 +9611,8 @@ CREATE TABLE "user_2fa" (
  "created_at" datetime NOT NULL
 );
 CREATE UNIQUE INDEX "user_2fa_user_id_unique" ON "user_2fa" ("user_id");
+CREATE INDEX "user_2fa_tenant_id_index" ON "user_2fa" ("tenant_id");
+CREATE INDEX "user_2fa_tenant_id_idx" ON "user_2fa" ("tenant_id");
 
 CREATE TABLE "user_competencies" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7827,6 +9629,12 @@ CREATE TABLE "user_competencies" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "user_competencies_user_id_foreign" ON "user_competencies" ("user_id");
+CREATE INDEX "user_competencies_equipment_id_foreign" ON "user_competencies" ("equipment_id");
+CREATE INDEX "user_competencies_supervisor_id_foreign" ON "user_competencies" ("supervisor_id");
+CREATE INDEX "user_competencies_tenant_id_user_id_index" ON "user_competencies" ("tenant_id","user_id");
+CREATE INDEX "user_competencies_tenant_id_status_index" ON "user_competencies" ("tenant_id","status");
+CREATE INDEX "user_competencies_tenant_id_idx" ON "user_competencies" ("tenant_id");
 
 CREATE TABLE "user_favorites" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7838,6 +9646,9 @@ CREATE TABLE "user_favorites" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "user_favorites_unique" ON "user_favorites" ("user_id","favoritable_type","favoritable_id");
+CREATE INDEX "user_favorites_favoritable_type_favoritable_id_index" ON "user_favorites" ("favoritable_type","favoritable_id");
+CREATE INDEX "user_favorites_user_id_index" ON "user_favorites" ("user_id");
+CREATE INDEX "user_favorites_tenant_id_idx" ON "user_favorites" ("tenant_id");
 
 CREATE TABLE "user_preferences" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7852,6 +9663,7 @@ CREATE TABLE "user_preferences" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "user_preferences_user_id_unique" ON "user_preferences" ("user_id");
+CREATE INDEX "user_preferences_tenant_id_idx" ON "user_preferences" ("tenant_id");
 
 CREATE TABLE "user_sessions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7863,6 +9675,9 @@ CREATE TABLE "user_sessions" (
  "last_activity" datetime NOT NULL,
  "created_at" datetime NOT NULL
 );
+CREATE INDEX "user_sessions_user_id_index" ON "user_sessions" ("user_id");
+CREATE INDEX "user_sessions_token_id_index" ON "user_sessions" ("token_id");
+CREATE INDEX "user_sessions_tenant_id_idx" ON "user_sessions" ("tenant_id");
 
 CREATE TABLE "user_skills" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7875,6 +9690,11 @@ CREATE TABLE "user_skills" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "user_skills_user_id_foreign" ON "user_skills" ("user_id");
+CREATE INDEX "user_skills_skill_id_foreign" ON "user_skills" ("skill_id");
+CREATE INDEX "user_skills_assessed_by_foreign" ON "user_skills" ("assessed_by");
+CREATE INDEX "user_skills_tenant_id_index" ON "user_skills" ("tenant_id");
+CREATE INDEX "user_skills_tenant_id_idx" ON "user_skills" ("tenant_id");
 
 CREATE TABLE "user_tenants" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7885,6 +9705,8 @@ CREATE TABLE "user_tenants" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "user_tenants_user_id_tenant_id_unique" ON "user_tenants" ("user_id","tenant_id");
+CREATE INDEX "user_tenants_tid_idx" ON "user_tenants" ("tenant_id");
+CREATE INDEX "user_tenants_tenant_id_idx" ON "user_tenants" ("tenant_id");
 
 CREATE TABLE "users" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7945,6 +9767,15 @@ CREATE TABLE "users" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "users_email_unique" ON "users" ("email");
+CREATE INDEX "users_manager_id_foreign" ON "users" ("manager_id");
+CREATE INDEX "users_tid_idx" ON "users" ("tenant_id");
+CREATE INDEX "users_current_tenant_id_fk_idx" ON "users" ("current_tenant_id");
+CREATE INDEX "users_branch_id_fk_idx" ON "users" ("branch_id");
+CREATE INDEX "users_department_id_fk_idx" ON "users" ("department_id");
+CREATE INDEX "users_position_id_fk_idx" ON "users" ("position_id");
+CREATE INDEX "users_journey_rule_id_foreign" ON "users" ("journey_rule_id");
+CREATE INDEX "users_deleted_at_idx" ON "users" ("deleted_at");
+CREATE INDEX "users_tenant_cpf_hash_idx" ON "users" ("tenant_id","cpf_hash");
 
 CREATE TABLE "vacation_balances" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7961,6 +9792,9 @@ CREATE TABLE "vacation_balances" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "vacation_balances_user_id_foreign" ON "vacation_balances" ("user_id");
+CREATE INDEX "vacation_balances_tid_idx" ON "vacation_balances" ("tenant_id");
+CREATE INDEX "vacation_balances_tenant_id_idx" ON "vacation_balances" ("tenant_id");
 
 CREATE TABLE "vehicle_accidents" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7979,6 +9813,10 @@ CREATE TABLE "vehicle_accidents" (
  "estimated_cost" numeric DEFAULT NULL,
  "status" varchar(30) NOT NULL DEFAULT 'investigating'
 );
+CREATE INDEX "vehicle_accidents_tenant_status_idx" ON "vehicle_accidents" ("tenant_id","status");
+CREATE INDEX "vehicle_accidents_vehicle_date_idx" ON "vehicle_accidents" ("fleet_vehicle_id","occurrence_date");
+CREATE INDEX "vehicle_accidents_driver_id_index" ON "vehicle_accidents" ("driver_id");
+CREATE INDEX "vehicle_accidents_tenant_id_idx" ON "vehicle_accidents" ("tenant_id");
 
 CREATE TABLE "vehicle_gps_positions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7990,6 +9828,10 @@ CREATE TABLE "vehicle_gps_positions" (
  "heading" numeric DEFAULT NULL,
  "recorded_at" datetime NOT NULL
 );
+CREATE INDEX "vehicle_gps_positions_tenant_id_index" ON "vehicle_gps_positions" ("tenant_id");
+CREATE INDEX "vehicle_gps_positions_vehicle_id_index" ON "vehicle_gps_positions" ("vehicle_id");
+CREATE INDEX "vehicle_gps_positions_recorded_at_index" ON "vehicle_gps_positions" ("recorded_at");
+CREATE INDEX "vehicle_gps_positions_tenant_id_idx" ON "vehicle_gps_positions" ("tenant_id");
 
 CREATE TABLE "vehicle_inspections" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8004,6 +9846,11 @@ CREATE TABLE "vehicle_inspections" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "vehicle_inspections_fleet_vehicle_id_foreign" ON "vehicle_inspections" ("fleet_vehicle_id");
+CREATE INDEX "vehicle_inspections_inspector_id_foreign" ON "vehicle_inspections" ("inspector_id");
+CREATE INDEX "vehicle_inspections_tid_idx" ON "vehicle_inspections" ("tenant_id");
+CREATE INDEX "vehicle_inspections_tid_st_idx" ON "vehicle_inspections" ("tenant_id","status");
+CREATE INDEX "vehicle_inspections_tenant_id_idx" ON "vehicle_inspections" ("tenant_id");
 
 CREATE TABLE "vehicle_insurances" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8024,6 +9871,11 @@ CREATE TABLE "vehicle_insurances" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "vehicle_insurances_fleet_vehicle_id_index" ON "vehicle_insurances" ("fleet_vehicle_id");
+CREATE INDEX "vehicle_insurances_tenant_id_index" ON "vehicle_insurances" ("tenant_id");
+CREATE INDEX "vehicle_insurances_del_idx" ON "vehicle_insurances" ("deleted_at");
+CREATE INDEX "vehicle_insurances_tenant_id_idx" ON "vehicle_insurances" ("tenant_id");
+CREATE INDEX "vehicle_insurances_deleted_at_idx" ON "vehicle_insurances" ("deleted_at");
 
 CREATE TABLE "vehicle_pool_requests" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8039,6 +9891,10 @@ CREATE TABLE "vehicle_pool_requests" (
  "purpose" text,
  "status" varchar(30) NOT NULL DEFAULT 'pending'
 );
+CREATE INDEX "vehicle_pool_requests_vehicle_pool_tenant_status_idx" ON "vehicle_pool_requests" ("tenant_id","status");
+CREATE INDEX "vehicle_pool_requests_vehicle_pool_user_idx" ON "vehicle_pool_requests" ("user_id");
+CREATE INDEX "vehicle_pool_requests_fleet_vehicle_id_index" ON "vehicle_pool_requests" ("fleet_vehicle_id");
+CREATE INDEX "vehicle_pool_requests_tenant_id_idx" ON "vehicle_pool_requests" ("tenant_id");
 
 CREATE TABLE "vehicle_tires" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8057,6 +9913,13 @@ CREATE TABLE "vehicle_tires" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "vehicle_tires_fleet_vehicle_id_index" ON "vehicle_tires" ("fleet_vehicle_id");
+CREATE INDEX "vehicle_tires_tenant_id_index" ON "vehicle_tires" ("tenant_id");
+CREATE INDEX "vehicle_tires_tenant_status_idx" ON "vehicle_tires" ("tenant_id","status");
+CREATE INDEX "vehicle_tires_vehicle_idx" ON "vehicle_tires" ("fleet_vehicle_id");
+CREATE INDEX "vehicle_tires_del_idx" ON "vehicle_tires" ("deleted_at");
+CREATE INDEX "vehicle_tires_tenant_id_idx" ON "vehicle_tires" ("tenant_id");
+CREATE INDEX "vehicle_tires_deleted_at_idx" ON "vehicle_tires" ("deleted_at");
 
 CREATE TABLE "virtual_cards" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8071,6 +9934,10 @@ CREATE TABLE "virtual_cards" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "virtual_cards_os_id_foreign" ON "virtual_cards" ("os_id");
+CREATE INDEX "virtual_cards_user_id_foreign" ON "virtual_cards" ("user_id");
+CREATE INDEX "virtual_cards_tid_idx" ON "virtual_cards" ("tenant_id");
+CREATE INDEX "virtual_cards_tenant_id_idx" ON "virtual_cards" ("tenant_id");
 
 CREATE TABLE "visit_checkins" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8094,6 +9961,12 @@ CREATE TABLE "visit_checkins" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "visit_checkins_customer_id_foreign" ON "visit_checkins" ("customer_id");
+CREATE INDEX "visit_checkins_user_id_foreign" ON "visit_checkins" ("user_id");
+CREATE INDEX "visit_checkins_activity_id_foreign" ON "visit_checkins" ("activity_id");
+CREATE INDEX "visit_checkins_visit_ck_tenant_user_idx" ON "visit_checkins" ("tenant_id","user_id","checkin_at");
+CREATE INDEX "visit_checkins_visit_ck_tenant_cust_idx" ON "visit_checkins" ("tenant_id","customer_id");
+CREATE INDEX "visit_checkins_tenant_id_idx" ON "visit_checkins" ("tenant_id");
 
 CREATE TABLE "visit_reports" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8118,6 +9991,13 @@ CREATE TABLE "visit_reports" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "visit_reports_customer_id_foreign" ON "visit_reports" ("customer_id");
+CREATE INDEX "visit_reports_user_id_foreign" ON "visit_reports" ("user_id");
+CREATE INDEX "visit_reports_checkin_id_foreign" ON "visit_reports" ("checkin_id");
+CREATE INDEX "visit_reports_deal_id_foreign" ON "visit_reports" ("deal_id");
+CREATE INDEX "visit_reports_vr_tenant_cust_idx" ON "visit_reports" ("tenant_id","customer_id");
+CREATE INDEX "visit_reports_vr_tenant_user_date_idx" ON "visit_reports" ("tenant_id","user_id","visit_date");
+CREATE INDEX "visit_reports_tenant_id_idx" ON "visit_reports" ("tenant_id");
 
 CREATE TABLE "visit_route_stops" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8132,6 +10012,9 @@ CREATE TABLE "visit_route_stops" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "visit_route_stops_customer_id_foreign" ON "visit_route_stops" ("customer_id");
+CREATE INDEX "visit_route_stops_checkin_id_foreign" ON "visit_route_stops" ("checkin_id");
+CREATE INDEX "visit_route_stops_vrs_route_order_idx" ON "visit_route_stops" ("visit_route_id","stop_order");
 
 CREATE TABLE "visit_routes" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8148,6 +10031,9 @@ CREATE TABLE "visit_routes" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "visit_routes_user_id_foreign" ON "visit_routes" ("user_id");
+CREATE INDEX "visit_routes_visit_rt_tenant_user_dt_idx" ON "visit_routes" ("tenant_id","user_id","route_date");
+CREATE INDEX "visit_routes_tenant_id_idx" ON "visit_routes" ("tenant_id");
 
 CREATE TABLE "visit_surveys" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8166,6 +10052,11 @@ CREATE TABLE "visit_surveys" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "visit_surveys_token_unique" ON "visit_surveys" ("token");
+CREATE INDEX "visit_surveys_customer_id_foreign" ON "visit_surveys" ("customer_id");
+CREATE INDEX "visit_surveys_checkin_id_foreign" ON "visit_surveys" ("checkin_id");
+CREATE INDEX "visit_surveys_user_id_foreign" ON "visit_surveys" ("user_id");
+CREATE INDEX "visit_surveys_vs_tenant_status_idx" ON "visit_surveys" ("tenant_id","status");
+CREATE INDEX "visit_surveys_tenant_id_idx" ON "visit_surveys" ("tenant_id");
 
 CREATE TABLE "voice_reports" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8177,6 +10068,10 @@ CREATE TABLE "voice_reports" (
  "language" varchar(5) NOT NULL DEFAULT 'pt_BR',
  "created_at" datetime NOT NULL
 );
+CREATE INDEX "voice_reports_tenant_id_index" ON "voice_reports" ("tenant_id");
+CREATE INDEX "voice_reports_user_id_index" ON "voice_reports" ("user_id");
+CREATE INDEX "voice_reports_work_order_id_index" ON "voice_reports" ("work_order_id");
+CREATE INDEX "voice_reports_tenant_id_idx" ON "voice_reports" ("tenant_id");
 
 CREATE TABLE "vulnerability_scans" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8190,6 +10085,8 @@ CREATE TABLE "vulnerability_scans" (
  "scanned_at" datetime NOT NULL,
  "completed_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "vulnerability_scans_tenant_id_index" ON "vulnerability_scans" ("tenant_id");
+CREATE INDEX "vulnerability_scans_tenant_id_idx" ON "vulnerability_scans" ("tenant_id");
 
 CREATE TABLE "warehouse_stocks" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8202,6 +10099,9 @@ CREATE TABLE "warehouse_stocks" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "ws_unique" ON "warehouse_stocks" ("warehouse_id","product_id","batch_id");
+CREATE INDEX "warehouse_stocks_batch_id_foreign" ON "warehouse_stocks" ("batch_id");
+CREATE INDEX "warehouse_stocks_ws_product" ON "warehouse_stocks" ("product_id");
+CREATE INDEX "warehouse_stocks_tenant_id_idx" ON "warehouse_stocks" ("tenant_id");
 
 CREATE TABLE "warehouses" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8217,6 +10117,14 @@ CREATE TABLE "warehouses" (
  "vehicle_id" integer DEFAULT NULL,
  "is_main" tinyint DEFAULT NULL
 );
+CREATE INDEX "warehouses_user_id_foreign" ON "warehouses" ("user_id");
+CREATE INDEX "warehouses_vehicle_id_foreign" ON "warehouses" ("vehicle_id");
+CREATE INDEX "warehouses_wh_tenant" ON "warehouses" ("tenant_id");
+CREATE INDEX "warehouses_wh_deleted_at" ON "warehouses" ("tenant_id","deleted_at");
+CREATE INDEX "warehouses_tid_idx" ON "warehouses" ("tenant_id");
+CREATE INDEX "warehouses_del_idx" ON "warehouses" ("deleted_at");
+CREATE INDEX "warehouses_tenant_id_idx" ON "warehouses" ("tenant_id");
+CREATE INDEX "warehouses_deleted_at_idx" ON "warehouses" ("deleted_at");
 
 CREATE TABLE "warranty_tracking" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8233,6 +10141,13 @@ CREATE TABLE "warranty_tracking" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "warranty_tracking_work_order_id_foreign" ON "warranty_tracking" ("work_order_id");
+CREATE INDEX "warranty_tracking_product_id_foreign" ON "warranty_tracking" ("product_id");
+CREATE INDEX "warranty_tracking_work_order_item_id_foreign" ON "warranty_tracking" ("work_order_item_id");
+CREATE INDEX "warranty_tracking_warranty_tenant_end_idx" ON "warranty_tracking" ("tenant_id","warranty_end_at");
+CREATE INDEX "warranty_tracking_warranty_customer_end_idx" ON "warranty_tracking" ("customer_id","warranty_end_at");
+CREATE INDEX "warranty_tracking_warranty_equip_end_idx" ON "warranty_tracking" ("equipment_id","warranty_end_at");
+CREATE INDEX "warranty_tracking_tenant_id_idx" ON "warranty_tracking" ("tenant_id");
 
 CREATE TABLE "watermark_configs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8262,6 +10177,8 @@ CREATE TABLE "webhook_configs" (
  "last_triggered_at" datetime NULL DEFAULT NULL,
  "failure_count" int NOT NULL DEFAULT '0'
 );
+CREATE INDEX "webhook_configs_tid_idx" ON "webhook_configs" ("tenant_id");
+CREATE INDEX "webhook_configs_tenant_id_idx" ON "webhook_configs" ("tenant_id");
 
 CREATE TABLE "webhook_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8276,6 +10193,8 @@ CREATE TABLE "webhook_logs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "webhook_logs_webhook_id_foreign" ON "webhook_logs" ("webhook_id");
+CREATE INDEX "webhook_logs_tenant_id_idx" ON "webhook_logs" ("tenant_id");
 
 CREATE TABLE "webhooks" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8292,6 +10211,10 @@ CREATE TABLE "webhooks" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "webhooks_tenant_id_index" ON "webhooks" ("tenant_id");
+CREATE INDEX "webhooks_event_index" ON "webhooks" ("event");
+CREATE INDEX "webhooks_tenant_id_idx" ON "webhooks" ("tenant_id");
+CREATE INDEX "webhooks_deleted_at_idx" ON "webhooks" ("deleted_at");
 
 CREATE TABLE "weight_assignments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8307,6 +10230,12 @@ CREATE TABLE "weight_assignments" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "weight_assignments_standard_weight_id_foreign" ON "weight_assignments" ("standard_weight_id");
+CREATE INDEX "weight_assignments_assigned_to_user_id_foreign" ON "weight_assignments" ("assigned_to_user_id");
+CREATE INDEX "weight_assignments_assigned_to_vehicle_id_foreign" ON "weight_assignments" ("assigned_to_vehicle_id");
+CREATE INDEX "weight_assignments_assigned_by_foreign" ON "weight_assignments" ("assigned_by");
+CREATE INDEX "weight_assignments_tenant_id_standard_weight_id_index" ON "weight_assignments" ("tenant_id","standard_weight_id");
+CREATE INDEX "weight_assignments_tenant_id_idx" ON "weight_assignments" ("tenant_id");
 
 CREATE TABLE "whatsapp_configs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8321,6 +10250,8 @@ CREATE TABLE "whatsapp_configs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "whatsapp_configs_tid_idx" ON "whatsapp_configs" ("tenant_id");
+CREATE INDEX "whatsapp_configs_tenant_id_idx" ON "whatsapp_configs" ("tenant_id");
 
 CREATE TABLE "whatsapp_messages" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8347,6 +10278,9 @@ CREATE TABLE "whatsapp_messages" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "whatsapp_messages_tenant_id_index" ON "whatsapp_messages" ("tenant_id");
+CREATE INDEX "whatsapp_messages_customer_id_foreign" ON "whatsapp_messages" ("customer_id");
+CREATE INDEX "whatsapp_messages_tenant_id_idx" ON "whatsapp_messages" ("tenant_id");
 
 CREATE TABLE "work_order_approvals" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8360,6 +10294,9 @@ CREATE TABLE "work_order_approvals" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "work_order_approvals_approver_id_foreign" ON "work_order_approvals" ("approver_id");
+CREATE INDEX "work_order_approvals_requested_by_foreign" ON "work_order_approvals" ("requested_by");
+CREATE INDEX "work_order_approvals_wo_approvals_wo_status_idx" ON "work_order_approvals" ("work_order_id","status");
 
 CREATE TABLE "work_order_attachments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8375,6 +10312,11 @@ CREATE TABLE "work_order_attachments" (
  "tenant_id" integer NOT NULL,
  "category" varchar(30) NOT NULL DEFAULT 'general'
 );
+CREATE INDEX "work_order_attachments_uploaded_by_foreign" ON "work_order_attachments" ("uploaded_by");
+CREATE INDEX "work_order_attachments_work_order_id_index" ON "work_order_attachments" ("work_order_id");
+CREATE INDEX "work_order_attachments_tenant_id_index" ON "work_order_attachments" ("tenant_id");
+CREATE INDEX "work_order_attachments_woa_work_order" ON "work_order_attachments" ("work_order_id");
+CREATE INDEX "work_order_attachments_tenant_id_idx" ON "work_order_attachments" ("tenant_id");
 
 CREATE TABLE "work_order_chats" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8388,6 +10330,10 @@ CREATE TABLE "work_order_chats" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "work_order_chats_user_id_foreign" ON "work_order_chats" ("user_id");
+CREATE INDEX "work_order_chats_woc_work_order" ON "work_order_chats" ("work_order_id");
+CREATE INDEX "work_order_chats_tid_idx" ON "work_order_chats" ("tenant_id");
+CREATE INDEX "work_order_chats_tenant_id_idx" ON "work_order_chats" ("tenant_id");
 
 CREATE TABLE "work_order_checklist_responses" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8399,6 +10345,10 @@ CREATE TABLE "work_order_checklist_responses" (
  "updated_at" datetime NULL DEFAULT NULL,
  "tenant_id" integer NOT NULL
 );
+CREATE INDEX "work_order_checklist_responses_work_order_id_foreign" ON "work_order_checklist_responses" ("work_order_id");
+CREATE INDEX "work_order_checklist_responses_checklist_item_id_foreign" ON "work_order_checklist_responses" ("checklist_item_id");
+CREATE INDEX "work_order_checklist_responses_tid_idx" ON "work_order_checklist_responses" ("tenant_id");
+CREATE INDEX "work_order_checklist_responses_tenant_id_idx" ON "work_order_checklist_responses" ("tenant_id");
 
 CREATE TABLE "work_order_displacement_locations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8411,6 +10361,10 @@ CREATE TABLE "work_order_displacement_locations" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "work_order_displacement_locations_user_id_foreign" ON "work_order_displacement_locations" ("user_id");
+CREATE INDEX "work_order_displacement_locations_wo_disp_loc_wo_rec_idx" ON "work_order_displacement_locations" ("work_order_id","recorded_at");
+CREATE INDEX "work_order_displacement_locations_tenant_id_index" ON "work_order_displacement_locations" ("tenant_id");
+CREATE INDEX "work_order_displacement_locations_tenant_id_idx" ON "work_order_displacement_locations" ("tenant_id");
 
 CREATE TABLE "work_order_displacement_stops" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8425,6 +10379,9 @@ CREATE TABLE "work_order_displacement_stops" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "work_order_displacement_stops_work_order_id_foreign" ON "work_order_displacement_stops" ("work_order_id");
+CREATE INDEX "work_order_displacement_stops_tenant_id_index" ON "work_order_displacement_stops" ("tenant_id");
+CREATE INDEX "work_order_displacement_stops_tenant_id_idx" ON "work_order_displacement_stops" ("tenant_id");
 
 CREATE TABLE "work_order_equipments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8435,6 +10392,10 @@ CREATE TABLE "work_order_equipments" (
  "updated_at" datetime NULL DEFAULT NULL,
  "tenant_id" integer DEFAULT NULL
 );
+CREATE INDEX "work_order_equipments_work_order_equipment_tenant_idx" ON "work_order_equipments" ("tenant_id");
+CREATE INDEX "work_order_equipments_work_order_id_fk_idx" ON "work_order_equipments" ("work_order_id");
+CREATE INDEX "work_order_equipments_equipment_id_fk_idx" ON "work_order_equipments" ("equipment_id");
+CREATE INDEX "work_order_equipments_tenant_id_idx" ON "work_order_equipments" ("tenant_id");
 
 CREATE TABLE "work_order_events" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8448,6 +10409,10 @@ CREATE TABLE "work_order_events" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "work_order_events_wo_events_wo_created_idx" ON "work_order_events" ("work_order_id","created_at");
+CREATE INDEX "work_order_events_user_id_fk_idx" ON "work_order_events" ("user_id");
+CREATE INDEX "work_order_events_tenant_id_index" ON "work_order_events" ("tenant_id");
+CREATE INDEX "work_order_events_tenant_id_idx" ON "work_order_events" ("tenant_id");
 
 CREATE TABLE "work_order_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8465,6 +10430,14 @@ CREATE TABLE "work_order_items" (
  "cost_price" numeric DEFAULT NULL,
  "tenant_id" integer NOT NULL
 );
+CREATE INDEX "work_order_items_tenant_id_index" ON "work_order_items" ("tenant_id");
+CREATE INDEX "work_order_items_work_order_id_fk_idx" ON "work_order_items" ("work_order_id");
+CREATE INDEX "work_order_items_reference_id_fk_idx" ON "work_order_items" ("reference_id");
+CREATE INDEX "work_order_items_warehouse_id_fk_idx" ON "work_order_items" ("warehouse_id");
+CREATE INDEX "work_order_items_woi_woid_type_idx" ON "work_order_items" ("work_order_id","type");
+CREATE INDEX "work_order_items_reference_id_index" ON "work_order_items" ("reference_id");
+CREATE INDEX "work_order_items_work_order_id_type_index" ON "work_order_items" ("work_order_id","type");
+CREATE INDEX "work_order_items_tenant_id_idx" ON "work_order_items" ("tenant_id");
 
 CREATE TABLE "work_order_ratings" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8479,6 +10452,10 @@ CREATE TABLE "work_order_ratings" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "work_order_ratings_work_order_id_fk_idx" ON "work_order_ratings" ("work_order_id");
+CREATE INDEX "work_order_ratings_customer_id_fk_idx" ON "work_order_ratings" ("customer_id");
+CREATE INDEX "work_order_ratings_tenant_id_index" ON "work_order_ratings" ("tenant_id");
+CREATE INDEX "work_order_ratings_tenant_id_idx" ON "work_order_ratings" ("tenant_id");
 
 CREATE TABLE "work_order_recurrences" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8501,6 +10478,12 @@ CREATE TABLE "work_order_recurrences" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "work_order_recurrences_customer_id_foreign" ON "work_order_recurrences" ("customer_id");
+CREATE INDEX "work_order_recurrences_service_id_foreign" ON "work_order_recurrences" ("service_id");
+CREATE INDEX "work_order_recurrences_tid_idx" ON "work_order_recurrences" ("tenant_id");
+CREATE INDEX "work_order_recurrences_del_idx" ON "work_order_recurrences" ("deleted_at");
+CREATE INDEX "work_order_recurrences_tenant_id_idx" ON "work_order_recurrences" ("tenant_id");
+CREATE INDEX "work_order_recurrences_deleted_at_idx" ON "work_order_recurrences" ("deleted_at");
 
 CREATE TABLE "work_order_signatures" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8516,6 +10499,9 @@ CREATE TABLE "work_order_signatures" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "work_order_signatures_work_order_id_foreign" ON "work_order_signatures" ("work_order_id");
+CREATE INDEX "work_order_signatures_tid_idx" ON "work_order_signatures" ("tenant_id");
+CREATE INDEX "work_order_signatures_tenant_id_idx" ON "work_order_signatures" ("tenant_id");
 
 CREATE TABLE "work_order_status_history" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8528,6 +10514,13 @@ CREATE TABLE "work_order_status_history" (
  "updated_at" datetime NULL DEFAULT NULL,
  "tenant_id" integer NOT NULL
 );
+CREATE INDEX "work_order_status_history_tenant_id_index" ON "work_order_status_history" ("tenant_id");
+CREATE INDEX "work_order_status_history_wosh_wo_created" ON "work_order_status_history" ("work_order_id","created_at");
+CREATE INDEX "work_order_status_history_work_order_id_fk_idx" ON "work_order_status_history" ("work_order_id");
+CREATE INDEX "work_order_status_history_user_id_fk_idx" ON "work_order_status_history" ("user_id");
+CREATE INDEX "work_order_status_history_wosh_woid_cat_idx" ON "work_order_status_history" ("work_order_id","created_at");
+CREATE INDEX "work_order_status_history_wo_status_history_wo_id_created_at_index" ON "work_order_status_history" ("work_order_id","created_at");
+CREATE INDEX "work_order_status_history_tenant_id_idx" ON "work_order_status_history" ("tenant_id");
 
 CREATE TABLE "work_order_technicians" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8539,6 +10532,9 @@ CREATE TABLE "work_order_technicians" (
  "tenant_id" integer DEFAULT NULL
 );
 CREATE UNIQUE INDEX "work_order_technicians_work_order_id_user_id_unique" ON "work_order_technicians" ("work_order_id","user_id");
+CREATE INDEX "work_order_technicians_user_id_foreign" ON "work_order_technicians" ("user_id");
+CREATE INDEX "work_order_technicians_work_order_technicia_tenant_idx" ON "work_order_technicians" ("tenant_id");
+CREATE INDEX "work_order_technicians_tenant_id_idx" ON "work_order_technicians" ("tenant_id");
 
 CREATE TABLE "work_order_templates" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8553,6 +10549,13 @@ CREATE TABLE "work_order_templates" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "work_order_templates_tenant_id_index" ON "work_order_templates" ("tenant_id");
+CREATE INDEX "work_order_templates_checklist_id_foreign" ON "work_order_templates" ("checklist_id");
+CREATE INDEX "work_order_templates_created_by_foreign" ON "work_order_templates" ("created_by");
+CREATE INDEX "work_order_templates_wot_deleted_at" ON "work_order_templates" ("tenant_id","deleted_at");
+CREATE INDEX "work_order_templates_del_idx" ON "work_order_templates" ("deleted_at");
+CREATE INDEX "work_order_templates_tenant_id_idx" ON "work_order_templates" ("tenant_id");
+CREATE INDEX "work_order_templates_deleted_at_idx" ON "work_order_templates" ("deleted_at");
 
 CREATE TABLE "work_order_time_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8569,6 +10572,12 @@ CREATE TABLE "work_order_time_logs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+CREATE INDEX "work_order_time_logs_work_order_id_foreign" ON "work_order_time_logs" ("work_order_id");
+CREATE INDEX "work_order_time_logs_user_id_foreign" ON "work_order_time_logs" ("user_id");
+CREATE INDEX "work_order_time_logs_wotl_tenant_wo_started" ON "work_order_time_logs" ("tenant_id","work_order_id","started_at");
+CREATE INDEX "work_order_time_logs_wotl_tenant_user_started" ON "work_order_time_logs" ("tenant_id","user_id","started_at");
+CREATE INDEX "work_order_time_logs_tid_idx" ON "work_order_time_logs" ("tenant_id");
+CREATE INDEX "work_order_time_logs_tenant_id_idx" ON "work_order_time_logs" ("tenant_id");
 
 CREATE TABLE "work_orders" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8695,6 +10704,36 @@ CREATE TABLE "work_orders" (
 );
 CREATE UNIQUE INDEX "work_orders_tenant_id_number_unique" ON "work_orders" ("tenant_id","number");
 CREATE UNIQUE INDEX "work_orders_rating_token_unique" ON "work_orders" ("rating_token");
+CREATE INDEX "work_orders_customer_id_foreign" ON "work_orders" ("customer_id");
+CREATE INDEX "work_orders_assigned_to_foreign" ON "work_orders" ("assigned_to");
+CREATE INDEX "work_orders_tenant_id_status_index" ON "work_orders" ("tenant_id","status");
+CREATE INDEX "work_orders_tenant_id_customer_id_index" ON "work_orders" ("tenant_id","customer_id");
+CREATE INDEX "work_orders_checklist_id_foreign" ON "work_orders" ("checklist_id");
+CREATE INDEX "work_orders_dispatch_authorized_by_foreign" ON "work_orders" ("dispatch_authorized_by");
+CREATE INDEX "work_orders_tenant_id_business_number_index" ON "work_orders" ("tenant_id","business_number");
+CREATE INDEX "work_orders_parent_work_order_id_foreign" ON "work_orders" ("parent_work_order_id");
+CREATE INDEX "work_orders_auto_assignment_rule_id_foreign" ON "work_orders" ("auto_assignment_rule_id");
+CREATE INDEX "work_orders_wo_tenant_created_idx" ON "work_orders" ("tenant_id","created_at");
+CREATE INDEX "work_orders_wo_tenant_assigned" ON "work_orders" ("tenant_id","assigned_to");
+CREATE INDEX "work_orders_wo_tenant_priority" ON "work_orders" ("tenant_id","priority");
+CREATE INDEX "work_orders_wo_branch" ON "work_orders" ("branch_id");
+CREATE INDEX "work_orders_wo_sla_policy" ON "work_orders" ("sla_policy_id");
+CREATE INDEX "work_orders_created_by_foreign" ON "work_orders" ("created_by");
+CREATE INDEX "work_orders_wo_deleted_at" ON "work_orders" ("tenant_id","deleted_at");
+CREATE INDEX "work_orders_del_idx" ON "work_orders" ("deleted_at");
+CREATE INDEX "work_orders_equipment_id_fk_idx" ON "work_orders" ("equipment_id");
+CREATE INDEX "work_orders_branch_id_fk_idx" ON "work_orders" ("branch_id");
+CREATE INDEX "work_orders_quote_id_fk_idx" ON "work_orders" ("quote_id");
+CREATE INDEX "work_orders_service_call_id_fk_idx" ON "work_orders" ("service_call_id");
+CREATE INDEX "work_orders_seller_id_fk_idx" ON "work_orders" ("seller_id");
+CREATE INDEX "work_orders_driver_id_fk_idx" ON "work_orders" ("driver_id");
+CREATE INDEX "work_orders_recurring_contract_i_fk_idx" ON "work_orders" ("recurring_contract_id");
+CREATE INDEX "work_orders_parent_id_fk_idx" ON "work_orders" ("parent_id");
+CREATE INDEX "work_orders_fleet_vehicle_id_fk_idx" ON "work_orders" ("fleet_vehicle_id");
+CREATE INDEX "work_orders_cost_center_id_fk_idx" ON "work_orders" ("cost_center_id");
+CREATE INDEX "work_orders_tenant_id_assigned_to_status_index" ON "work_orders" ("tenant_id","assigned_to","status");
+CREATE INDEX "work_orders_project_id_foreign" ON "work_orders" ("project_id");
+CREATE INDEX "work_orders_deleted_at_idx" ON "work_orders" ("deleted_at");
 
 CREATE TABLE "work_schedules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8710,6 +10749,8 @@ CREATE TABLE "work_schedules" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 CREATE UNIQUE INDEX "work_schedules_user_id_date_unique" ON "work_schedules" ("user_id","date");
+CREATE INDEX "work_schedules_tid_idx" ON "work_schedules" ("tenant_id");
+CREATE INDEX "work_schedules_tenant_id_idx" ON "work_schedules" ("tenant_id");
 
 -- Migration records
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (1, '0001_01_01_000000_create_users_table', 1);
