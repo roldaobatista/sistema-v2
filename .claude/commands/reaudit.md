@@ -1,6 +1,6 @@
 ---
-description: Re-auditoria isolada e sem viés de uma Camada/Wave após correção. Invoca especialistas em paralelo com prompt padronizado neutro. Uso: /reaudit <camada> [<range-commits>].
-allowed-tools: Read, Bash, Grep, Glob, Agent
+description: Re-auditoria isolada e sem viés de uma Camada/Wave após correção. Invoca especialistas em paralelo com prompt neutro (skill audit-prompt). Uso: /reaudit <camada>.
+allowed-tools: Read, Bash, Grep, Glob, Agent, Skill
 ---
 
 # /reaudit
@@ -9,13 +9,14 @@ allowed-tools: Read, Bash, Grep, Glob, Agent
 
 ```
 /reaudit "Camada 1"
-/reaudit "Camada 1" 38fea08..HEAD
-/reaudit "Wave 6" bffe8a1
+/reaudit "Wave 6"
 ```
+
+> **Não aceitar mais commit range ou lista de arquivos.** Esses inputs enviesam o agente e anulam a isolação de contexto. Ver skill `audit-prompt`.
 
 ## Propósito
 
-Re-auditoria **pós-correção** de uma Camada/Wave. Responde duas perguntas, nessa ordem:
+Re-auditoria **pós-correção** de uma Camada/Wave. Responde em ordem:
 
 1. Os findings originais da camada foram **efetivamente resolvidos**?
 2. A correção introduziu **novos findings**?
@@ -24,110 +25,102 @@ Re-auditoria **pós-correção** de uma Camada/Wave. Responde duas perguntas, ne
 
 ## Por que existe
 
-Proteção contra viés de confirmação. Quando o mesmo agente que corrigiu também audita, tende a aprovar. Especialistas em subagents começam com contexto fresco, MAS o prompt que carrega bias anula essa isolação. Este comando garante que o prompt enviado aos especialistas seja **neutro**: lista findings + range de commits + checklist do domínio. Proibido vazar narrativa, conclusões, ou "já foi feito".
+Proteção contra viés de confirmação. Subagents iniciam com contexto isolado, MAS o prompt carrega bias que anula essa isolação. Este comando garante que o prompt enviado seja **neutro** — conforme a skill `audit-prompt`. Proibido vazar narrativa da correção, IDs de findings originais, ou arquivos tocados.
 
 ## Pré-condições
 
-- Documento de auditoria original existe (formato padrão: `docs/audits/RELATORIO-AUDITORIA-SISTEMA.md` ou equivalente listando findings com ID).
-- Range de commits da correção identificável (handoff/log).
-- Agentes `data-expert`, `security-expert`, `governance`, `qa-expert` disponíveis em `.claude/agents/`.
+- **Lista canônica de findings** em `docs/audits/findings-<camada>.md` (formato definido em `audit-prompt`). Se ausente, criar primeiro (extraindo de audit originais + handoffs).
+- Agentes relevantes ao escopo disponíveis em `.claude/agents/`.
+- Skill `audit-prompt` carregada.
 
 ## O que faz
 
-### 1. Coletar inputs neutros
+### 1. Validar lista canônica
 
-- **Findings originais:** ler documento de auditoria e extrair lista de IDs com status (S0/S1/S2 + descrição 1-linha). Se ausente, abortar.
-- **Range de commits:** `git log --oneline <range>` — lista crua, sem interpretação.
-- **Arquivos tocados:** `git diff --name-only <range>` — lista crua.
-- **Schema dump** (se camada é DB): `backend/database/schema/sqlite-schema.sql`.
+Ler `docs/audits/findings-<camada>.md`. Se ausente → abortar e pedir que seja consolidada. **Não adivinhar findings nem extrair de memória/handoff no momento da invocação** — isso é trabalho de consolidação prévia.
 
-### 2. Montar prompt neutro padronizado
+### 2. Determinar perímetro funcional
 
-Template rígido (um por especialista). Proibido adicionar: "já foi feito X", "confirme que Y", "aprove se Z", "validamos W", resumo da correção.
+A partir do nome da camada, identificar o **domínio** (não os arquivos). Exemplos:
+- "Camada 1 — fundação" → entidades centrais de cadastro + financeiro operacional
+- "Camada 2 — operacional" → agenda, OS, calibrações, orçamento
 
-```
-Re-auditoria de <camada>.
+O perímetro é **funcional**, não "arquivos do commit X". Ver skill `audit-prompt`.
 
-Seu domínio: <data|security|governance|qa>
+### 3. Selecionar especialistas
 
-Findings originais listados no documento:
-<lista de IDs sem descrição de correção>
+Conjunto mínimo obrigatório (skill `audit-prompt`):
+- Qualquer camada: `governance` + `qa-expert`
+- Toca DB/schema: `data-expert`
+- Toca auth/PII: `security-expert`
+- Toca contract/API: `architecture-expert`
+- Toca integração externa: `integration-expert`
+- Toca frontend: `ux-designer` + `product-expert`
 
-Range de commits a auditar:
-<git log cru>
+### 4. Invocar em paralelo — prompt neutro via skill
 
-Arquivos tocados:
-<git diff --name-only cru>
+**Obrigatório**: montar o prompt de cada agente usando o template da skill `audit-prompt`. Uma única mensagem com N `Agent` calls paralelos.
 
-Suas tarefas:
-1. Para CADA finding do seu domínio: verifique se está resolvido no código atual. Evidência via grep/read com file:line.
-2. Procure novos findings introduzidos pelos commits do range. Aplique seu checklist completo sem viés do que "deve estar bom".
-3. Devolva em formato estruturado:
-   - RESOLVIDOS: [ID] + arquivo:linha de evidência
-   - NÃO RESOLVIDOS: [ID] + arquivo:linha + por quê
-   - NOVOS: [severidade] + arquivo:linha + descrição
+**Proibido incluir no prompt do agente:**
+- IDs de findings originais
+- Commit range, arquivos tocados
+- Qualquer narrativa da correção
+- Conclusões antecipadas ("valide", "confirme")
 
-Proibido assumir que correções foram bem feitas. Se tiver dúvida, rejeitar e pedir evidência. Sua função é ENCONTRAR, não aprovar.
-```
+**Obrigatório incluir:**
+- Camada + perímetro funcional
+- Diretórios sugeridos (não arquivos)
+- Checklist verbatim do `.claude/agents/<expert>.md`
+- Proibições e formato de saída da skill `audit-prompt`
 
-### 3. Rodar 4 especialistas em paralelo
+### 5. Coletar achados
 
-Spawn simultâneo via Agent tool (única mensagem com múltiplas invocações):
+Salvar output de cada agente em `docs/audits/reaudit-<camada>-<YYYY-MM-DD>/<expert>.md` verbatim.
 
-- `data-expert` — schema, índices, integridade, N+1, migrations
-- `security-expert` — tenant isolation, OWASP, LGPD, secrets, PII
-- `governance` — padrões/convenções, consistência, LGPD governança, retenção
-- `qa-expert` — cobertura testes, edge cases, anti-patterns, regressão
-
-Cada um recebe o MESMO template com filtro de domínio diferente.
-
-### 4. Consolidar resultado
-
-Após os 4 retornarem, agregar:
+### 6. Set-difference mecânico (coordenador, fora do agente)
 
 ```
-Re-auditoria <camada>
+originais     = set(docs/audits/findings-<camada>.md)
+encontrados   = união(achados de todos os experts)
 
-FINDINGS ORIGINAIS (<total>):
-  ✅ Resolvidos: X (IDs)
-  ❌ Não resolvidos: Y (IDs)
-  ⚠️ Parcialmente resolvidos: Z (IDs)
-
-NOVOS FINDINGS (introduzidos pela correção): N
-  S1: ...
-  S2: ...
-  S3: ...
-
-VEREDITO: <FECHADA | REABERTA | CONDICIONAL>
+resolvidos     = originais \ encontrados
+não_resolvidos = originais ∩ encontrados
+novos          = encontrados \ originais
 ```
 
-**Critério de fechamento:**
-- FECHADA: 100% originais resolvidos + zero novos S1/S2
-- REABERTA: ≥ 1 original não resolvido OU ≥ 1 novo S1
-- CONDICIONAL: originais resolvidos + apenas novos S3/S4 (camada pode prosseguir com dívida documentada)
+Match por `arquivo:linha + palavra-chave`. Ambiguidade → mantém em "não resolvido" (conservador).
 
-### 5. Registrar no histórico
+### 7. Veredito
 
-Salvar output consolidado em `docs/audits/reaudit-<camada>-<YYYY-MM-DD>.md` com links aos 4 relatórios individuais dos especialistas.
+| Situação | Veredito |
+|---|---|
+| `não_resolvidos = ∅` E `novos_S1_S2 = ∅` | **FECHADA** |
+| `não_resolvidos ≠ ∅` OU `novos_S1 ≠ ∅` | **REABERTA** |
+| `não_resolvidos = ∅` E só `novos_S3_S4 ≠ ∅` | **CONDICIONAL** (dívida documentada) |
+
+### 8. Consolidar e registrar
+
+`docs/audits/reaudit-<camada>-<YYYY-MM-DD>.md` no formato definido em `audit-prompt`.
 
 ## Erros e recuperação
 
 | Cenário | Recuperação |
 |---|---|
-| Documento de auditoria original ausente | Abortar. Não adivinhar findings. |
-| Range de commits inválido | Pedir ao usuário. |
-| Agente retorna "aprovado" sem evidência | Rejeitar output. Re-invocar com pedido de file:line explícito. |
-| Desacordo entre 2 especialistas | Ambos findings permanecem no output. Usuário decide. |
+| `docs/audits/findings-<camada>.md` ausente | Abortar. Instruir usuário a consolidar. |
+| Agente retorna veredito em vez de achados | Rejeitar output. Re-invocar reforçando "reporte, não julgue". |
+| Desacordo entre 2 especialistas | Ambos achados permanecem. Usuário decide. |
+| Agente tentou ler docs/audits/ ou rodar git log | Rejeitar output. Reforçar proibições da skill. |
 
 ## Proibições
 
-- **Nunca** enviar ao agente: "eu acho que", "já foi corrigido", "confirme que", "validar fechamento", "aprovar se", resumo narrativo da correção.
-- **Nunca** pular especialista relevante pelo atalho "o escopo é pequeno".
-- **Nunca** rodar um especialista único e extrapolar para fechamento multi-domínio.
-- **Nunca** declarar fechamento se algum agente retornou veredito de bloqueio.
+- Nunca passar ao agente: findings originais, commit range, arquivos tocados, narrativa da correção, conclusões antecipadas.
+- Nunca pular um expert do conjunto mínimo do escopo.
+- Nunca rodar 1 expert e extrapolar para fechamento multi-domínio.
+- Nunca declarar FECHADA sem set-difference contra lista canônica.
+- Nunca resolver desacordo em favor do mais leniente.
 
 ## Handoff
 
-- Todos verdes → fechamento legítimo. Atualizar handoff de camada com link ao relatório de re-auditoria.
-- Algum bloqueio → etapa volta ao `builder`. Re-rodar `/reaudit` após correção.
-- Novos findings S3/S4 → documentar como dívida em TECHNICAL-DECISIONS.md, decidir se bloqueia avanço de camada.
+- FECHADA → atualizar handoff da camada com link ao relatório de re-auditoria.
+- REABERTA → etapa volta ao `builder`. Re-rodar `/reaudit` após correção.
+- CONDICIONAL → registrar dívida em `TECHNICAL-DECISIONS.md`, decidir se bloqueia avanço.
