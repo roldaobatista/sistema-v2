@@ -42,7 +42,7 @@ class TwoFactorController extends Controller
             ['user_id' => $user->id],
             [
                 'method' => $validated['method'],
-                'secret' => encrypt($secret),
+                'secret' => $secret,
                 'is_enabled' => false,
                 'tenant_id' => $user->current_tenant_id ?? $user->tenant_id,
             ]
@@ -85,7 +85,7 @@ class TwoFactorController extends Controller
         ]);
 
         $backupCodes = collect(range(1, 8))->map(fn () => Str::random(8))->toArray();
-        $twoFa->update(['backup_codes' => encrypt(json_encode($backupCodes))]);
+        $twoFa->update(['backup_codes' => $backupCodes]);
 
         return ApiResponse::message('2FA ativado com sucesso', 200, ['backup_codes' => $backupCodes]);
     }

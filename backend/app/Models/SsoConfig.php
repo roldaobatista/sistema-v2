@@ -6,8 +6,7 @@ use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * @property bool|null $is_enabled
- * @property bool|null $auto_create_users
+ * @property bool|null $is_active
  */
 class SsoConfig extends Model
 {
@@ -16,20 +15,19 @@ class SsoConfig extends Model
     protected $table = 'sso_configurations';
 
     protected $fillable = [
-        'tenant_id', 'provider', 'client_id', 'client_secret',
-        'redirect_url', 'is_enabled', 'auto_create_users',
-        'default_role',
+        'provider', 'client_id', 'client_secret',
+        'tenant_domain', 'is_active',
     ];
 
     protected function casts(): array
     {
         return [
-            'is_enabled' => 'boolean',
-            'auto_create_users' => 'boolean',
+            'is_active' => 'boolean',
+            'client_id' => 'encrypted',
             'client_secret' => 'encrypted',
         ];
 
     }
 
-    protected $hidden = ['client_secret'];
+    protected $hidden = ['client_id', 'client_secret'];
 }

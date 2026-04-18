@@ -88,6 +88,8 @@ class Tenant extends Model
             'fiscal_nfe_next_number' => 'integer',
             'fiscal_nfse_rps_next_number' => 'integer',
             'fiscal_certificate_expires_at' => 'date',
+            'fiscal_certificate_password' => 'encrypted',
+            'fiscal_nfse_token' => 'encrypted',
         ];
     }
 
