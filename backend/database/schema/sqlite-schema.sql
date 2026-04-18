@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (converted from MySQL)
--- Generated: 2026-04-18 14:39:15
+-- Generated: 2026-04-18 15:14:47
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -775,6 +775,7 @@ CREATE INDEX "bank_statement_entries_bse_tenant_status" ON "bank_statement_entri
 CREATE INDEX "bank_statement_entries_tid_idx" ON "bank_statement_entries" ("tenant_id");
 CREATE INDEX "bank_statement_entries_matched_id_index" ON "bank_statement_entries" ("matched_id");
 CREATE INDEX "bank_statement_entries_tenant_id_idx" ON "bank_statement_entries" ("tenant_id");
+CREATE INDEX "bank_statement_entries_bank_stmt_entries_matched_morph_idx" ON "bank_statement_entries" ("matched_type","matched_id");
 
 CREATE TABLE "bank_statements" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1365,6 +1366,7 @@ CREATE INDEX "chat_messages_tenant_id_index" ON "chat_messages" ("tenant_id");
 CREATE INDEX "chat_messages_ticket_id_index" ON "chat_messages" ("ticket_id");
 CREATE INDEX "chat_messages_sender_id_foreign" ON "chat_messages" ("sender_id");
 CREATE INDEX "chat_messages_tenant_id_idx" ON "chat_messages" ("tenant_id");
+CREATE INDEX "chat_messages_sender_morph_idx" ON "chat_messages" ("sender_type","sender_id");
 
 CREATE TABLE "checklist_submissions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3113,6 +3115,7 @@ CREATE TABLE "email_logs" (
 );
 CREATE INDEX "email_logs_tenant_status_idx" ON "email_logs" ("tenant_id","status");
 CREATE INDEX "email_logs_tenant_id_idx" ON "email_logs" ("tenant_id");
+CREATE INDEX "email_logs_related_morph_idx" ON "email_logs" ("related_type","related_id");
 
 CREATE TABLE "email_notes" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5902,6 +5905,7 @@ CREATE TABLE "mobile_notifications" (
 CREATE INDEX "mobile_notifications_user_id_index" ON "mobile_notifications" ("user_id");
 CREATE INDEX "mobile_notifications_entity_id_index" ON "mobile_notifications" ("entity_id");
 CREATE INDEX "mobile_notifications_tenant_id_idx" ON "mobile_notifications" ("tenant_id");
+CREATE INDEX "mobile_notifications_mobile_notifs_entity_morph_idx" ON "mobile_notifications" ("entity_type","entity_id");
 
 CREATE TABLE "model_has_permissions" (
  "permission_id" integer NOT NULL,
@@ -6045,6 +6049,7 @@ CREATE INDEX "notifications_notif_tenant_user_read_idx" ON "notifications" ("ten
 CREATE INDEX "notifications_notif_user_read" ON "notifications" ("user_id","read_at");
 CREATE INDEX "notifications_notif_tenant_created" ON "notifications" ("tenant_id","created_at");
 CREATE INDEX "notifications_tenant_id_idx" ON "notifications" ("tenant_id");
+CREATE INDEX "notifications_tenant_type_idx" ON "notifications" ("tenant_id","type");
 
 CREATE TABLE "nps_responses" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6801,6 +6806,7 @@ CREATE INDEX "print_jobs_tenant_id_index" ON "print_jobs" ("tenant_id");
 CREATE INDEX "print_jobs_user_id_index" ON "print_jobs" ("user_id");
 CREATE INDEX "print_jobs_document_id_index" ON "print_jobs" ("document_id");
 CREATE INDEX "print_jobs_tenant_id_idx" ON "print_jobs" ("tenant_id");
+CREATE INDEX "print_jobs_document_morph_idx" ON "print_jobs" ("document_type","document_id");
 
 CREATE TABLE "privacy_consents" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7581,6 +7587,7 @@ CREATE INDEX "reconciliation_rules_supplier_id_foreign" ON "reconciliation_rules
 CREATE INDEX "reconciliation_rules_tenant_id_is_active_priority_index" ON "reconciliation_rules" ("tenant_id","is_active","priority");
 CREATE INDEX "reconciliation_rules_target_id_index" ON "reconciliation_rules" ("target_id");
 CREATE INDEX "reconciliation_rules_tenant_id_idx" ON "reconciliation_rules" ("tenant_id");
+CREATE INDEX "reconciliation_rules_recon_rules_target_morph_idx" ON "reconciliation_rules" ("target_type","target_id");
 
 CREATE TABLE "recurring_commissions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8822,6 +8829,7 @@ CREATE INDEX "sync_queue_tenant_id_index" ON "sync_queue" ("tenant_id");
 CREATE INDEX "sync_queue_user_id_index" ON "sync_queue" ("user_id");
 CREATE INDEX "sync_queue_entity_id_index" ON "sync_queue" ("entity_id");
 CREATE INDEX "sync_queue_tenant_id_idx" ON "sync_queue" ("tenant_id");
+CREATE INDEX "sync_queue_entity_morph_idx" ON "sync_queue" ("entity_type","entity_id");
 
 CREATE TABLE "sync_queue_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -8843,6 +8851,7 @@ CREATE INDEX "sync_queue_items_user_id_foreign" ON "sync_queue_items" ("user_id"
 CREATE INDEX "sync_queue_items_tenant_id_user_id_status_index" ON "sync_queue_items" ("tenant_id","user_id","status");
 CREATE INDEX "sync_queue_items_status_priority_index" ON "sync_queue_items" ("status","priority");
 CREATE INDEX "sync_queue_items_tenant_id_idx" ON "sync_queue_items" ("tenant_id");
+CREATE INDEX "sync_queue_items_entity_morph_idx" ON "sync_queue_items" ("entity_type","entity_id");
 
 CREATE TABLE "system_alerts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -10195,8 +10204,10 @@ CREATE TABLE "webhook_logs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-CREATE INDEX "webhook_logs_webhook_id_foreign" ON "webhook_logs" ("webhook_id");
 CREATE INDEX "webhook_logs_tenant_id_idx" ON "webhook_logs" ("tenant_id");
+CREATE INDEX "webhook_logs_status_idx" ON "webhook_logs" ("status");
+CREATE INDEX "webhook_logs_event_idx" ON "webhook_logs" ("event");
+CREATE INDEX "webhook_logs_webhook_created_idx" ON "webhook_logs" ("webhook_id","created_at");
 
 CREATE TABLE "webhooks" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -10283,6 +10294,7 @@ CREATE TABLE "whatsapp_messages" (
 CREATE INDEX "whatsapp_messages_tenant_id_index" ON "whatsapp_messages" ("tenant_id");
 CREATE INDEX "whatsapp_messages_customer_id_foreign" ON "whatsapp_messages" ("customer_id");
 CREATE INDEX "whatsapp_messages_tenant_id_idx" ON "whatsapp_messages" ("tenant_id");
+CREATE INDEX "whatsapp_messages_whatsapp_msgs_related_morph_idx" ON "whatsapp_messages" ("related_type","related_id");
 
 CREATE TABLE "work_order_approvals" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -11233,3 +11245,4 @@ INSERT INTO "migrations" ("id", "migration", "batch") VALUES (475, '2026_04_18_5
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (476, '2026_04_18_500002_restore_amount_paid_default', 10);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (477, '2026_04_18_500003_invalidate_legacy_backup_codes', 11);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (478, '2026_04_18_500004_add_unique_constraints_to_tenants', 12);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (479, '2026_04_18_500005_add_polymorphic_and_hot_log_indexes', 13);
