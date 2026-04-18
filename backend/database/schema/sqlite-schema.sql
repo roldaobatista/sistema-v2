@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (converted from MySQL)
--- Generated: 2026-04-18 14:26:55
+-- Generated: 2026-04-18 14:39:15
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -9145,6 +9145,8 @@ CREATE TABLE "tenants" (
  "rep_p_developer_cnpj" varchar(14) DEFAULT NULL,
  "timezone" varchar(50) NOT NULL DEFAULT 'America/Sao_Paulo'
 );
+CREATE UNIQUE INDEX "tenants_document_unique" ON "tenants" ("document");
+CREATE UNIQUE INDEX "tenants_slug_unique" ON "tenants" ("slug");
 CREATE INDEX "tenants_current_plan_id_foreign" ON "tenants" ("current_plan_id");
 CREATE INDEX "tenants_deleted_at_idx" ON "tenants" ("deleted_at");
 
@@ -11230,3 +11232,4 @@ INSERT INTO "migrations" ("id", "migration", "batch") VALUES (474, '2026_04_17_4
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (475, '2026_04_18_500001_repair_encrypted_search_alter_on_mysql', 9);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (476, '2026_04_18_500002_restore_amount_paid_default', 10);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (477, '2026_04_18_500003_invalidate_legacy_backup_codes', 11);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (478, '2026_04_18_500004_add_unique_constraints_to_tenants', 12);
