@@ -1,5 +1,5 @@
--- SQLite Schema Dump (generated via artisan migrate)
--- Generated: 2026-04-17 23:44:16
+-- SQLite Schema Dump (converted from MySQL)
+-- Generated: 2026-04-18 12:54:23
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -83,6 +83,22 @@ CREATE TABLE "account_plans" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "account_receivable_categories" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "account_receivable_categories_tid_slug_uq" ON "account_receivable_categories" ("tenant_id","slug");
+
 CREATE TABLE "account_receivable_installments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -92,10 +108,95 @@ CREATE TABLE "account_receivable_installments" (
  "amount" numeric NOT NULL,
  "paid_amount" numeric NOT NULL DEFAULT '0.00',
  "status" varchar(20) NOT NULL DEFAULT 'pending',
+ "psp_external_id" varchar(255) DEFAULT NULL,
+ "psp_status" varchar(30) DEFAULT NULL,
+ "psp_boleto_url" text,
+ "psp_boleto_barcode" varchar(255) DEFAULT NULL,
+ "psp_pix_qr_code" text,
+ "psp_pix_copy_paste" text,
  "paid_at" datetime NULL DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
-, "psp_external_id" varchar, "psp_status" varchar, "psp_boleto_url" text, "psp_boleto_barcode" varchar, "psp_pix_qr_code" text, "psp_pix_copy_paste" text);
+);
+
+CREATE TABLE "accounts_payable" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "created_by" integer DEFAULT NULL,
+ "updated_by" integer DEFAULT NULL,
+ "deleted_by" integer DEFAULT NULL,
+ "supplier" varchar(255) DEFAULT NULL,
+ "category" varchar(50) DEFAULT NULL,
+ "description" varchar(255) NOT NULL,
+ "amount" numeric NOT NULL,
+ "amount_paid" numeric NOT NULL DEFAULT '0.00',
+ "due_date" date NOT NULL,
+ "paid_at" date DEFAULT NULL,
+ "status" varchar(20) NOT NULL DEFAULT 'pending',
+ "payment_method" varchar(30) DEFAULT NULL,
+ "notes" text,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL,
+ "category_id" integer DEFAULT NULL,
+ "supplier_id" integer DEFAULT NULL,
+ "chart_of_account_id" integer DEFAULT NULL,
+ "cost_center_id" integer DEFAULT NULL,
+ "penalty_amount" numeric NOT NULL DEFAULT '0.00',
+ "interest_amount" numeric NOT NULL DEFAULT '0.00',
+ "discount_amount" numeric NOT NULL DEFAULT '0.00',
+ "work_order_id" integer DEFAULT NULL
+);
+
+CREATE TABLE "accounts_receivable" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "customer_id" integer NOT NULL,
+ "work_order_id" integer DEFAULT NULL,
+ "quote_id" integer DEFAULT NULL,
+ "origin_type" varchar(30) DEFAULT NULL,
+ "invoice_id" integer DEFAULT NULL,
+ "created_by" integer DEFAULT NULL,
+ "updated_by" integer DEFAULT NULL,
+ "deleted_by" integer DEFAULT NULL,
+ "description" varchar(255) NOT NULL,
+ "amount" numeric NOT NULL,
+ "amount_paid" numeric NOT NULL DEFAULT '0.00',
+ "due_date" date NOT NULL,
+ "paid_at" date DEFAULT NULL,
+ "status" varchar(20) NOT NULL DEFAULT 'pending',
+ "payment_method" varchar(30) DEFAULT NULL,
+ "notes" text,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL,
+ "chart_of_account_id" integer DEFAULT NULL,
+ "collection_rule_id" integer DEFAULT NULL,
+ "last_collection_action_at" datetime NULL DEFAULT NULL,
+ "days_overdue" int NOT NULL DEFAULT '0',
+ "nosso_numero" varchar(30) DEFAULT NULL,
+ "numero_documento" varchar(30) DEFAULT NULL,
+ "penalty_amount" numeric NOT NULL DEFAULT '0.00',
+ "interest_amount" numeric NOT NULL DEFAULT '0.00',
+ "discount_amount" numeric NOT NULL DEFAULT '0.00',
+ "cost_center_id" integer DEFAULT NULL,
+ "reference_id" integer DEFAULT NULL
+);
+
+CREATE TABLE "accreditation_scopes" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "accreditation_number" varchar(100) NOT NULL,
+ "accrediting_body" varchar(100) NOT NULL DEFAULT 'Cgcre/Inmetro',
+ "scope_description" text NOT NULL,
+ "equipment_categories" text NOT NULL,
+ "valid_from" date NOT NULL,
+ "valid_until" date NOT NULL,
+ "certificate_file" varchar(500) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
 
 CREATE TABLE "admissions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -134,7 +235,6 @@ CREATE TABLE "alert_configurations" (
  "blackout_end" varchar(5) DEFAULT NULL,
  "threshold_amount" numeric DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "alert_configurations_tenant_id_alert_type_unique" ON "alert_configurations" ("tenant_id","alert_type");
 
 CREATE TABLE "analytics_datasets" (
@@ -254,8 +354,21 @@ CREATE TABLE "asset_records" (
  "deleted_at" datetime NULL DEFAULT NULL,
  "crm_deal_id" integer DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "asset_records_tenant_code_unique" ON "asset_records" ("tenant_id","code");
+
+CREATE TABLE "asset_tag_scans" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
+ "asset_tag_id" integer NOT NULL,
+ "scanned_by" integer NOT NULL,
+ "action" varchar(50) NOT NULL DEFAULT 'scan',
+ "location" varchar(255) DEFAULT NULL,
+ "latitude" numeric DEFAULT NULL,
+ "longitude" numeric DEFAULT NULL,
+ "metadata" text DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
 
 CREATE TABLE "asset_tags" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -272,7 +385,6 @@ CREATE TABLE "asset_tags" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "asset_tags_tag_code_unique" ON "asset_tags" ("tag_code");
 
 CREATE TABLE "audit_blockchain_hashes" (
@@ -285,6 +397,21 @@ CREATE TABLE "audit_blockchain_hashes" (
  "user_id" integer DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "audit_logs" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
+ "user_id" integer DEFAULT NULL,
+ "action" varchar(50) NOT NULL,
+ "auditable_type" varchar(255) DEFAULT NULL,
+ "auditable_id" integer DEFAULT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "old_values" text DEFAULT NULL,
+ "new_values" text DEFAULT NULL,
+ "ip_address" varchar(45) DEFAULT NULL,
+ "user_agent" varchar(255) DEFAULT NULL,
+ "created_at" datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "auto_assignment_rules" (
@@ -315,8 +442,55 @@ CREATE TABLE "auto_purchase_rules" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "auto_purchase_rules_tenant_id_product_id_unique" ON "auto_purchase_rules" ("tenant_id","product_id");
+
+CREATE TABLE "automation_report_formats" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "automation_report_formats_tid_slug_uq" ON "automation_report_formats" ("tenant_id","slug");
+
+CREATE TABLE "automation_report_frequencies" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "automation_report_frequencies_tid_slug_uq" ON "automation_report_frequencies" ("tenant_id","slug");
+
+CREATE TABLE "automation_report_types" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "automation_report_types_tid_slug_uq" ON "automation_report_types" ("tenant_id","slug");
 
 CREATE TABLE "automation_rules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -344,7 +518,6 @@ CREATE TABLE "auvo_id_mappings" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "auvo_id_mappings_tenant_id_entity_type_auvo_id_unique" ON "auvo_id_mappings" ("tenant_id","entity_type","auvo_id");
 
 CREATE TABLE "auvo_imports" (
@@ -384,6 +557,22 @@ CREATE TABLE "auxiliary_tools" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
+
+CREATE TABLE "bank_account_types" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "bank_account_types_tid_slug_uq" ON "bank_account_types" ("tenant_id","slug");
 
 CREATE TABLE "bank_accounts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -451,6 +640,35 @@ CREATE TABLE "batches" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "biometric_configs" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
+ "user_id" integer NOT NULL,
+ "enabled" tinyint NOT NULL DEFAULT '0',
+ "type" varchar(20) DEFAULT NULL,
+ "device_id" varchar(255) DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "biometric_configs_user_id_unique" ON "biometric_configs" ("user_id");
+
+CREATE TABLE "biometric_consents" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "user_id" integer NOT NULL,
+ "data_type" varchar(255) NOT NULL,
+ "legal_basis" varchar(255) NOT NULL,
+ "purpose" text NOT NULL,
+ "consented_at" date NOT NULL,
+ "expires_at" date DEFAULT NULL,
+ "revoked_at" date DEFAULT NULL,
+ "alternative_method" varchar(255) DEFAULT NULL,
+ "retention_days" int NOT NULL DEFAULT '365',
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
 CREATE TABLE "branches" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -479,7 +697,6 @@ CREATE TABLE "business_hours" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "business_hours_tenant_id_day_of_week_unique" ON "business_hours" ("tenant_id","day_of_week");
 
 CREATE TABLE "cache" (
@@ -496,6 +713,19 @@ CREATE TABLE "cache_locks" (
  PRIMARY KEY ("key")
 );
 
+CREATE TABLE "calibration_decision_logs" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "equipment_calibration_id" integer NOT NULL,
+ "user_id" integer NOT NULL,
+ "decision_rule" varchar(20) NOT NULL,
+ "inputs" text NOT NULL,
+ "outputs" text NOT NULL,
+ "engine_version" varchar(20) NOT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
 CREATE TABLE "calibration_readings" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -507,14 +737,74 @@ CREATE TABLE "calibration_readings" (
  "expanded_uncertainty" numeric DEFAULT NULL,
  "k_factor" numeric NOT NULL DEFAULT '2.00',
  "correction" numeric DEFAULT NULL,
+ "max_permissible_error" numeric DEFAULT NULL,
+ "ema_conforms" tinyint DEFAULT NULL,
  "reading_order" int NOT NULL DEFAULT '0',
  "repetition" int NOT NULL DEFAULT '1',
  "unit" varchar(10) NOT NULL DEFAULT 'kg',
+ "temperature" numeric DEFAULT NULL,
+ "humidity" numeric DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL,
  "ema" numeric DEFAULT NULL,
  "conforms" tinyint DEFAULT NULL
-, "max_permissible_error" numeric, "ema_conforms" tinyint(1), "temperature" numeric, "humidity" numeric);
+);
+
+CREATE TABLE "calibration_standard_weight" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "equipment_calibration_id" integer NOT NULL,
+ "standard_weight_id" integer NOT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer DEFAULT NULL
+);
+CREATE UNIQUE INDEX "cal_sw_unique" ON "calibration_standard_weight" ("equipment_calibration_id","standard_weight_id");
+
+CREATE TABLE "calibration_types" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "calibration_types_tid_slug_uq" ON "calibration_types" ("tenant_id","slug");
+
+CREATE TABLE "cameras" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "stream_url" varchar(255) NOT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "position" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer DEFAULT NULL,
+ "location" varchar(255) DEFAULT NULL,
+ "type" varchar(255) NOT NULL DEFAULT 'ip'
+);
+
+CREATE TABLE "cancellation_reasons" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL,
+ "applies_to" text DEFAULT NULL
+);
+CREATE UNIQUE INDEX "cancellation_reasons_tid_slug_uq" ON "cancellation_reasons" ("tenant_id","slug");
 
 CREATE TABLE "candidates" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -558,7 +848,7 @@ CREATE TABLE "central_attachments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
  "agenda_item_id" integer NOT NULL,
- "nome" varchar(255) NOT NULL,
+ "name" varchar(255) NOT NULL,
  "path" varchar(500) NOT NULL,
  "mime_type" varchar(100) DEFAULT NULL,
  "size" integer NOT NULL DEFAULT '0',
@@ -569,22 +859,86 @@ CREATE TABLE "central_attachments" (
 
 CREATE TABLE "central_item_comments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
  "agenda_item_id" integer NOT NULL,
  "user_id" integer DEFAULT NULL,
  "body" text NOT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
-, "tenant_id" integer);
+);
+
+CREATE TABLE "central_item_dependencies" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "item_id" integer NOT NULL,
+ "depends_on_id" integer NOT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL
+);
+CREATE UNIQUE INDEX "central_item_dependencies_item_id_depends_on_id_unique" ON "central_item_dependencies" ("item_id","depends_on_id");
 
 CREATE TABLE "central_item_history" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
  "agenda_item_id" integer NOT NULL,
  "user_id" integer DEFAULT NULL,
  "action" varchar(50) NOT NULL,
  "from_value" varchar(255) DEFAULT NULL,
  "to_value" varchar(255) DEFAULT NULL,
  "created_at" datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
-, "tenant_id" integer);
+);
+
+CREATE TABLE "central_item_watchers" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "agenda_item_id" integer NOT NULL,
+ "user_id" integer NOT NULL,
+ "role" varchar(20) NOT NULL DEFAULT 'watcher',
+ "notify_status_change" tinyint NOT NULL DEFAULT '1',
+ "notify_comment" tinyint NOT NULL DEFAULT '1',
+ "notify_due_date" tinyint NOT NULL DEFAULT '1',
+ "notify_assignment" tinyint NOT NULL DEFAULT '1',
+ "added_by_type" varchar(20) NOT NULL DEFAULT 'manual',
+ "added_by_user_id" integer DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL
+);
+CREATE UNIQUE INDEX "ciw_item_user_unique" ON "central_item_watchers" ("agenda_item_id","user_id");
+
+CREATE TABLE "central_items" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "type" varchar(20) NOT NULL,
+ "origin" varchar(20) NOT NULL DEFAULT 'manual',
+ "ref_type" varchar(100) DEFAULT NULL,
+ "ref_id" integer DEFAULT NULL,
+ "title" varchar(255) NOT NULL,
+ "short_description" text,
+ "assignee_user_id" integer DEFAULT NULL,
+ "created_by_user_id" integer DEFAULT NULL,
+ "status" varchar(20) NOT NULL DEFAULT 'open',
+ "priority" varchar(20) NOT NULL DEFAULT 'medium',
+ "visibility" varchar(20) NOT NULL DEFAULT 'team',
+ "due_at" datetime NULL DEFAULT NULL,
+ "remind_at" datetime NULL DEFAULT NULL,
+ "snooze_until" datetime NULL DEFAULT NULL,
+ "sla_due_at" datetime NULL DEFAULT NULL,
+ "closed_at" datetime NULL DEFAULT NULL,
+ "closed_by" integer DEFAULT NULL,
+ "context" text DEFAULT NULL,
+ "tags" text DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL,
+ "remind_notified_at" datetime NULL DEFAULT NULL,
+ "recurrence_pattern" varchar(30) DEFAULT NULL,
+ "recurrence_interval" integer NOT NULL DEFAULT '1',
+ "recurrence_next_at" datetime NULL DEFAULT NULL,
+ "escalation_hours" integer DEFAULT NULL,
+ "visibility_departments" text DEFAULT NULL,
+ "visibility_users" text DEFAULT NULL
+);
+CREATE UNIQUE INDEX "ci_ref_unique" ON "central_items" ("tenant_id","ref_type","ref_id");
 
 CREATE TABLE "central_notification_prefs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -604,7 +958,6 @@ CREATE TABLE "central_notification_prefs" (
  "pwa_mode" varchar(20) DEFAULT NULL,
  "notify_types" text DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "cnp_user_tenant" ON "central_notification_prefs" ("user_id","tenant_id");
 
 CREATE TABLE "central_rules" (
@@ -631,10 +984,29 @@ CREATE TABLE "central_subtasks" (
  "tenant_id" integer NOT NULL,
  "agenda_item_id" integer NOT NULL,
  "title" varchar(255) NOT NULL,
- "concluido" tinyint NOT NULL DEFAULT '0',
- "ordem" integer NOT NULL DEFAULT '0',
+ "is_completed" tinyint NOT NULL DEFAULT '0',
+ "sort_order" integer NOT NULL DEFAULT '0',
  "completed_by" integer DEFAULT NULL,
  "completed_at" datetime NULL DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "central_templates" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(150) NOT NULL,
+ "description" text,
+ "type" varchar(20) NOT NULL DEFAULT 'TAREFA',
+ "priority" varchar(20) NOT NULL DEFAULT 'medium',
+ "visibility" varchar(20) NOT NULL DEFAULT 'team',
+ "category" varchar(60) DEFAULT NULL,
+ "due_days" int DEFAULT NULL,
+ "subtasks" text DEFAULT NULL,
+ "default_watchers" text DEFAULT NULL,
+ "tags" text DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "created_by" integer DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
@@ -651,6 +1023,30 @@ CREATE TABLE "central_time_entries" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+
+CREATE TABLE "certificate_emission_checklists" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "equipment_calibration_id" integer NOT NULL,
+ "verified_by" integer NOT NULL,
+ "equipment_identified" tinyint NOT NULL DEFAULT '0',
+ "scope_defined" tinyint NOT NULL DEFAULT '0',
+ "critical_analysis_done" tinyint NOT NULL DEFAULT '0',
+ "procedure_defined" tinyint NOT NULL DEFAULT '0',
+ "standards_traceable" tinyint NOT NULL DEFAULT '0',
+ "raw_data_recorded" tinyint NOT NULL DEFAULT '0',
+ "uncertainty_calculated" tinyint NOT NULL DEFAULT '0',
+ "adjustment_documented" tinyint NOT NULL DEFAULT '0',
+ "no_undue_interval" tinyint NOT NULL DEFAULT '0',
+ "conformity_declaration_valid" tinyint NOT NULL DEFAULT '0',
+ "accreditation_mark_correct" tinyint NOT NULL DEFAULT '0',
+ "observations" text,
+ "approved" tinyint NOT NULL DEFAULT '0',
+ "verified_at" datetime DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "cert_checklist_cal_unique" ON "certificate_emission_checklists" ("equipment_calibration_id");
 
 CREATE TABLE "certificate_signatures" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -694,7 +1090,6 @@ CREATE TABLE "chart_of_accounts" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "chart_of_accounts_tenant_id_code_unique" ON "chart_of_accounts" ("tenant_id","code");
 
 CREATE TABLE "chat_messages" (
@@ -737,13 +1132,20 @@ CREATE TABLE "client_portal_users" (
  "name" varchar(255) NOT NULL,
  "email" varchar(255) NOT NULL,
  "password" varchar(255) NOT NULL,
+ "password_changed_at" datetime NULL DEFAULT NULL,
+ "password_history" text DEFAULT NULL,
  "is_active" tinyint NOT NULL DEFAULT '1',
+ "failed_login_attempts" int NOT NULL DEFAULT '0',
+ "locked_until" datetime NULL DEFAULT NULL,
+ "two_factor_enabled" tinyint NOT NULL DEFAULT '0',
+ "two_factor_secret" text,
+ "two_factor_recovery_codes" text DEFAULT NULL,
+ "two_factor_confirmed_at" datetime NULL DEFAULT NULL,
  "last_login_at" datetime NULL DEFAULT NULL,
  "remember_token" varchar(100) DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
-, "failed_login_attempts" integer not null default '0', "locked_until" datetime, "password_changed_at" datetime, "password_history" text, "two_factor_enabled" tinyint(1) not null default '0', "two_factor_secret" text, "two_factor_recovery_codes" text, "two_factor_confirmed_at" datetime);
-
+);
 CREATE UNIQUE INDEX "client_portal_users_tenant_id_email_unique" ON "client_portal_users" ("tenant_id","email");
 
 CREATE TABLE "clt_violations" (
@@ -877,7 +1279,6 @@ CREATE TABLE "commission_goals" (
  "target_value" numeric DEFAULT NULL,
  "current_value" numeric DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "commission_goals_tenant_user_period_type_unique" ON "commission_goals" ("tenant_id","user_id","period","type");
 
 CREATE TABLE "commission_rules" (
@@ -922,7 +1323,6 @@ CREATE TABLE "commission_settlements" (
  "payment_notes" text,
  "total" numeric DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "commission_settlements_tenant_id_user_id_period_unique" ON "commission_settlements" ("tenant_id","user_id","period");
 
 CREATE TABLE "commission_splits" (
@@ -1043,6 +1443,22 @@ CREATE TABLE "contract_measurements" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "contract_types" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "contract_types_tid_slug_uq" ON "contract_types" ("tenant_id","slug");
+
 CREATE TABLE "contracts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -1153,6 +1569,7 @@ CREATE TABLE "crm_contract_renewals" (
 
 CREATE TABLE "crm_deal_competitors" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL DEFAULT '0',
  "deal_id" integer NOT NULL,
  "competitor_name" varchar(255) NOT NULL,
  "competitor_price" numeric DEFAULT NULL,
@@ -1161,7 +1578,7 @@ CREATE TABLE "crm_deal_competitors" (
  "outcome" varchar(255) DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
-, "tenant_id" integer not null default '0');
+);
 
 CREATE TABLE "crm_deal_products" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1229,7 +1646,6 @@ CREATE TABLE "crm_email_threads" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "crm_email_threads_message_id_hash_unique" ON "crm_email_threads" ("message_id_hash");
 
 CREATE TABLE "crm_external_leads" (
@@ -1282,6 +1698,23 @@ CREATE TABLE "crm_forecast_snapshots" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "crm_funnel_automations" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "pipeline_id" integer DEFAULT NULL,
+ "stage_id" integer DEFAULT NULL,
+ "name" varchar(255) NOT NULL,
+ "trigger_event" varchar(255) NOT NULL,
+ "conditions" text DEFAULT NULL,
+ "actions" text NOT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_by" integer DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+
 CREATE TABLE "crm_interactive_proposals" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -1302,7 +1735,6 @@ CREATE TABLE "crm_interactive_proposals" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "crm_interactive_proposals_token_unique" ON "crm_interactive_proposals" ("token");
 
 CREATE TABLE "crm_lead_scores" (
@@ -1316,7 +1748,6 @@ CREATE TABLE "crm_lead_scores" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "crm_lead_scores_tenant_id_customer_id_unique" ON "crm_lead_scores" ("tenant_id","customer_id");
 
 CREATE TABLE "crm_lead_scoring_rules" (
@@ -1358,7 +1789,6 @@ CREATE TABLE "crm_message_templates" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "crm_message_templates_tenant_id_slug_unique" ON "crm_message_templates" ("tenant_id","slug");
 
 CREATE TABLE "crm_messages" (
@@ -1415,7 +1845,6 @@ CREATE TABLE "crm_pipelines" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "crm_pipelines_tenant_id_slug_unique" ON "crm_pipelines" ("tenant_id","slug");
 
 CREATE TABLE "crm_referrals" (
@@ -1477,6 +1906,7 @@ CREATE TABLE "crm_sequence_enrollments" (
 
 CREATE TABLE "crm_sequence_steps" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL DEFAULT '0',
  "sequence_id" integer NOT NULL,
  "step_order" int NOT NULL,
  "delay_days" int NOT NULL DEFAULT '0',
@@ -1488,7 +1918,7 @@ CREATE TABLE "crm_sequence_steps" (
  "metadata" text DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
-, "tenant_id" integer not null default '0');
+);
 
 CREATE TABLE "crm_sequences" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1538,13 +1968,13 @@ CREATE TABLE "crm_territories" (
 
 CREATE TABLE "crm_territory_members" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL DEFAULT '0',
  "territory_id" integer NOT NULL,
  "user_id" integer NOT NULL,
  "role" varchar(255) NOT NULL DEFAULT 'member',
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
-, "tenant_id" integer not null default '0');
-
+);
 CREATE UNIQUE INDEX "crm_territory_members_territory_id_user_id_unique" ON "crm_territory_members" ("territory_id","user_id");
 
 CREATE TABLE "crm_tracking_events" (
@@ -1565,6 +1995,7 @@ CREATE TABLE "crm_tracking_events" (
 
 CREATE TABLE "crm_web_form_submissions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
  "form_id" integer NOT NULL,
  "customer_id" integer DEFAULT NULL,
  "deal_id" integer DEFAULT NULL,
@@ -1576,7 +2007,7 @@ CREATE TABLE "crm_web_form_submissions" (
  "utm_campaign" varchar(255) DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
-, "tenant_id" integer);
+);
 
 CREATE TABLE "crm_web_forms" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1596,7 +2027,6 @@ CREATE TABLE "crm_web_forms" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "crm_web_forms_tenant_slug_unique" ON "crm_web_forms" ("tenant_id","slug");
 
 CREATE TABLE "custom_themes" (
@@ -1612,7 +2042,6 @@ CREATE TABLE "custom_themes" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "custom_themes_tenant_id_unique" ON "custom_themes" ("tenant_id");
 
 CREATE TABLE "customer_addresses" (
@@ -1635,6 +2064,22 @@ CREATE TABLE "customer_addresses" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "customer_company_sizes" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "customer_company_sizes_tid_slug_uq" ON "customer_company_sizes" ("tenant_id","slug");
+
 CREATE TABLE "customer_complaints" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -1652,6 +2097,19 @@ CREATE TABLE "customer_complaints" (
  "updated_at" datetime NULL DEFAULT NULL,
  "response_due_at" date DEFAULT NULL,
  "responded_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "customer_contacts" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "customer_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "role" varchar(100) DEFAULT NULL,
+ "phone" varchar(20) DEFAULT NULL,
+ "email" varchar(255) DEFAULT NULL,
+ "is_primary" tinyint NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL
 );
 
 CREATE TABLE "customer_documents" (
@@ -1680,7 +2138,6 @@ CREATE TABLE "customer_health_scores" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "customer_health_scores_tenant_id_customer_id_unique" ON "customer_health_scores" ("tenant_id","customer_id");
 
 CREATE TABLE "customer_locations" (
@@ -1697,7 +2154,24 @@ CREATE TABLE "customer_locations" (
  "contact_name" varchar(255) DEFAULT NULL,
  "contact_phone" varchar(20) DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL);
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "customer_ratings" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "customer_ratings_tid_slug_uq" ON "customer_ratings" ("tenant_id","slug");
 
 CREATE TABLE "customer_rfm_scores" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1715,15 +2189,32 @@ CREATE TABLE "customer_rfm_scores" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "crfm_tenant_cust_uniq" ON "customer_rfm_scores" ("tenant_id","customer_id");
+
+CREATE TABLE "customer_segments" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "customer_segments_tid_slug_uq" ON "customer_segments" ("tenant_id","slug");
 
 CREATE TABLE "customers" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
  "type" varchar NOT NULL DEFAULT 'PF',
  "name" varchar(255) NOT NULL,
- "document" varchar(20) DEFAULT NULL,
+ "document" text,
+ "document_hash" varchar(64) DEFAULT NULL,
+ "asaas_id" varchar(255) DEFAULT NULL,
  "email" varchar(255) DEFAULT NULL,
  "phone" varchar(20) DEFAULT NULL,
  "notification_preferences" text DEFAULT NULL,
@@ -1785,8 +2276,10 @@ CREATE TABLE "customers" (
  "secondary_activities" text DEFAULT NULL,
  "enrichment_data" text DEFAULT NULL,
  "enriched_at" datetime NULL DEFAULT NULL,
- "company_name" varchar(255) DEFAULT NULL
-, "asaas_id" varchar, "document_hash" varchar, "document_hash_active_key" TEXT GENERATED ALWAYS AS (IFNULL("deleted_at", '1970-01-01 00:00:00')) STORED);
+ "company_name" varchar(255) DEFAULT NULL,
+ "document_hash_active_key" char(19) GENERATED ALWAYS AS (ifnull(cast("deleted_at" as char(19)),'1970-01-01 00:00:00')) STORED
+);
+CREATE UNIQUE INDEX "customers_tenant_active_document_hash_unique" ON "customers" ("tenant_id","document_hash","document_hash_active_key");
 
 CREATE TABLE "data_export_jobs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1819,6 +2312,16 @@ CREATE TABLE "data_masking_rules" (
  "roles_exempt" text DEFAULT NULL,
  "is_active" tinyint NOT NULL DEFAULT '1',
  "created_at" datetime NOT NULL
+);
+
+CREATE TABLE "debt_renegotiation_items" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "debt_renegotiation_id" integer NOT NULL,
+ "account_receivable_id" integer NOT NULL,
+ "original_amount" numeric NOT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL
 );
 
 CREATE TABLE "debt_renegotiations" (
@@ -1870,8 +2373,23 @@ CREATE TABLE "depreciation_logs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "depreciation_logs_tenant_asset_month_unique" ON "depreciation_logs" ("tenant_id","asset_record_id","reference_month");
+
+CREATE TABLE "document_types" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "document_types_tid_slug_uq" ON "document_types" ("tenant_id","slug");
 
 CREATE TABLE "document_versions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1932,7 +2450,6 @@ CREATE TABLE "email_accounts" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "email_accounts_tenant_id_email_address_unique" ON "email_accounts" ("tenant_id","email_address");
 
 CREATE TABLE "email_activities" (
@@ -1972,6 +2489,13 @@ CREATE TABLE "email_campaigns" (
  "created_by" integer DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "email_email_tag" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "email_id" integer NOT NULL,
+ "email_tag_id" integer NOT NULL,
+ "tenant_id" integer DEFAULT NULL
 );
 
 CREATE TABLE "email_logs" (
@@ -2090,7 +2614,6 @@ CREATE TABLE "emails" (
  "assigned_to_user_id" integer DEFAULT NULL,
  "assigned_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "emails_message_id_unique" ON "emails" ("message_id");
 
 CREATE TABLE "embedded_dashboards" (
@@ -2127,7 +2650,8 @@ CREATE TABLE "employee_dependents" (
  "tenant_id" integer NOT NULL,
  "user_id" integer NOT NULL,
  "name" varchar(255) NOT NULL,
- "cpf" varchar(11) DEFAULT NULL,
+ "cpf" text,
+ "cpf_hash" varchar(64) DEFAULT NULL,
  "birth_date" date DEFAULT NULL,
  "relationship" varchar(30) NOT NULL,
  "is_irrf_dependent" tinyint NOT NULL DEFAULT '1',
@@ -2136,7 +2660,7 @@ CREATE TABLE "employee_dependents" (
  "end_date" date DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
-, "cpf_hash" varchar);
+);
 
 CREATE TABLE "employee_documents" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2170,6 +2694,155 @@ CREATE TABLE "epi_records" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "equipment_brands" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "equipment_brands_tid_slug_uq" ON "equipment_brands" ("tenant_id","slug");
+
+CREATE TABLE "equipment_calibrations" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "equipment_id" integer NOT NULL,
+ "calibration_date" date NOT NULL,
+ "calibration_started_at" datetime DEFAULT NULL,
+ "calibration_completed_at" datetime DEFAULT NULL,
+ "next_due_date" date DEFAULT NULL,
+ "calibration_type" varchar(30) NOT NULL DEFAULT 'externa',
+ "result" varchar(30) NOT NULL DEFAULT 'approved',
+ "laboratory" varchar(150) DEFAULT NULL,
+ "certificate_number" varchar(50) DEFAULT NULL,
+ "certificate_file" varchar(255) DEFAULT NULL,
+ "uncertainty" varchar(50) DEFAULT NULL,
+ "errors_found" text DEFAULT NULL,
+ "corrections_applied" text,
+ "performed_by" integer DEFAULT NULL,
+ "approved_by" integer DEFAULT NULL,
+ "cost" numeric DEFAULT NULL,
+ "work_order_id" integer DEFAULT NULL,
+ "notes" text,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL,
+ "certificate_pdf_path" varchar(255) DEFAULT NULL,
+ "standard_used" varchar(255) DEFAULT NULL,
+ "error_found" numeric DEFAULT NULL,
+ "technician_notes" text,
+ "temperature" numeric DEFAULT NULL,
+ "humidity" numeric DEFAULT NULL,
+ "pressure" numeric DEFAULT NULL,
+ "status" varchar(20) DEFAULT NULL,
+ "nominal_mass" varchar(255) DEFAULT NULL,
+ "error_after_adjustment" numeric DEFAULT NULL,
+ "traceability" text,
+ "eccentricity_data" text DEFAULT NULL,
+ "has_nonconformity" tinyint NOT NULL DEFAULT '0',
+ "nonconformity_details" text,
+ "batch_generated" tinyint NOT NULL DEFAULT '0',
+ "verification_token" varchar(64) DEFAULT NULL,
+ "certificate_template_id" integer DEFAULT NULL,
+ "conformity_declaration" varchar(255) DEFAULT NULL,
+ "max_permissible_error" numeric DEFAULT NULL,
+ "max_error_found" numeric DEFAULT NULL,
+ "mass_unit" varchar(10) NOT NULL DEFAULT 'kg',
+ "calibration_method" varchar(255) DEFAULT NULL,
+ "precision_class" varchar(10) DEFAULT NULL,
+ "received_date" date DEFAULT NULL,
+ "issued_date" date DEFAULT NULL,
+ "calibration_location" varchar(500) DEFAULT NULL,
+ "calibration_location_type" varchar(30) DEFAULT NULL,
+ "before_adjustment_data" text DEFAULT NULL,
+ "after_adjustment_data" text DEFAULT NULL,
+ "condition_as_found" text,
+ "condition_as_left" text,
+ "adjustment_performed" tinyint NOT NULL DEFAULT '0',
+ "verification_type" varchar(30) DEFAULT NULL,
+ "verification_division_e" numeric DEFAULT NULL,
+ "prefilled_from_id" integer DEFAULT NULL,
+ "gravity_acceleration" numeric DEFAULT NULL,
+ "decision_rule" varchar(30) DEFAULT 'simple',
+ "uncertainty_budget" text DEFAULT NULL,
+ "coverage_factor_k" numeric DEFAULT NULL,
+ "confidence_level" numeric DEFAULT NULL,
+ "guard_band_mode" varchar(20) DEFAULT NULL,
+ "guard_band_value" numeric DEFAULT NULL,
+ "producer_risk_alpha" numeric DEFAULT NULL,
+ "consumer_risk_beta" numeric DEFAULT NULL,
+ "decision_result" varchar(10) DEFAULT NULL,
+ "decision_z_value" numeric DEFAULT NULL,
+ "decision_false_accept_prob" numeric DEFAULT NULL,
+ "decision_guard_band_applied" numeric DEFAULT NULL,
+ "decision_calculated_at" datetime DEFAULT NULL,
+ "decision_calculated_by" integer DEFAULT NULL,
+ "decision_notes" text,
+ "laboratory_address" varchar(500) DEFAULT NULL,
+ "scope_declaration" text,
+ "accreditation_scope_id" integer DEFAULT NULL,
+ "icp_signature_status" varchar(255) DEFAULT NULL
+);
+CREATE UNIQUE INDEX "equipment_calibrations_verification_token_unique" ON "equipment_calibrations" ("verification_token");
+
+CREATE TABLE "equipment_categories" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "equipment_categories_tid_slug_uq" ON "equipment_categories" ("tenant_id","slug");
+
+CREATE TABLE "equipment_documents" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "equipment_id" integer NOT NULL,
+ "type" varchar(30) NOT NULL DEFAULT 'certificado',
+ "name" varchar(150) NOT NULL,
+ "file_path" varchar(255) NOT NULL,
+ "expires_at" date DEFAULT NULL,
+ "uploaded_by" integer DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL
+);
+
+CREATE TABLE "equipment_maintenances" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "equipment_id" integer NOT NULL,
+ "type" varchar(30) NOT NULL DEFAULT 'corretiva',
+ "description" text NOT NULL,
+ "parts_replaced" text,
+ "cost" numeric DEFAULT NULL,
+ "downtime_hours" numeric DEFAULT NULL,
+ "performed_by" integer DEFAULT NULL,
+ "work_order_id" integer DEFAULT NULL,
+ "next_maintenance_at" date DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL
+);
+
+CREATE TABLE "equipment_model_product" (
+ "equipment_model_id" integer NOT NULL,
+ "product_id" integer NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
+ PRIMARY KEY ("equipment_model_id","product_id")
+);
+
 CREATE TABLE "equipment_models" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -2179,6 +2852,22 @@ CREATE TABLE "equipment_models" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+
+CREATE TABLE "equipment_types" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "equipment_types_tid_slug_uq" ON "equipment_types" ("tenant_id","slug");
 
 CREATE TABLE "equipments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2223,7 +2912,6 @@ CREATE TABLE "equipments" (
  "min_capacity" numeric DEFAULT NULL,
  "max_capacity" numeric DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "equipments_qr_token_unique" ON "equipments" ("qr_token");
 
 CREATE TABLE "erp_sync_logs" (
@@ -2304,7 +2992,6 @@ CREATE TABLE "esocial_rubrics" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "esocial_rubrics_tenant_id_code_unique" ON "esocial_rubrics" ("tenant_id","code");
 
 CREATE TABLE "espelho_confirmations" (
@@ -2350,6 +3037,18 @@ CREATE TABLE "expense_categories" (
  "budget_limit" numeric DEFAULT NULL,
  "default_affects_net_value" tinyint NOT NULL DEFAULT '0',
  "default_affects_technician_cash" tinyint NOT NULL DEFAULT '1'
+);
+
+CREATE TABLE "expense_status_history" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "expense_id" integer NOT NULL,
+ "changed_by" integer NOT NULL,
+ "from_status" varchar(20) DEFAULT NULL,
+ "to_status" varchar(20) NOT NULL,
+ "reason" varchar(500) DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL
 );
 
 CREATE TABLE "expenses" (
@@ -2410,7 +3109,6 @@ CREATE TABLE "failed_jobs" (
  "exception" text NOT NULL,
  "failed_at" datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
 CREATE UNIQUE INDEX "failed_jobs_uuid_unique" ON "failed_jobs" ("uuid");
 
 CREATE TABLE "financial_checks" (
@@ -2489,7 +3187,6 @@ CREATE TABLE "fiscal_invoices" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "fiscal_invoices_tenant_number_unique" ON "fiscal_invoices" ("tenant_id","number");
 
 CREATE TABLE "fiscal_notes" (
@@ -2532,7 +3229,6 @@ CREATE TABLE "fiscal_notes" (
  "last_email_sent_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "fiscal_notes_access_key_unique" ON "fiscal_notes" ("access_key");
 
 CREATE TABLE "fiscal_scheduled_emissions" (
@@ -2592,6 +3288,22 @@ CREATE TABLE "fleet_fuel_entries" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "fleet_fuel_types" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "fleet_fuel_types_tid_slug_uq" ON "fleet_fuel_types" ("tenant_id","slug");
+
 CREATE TABLE "fleet_maintenances" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -2639,6 +3351,38 @@ CREATE TABLE "fleet_trips" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "fleet_vehicle_statuses" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "fleet_vehicle_statuses_tid_slug_uq" ON "fleet_vehicle_statuses" ("tenant_id","slug");
+
+CREATE TABLE "fleet_vehicle_types" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "fleet_vehicle_types_tid_slug_uq" ON "fleet_vehicle_types" ("tenant_id","slug");
+
 CREATE TABLE "fleet_vehicles" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -2685,6 +3429,38 @@ CREATE TABLE "fleets" (
  "deleted_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "follow_up_channels" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "follow_up_channels_tid_slug_uq" ON "follow_up_channels" ("tenant_id","slug");
+
+CREATE TABLE "follow_up_statuses" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "follow_up_statuses_tid_slug_uq" ON "follow_up_statuses" ("tenant_id","slug");
+
 CREATE TABLE "follow_ups" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -2700,6 +3476,43 @@ CREATE TABLE "follow_ups" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+
+CREATE TABLE "fuel_logs" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL,
+ "fleet_vehicle_id" integer DEFAULT NULL,
+ "driver_id" integer DEFAULT NULL,
+ "date" date DEFAULT NULL,
+ "odometer_km" int DEFAULT NULL,
+ "liters" numeric DEFAULT NULL,
+ "price_per_liter" numeric DEFAULT NULL,
+ "total_value" numeric DEFAULT NULL,
+ "fuel_type" varchar(50) DEFAULT NULL,
+ "gas_station" varchar(255) DEFAULT NULL,
+ "consumption_km_l" numeric DEFAULT NULL,
+ "receipt_path" varchar(255) DEFAULT NULL,
+ "distance_km" numeric DEFAULT NULL,
+ "total_cost" numeric DEFAULT NULL,
+ "created_by" integer DEFAULT NULL
+);
+
+CREATE TABLE "fueling_fuel_types" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "fueling_fuel_types_tid_slug_uq" ON "fueling_fuel_types" ("tenant_id","slug");
 
 CREATE TABLE "fueling_logs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2776,7 +3589,6 @@ CREATE TABLE "gamification_badges" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "gamification_badges_slug_unique" ON "gamification_badges" ("slug");
 
 CREATE TABLE "gamification_scores" (
@@ -2799,7 +3611,6 @@ CREATE TABLE "gamification_scores" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "gs_tenant_user_period_uniq" ON "gamification_scores" ("tenant_id","user_id","period");
 
 CREATE TABLE "gamification_user_badges" (
@@ -2811,7 +3622,6 @@ CREATE TABLE "gamification_user_badges" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "gub_user_badge_uniq" ON "gamification_user_badges" ("user_id","badge_id");
 
 CREATE TABLE "geo_login_alerts" (
@@ -2852,8 +3662,30 @@ CREATE TABLE "holidays" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "holidays_tenant_id_date_unique" ON "holidays" ("tenant_id","date");
+
+CREATE TABLE "hour_bank_policies" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "regime_type" varchar(255) NOT NULL DEFAULT 'individual_mensal',
+ "compensation_period_days" int NOT NULL DEFAULT '30',
+ "max_positive_balance_minutes" int DEFAULT NULL,
+ "max_negative_balance_minutes" int DEFAULT NULL,
+ "block_on_negative_exceeded" tinyint NOT NULL DEFAULT '1',
+ "auto_compensate" tinyint NOT NULL DEFAULT '0',
+ "convert_expired_to_payment" tinyint NOT NULL DEFAULT '0',
+ "overtime_50_multiplier" numeric NOT NULL DEFAULT '1.50',
+ "overtime_100_multiplier" numeric NOT NULL DEFAULT '2.00',
+ "applicable_roles" text DEFAULT NULL,
+ "applicable_teams" text DEFAULT NULL,
+ "applicable_unions" text DEFAULT NULL,
+ "requires_two_level_approval" tinyint NOT NULL DEFAULT '1',
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
 
 CREATE TABLE "hour_bank_transactions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -2894,7 +3726,6 @@ CREATE TABLE "import_templates" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "import_templates_tenant_id_entity_type_name_unique" ON "import_templates" ("tenant_id","entity_type","name");
 
 CREATE TABLE "important_dates" (
@@ -2960,7 +3791,6 @@ CREATE TABLE "inmetro_base_configs" (
  "email_subject_template" varchar(255) DEFAULT NULL,
  "email_body_template" text
 );
-
 CREATE UNIQUE INDEX "inmetro_base_configs_tenant_id_unique" ON "inmetro_base_configs" ("tenant_id");
 
 CREATE TABLE "inmetro_competitor_snapshots" (
@@ -3017,6 +3847,47 @@ CREATE TABLE "inmetro_compliance_checklists" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "inmetro_history" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
+ "instrument_id" integer NOT NULL,
+ "event_type" varchar NOT NULL DEFAULT 'verification',
+ "event_date" date NOT NULL,
+ "result" varchar NOT NULL DEFAULT 'approved',
+ "executor" varchar(255) DEFAULT NULL,
+ "executor_document" varchar(20) DEFAULT NULL,
+ "validity_date" date DEFAULT NULL,
+ "notes" text,
+ "osint_threat_level" varchar(50) DEFAULT NULL,
+ "source" varchar(30) NOT NULL DEFAULT 'psie_import',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "competitor_id" integer DEFAULT NULL
+);
+
+CREATE TABLE "inmetro_instruments" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "location_id" integer NOT NULL,
+ "inmetro_number" varchar(30) NOT NULL,
+ "serial_number" varchar(50) DEFAULT NULL,
+ "brand" varchar(50) DEFAULT NULL,
+ "model" varchar(50) DEFAULT NULL,
+ "capacity" varchar(30) DEFAULT NULL,
+ "instrument_type" varchar(80) NOT NULL DEFAULT 'Balança',
+ "current_status" varchar NOT NULL DEFAULT 'unknown',
+ "last_verification_at" date DEFAULT NULL,
+ "next_verification_at" date DEFAULT NULL,
+ "last_executor" varchar(255) DEFAULT NULL,
+ "source" varchar(30) NOT NULL DEFAULT 'xml_import',
+ "last_scrape_status" varchar(50) DEFAULT NULL,
+ "next_deep_scrape_at" datetime NULL DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "linked_equipment_id" integer DEFAULT NULL,
+ "tenant_id" integer DEFAULT NULL,
+ "type" varchar(50) DEFAULT NULL
+);
+
 CREATE TABLE "inmetro_lead_interactions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "owner_id" integer NOT NULL,
@@ -3045,7 +3916,6 @@ CREATE TABLE "inmetro_lead_scores" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "inmetro_lead_scores_owner_id_unique" ON "inmetro_lead_scores" ("owner_id");
 
 CREATE TABLE "inmetro_locations" (
@@ -3067,7 +3937,7 @@ CREATE TABLE "inmetro_locations" (
  "distance_from_base_km" numeric DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL,
- "tenant_id" integer DEFAULT NULL
+ "tenant_id" integer NOT NULL
 );
 
 CREATE TABLE "inmetro_owners" (
@@ -3101,7 +3971,6 @@ CREATE TABLE "inmetro_owners" (
  "deleted_at" datetime NULL DEFAULT NULL,
  "enrichment_data" text DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "inmetro_owners_tenant_id_document_unique" ON "inmetro_owners" ("tenant_id","document");
 
 CREATE TABLE "inmetro_prospection_queue" (
@@ -3118,6 +3987,38 @@ CREATE TABLE "inmetro_prospection_queue" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+
+CREATE TABLE "inmetro_seal_statuses" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "inmetro_seal_statuses_tid_slug_uq" ON "inmetro_seal_statuses" ("tenant_id","slug");
+
+CREATE TABLE "inmetro_seal_types" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "inmetro_seal_types_tid_slug_uq" ON "inmetro_seal_types" ("tenant_id","slug");
 
 CREATE TABLE "inmetro_seals" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3144,7 +4045,6 @@ CREATE TABLE "inmetro_seals" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "inmetro_seals_tenant_id_type_number_unique" ON "inmetro_seals" ("tenant_id","type","number");
 
 CREATE TABLE "inmetro_snapshots" (
@@ -3194,7 +4094,6 @@ CREATE TABLE "inss_brackets" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "inss_brackets_year_min_salary_unique" ON "inss_brackets" ("year","min_salary");
 
 CREATE TABLE "inventories" (
@@ -3234,6 +4133,28 @@ CREATE TABLE "inventory_counts" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "inventory_items" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "inventory_id" integer NOT NULL,
+ "product_id" integer NOT NULL,
+ "batch_id" integer DEFAULT NULL,
+ "product_serial_id" integer DEFAULT NULL,
+ "expected_quantity" numeric NOT NULL,
+ "counted_quantity" numeric DEFAULT NULL,
+ "adjustment_quantity" numeric DEFAULT NULL,
+ "notes" text,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer DEFAULT NULL
+);
+
+CREATE TABLE "inventory_tables_v3" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
 CREATE TABLE "invoices" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -3247,7 +4168,7 @@ CREATE TABLE "invoices" (
  "fiscal_note_key" varchar(255) DEFAULT NULL,
  "fiscal_emitted_at" datetime NULL DEFAULT NULL,
  "fiscal_error" text,
- "total" numeric NOT NULL DEFAULT '0.00',
+ "total" numeric NOT NULL,
  "discount" numeric NOT NULL DEFAULT '0.00',
  "issued_at" date DEFAULT NULL,
  "due_date" date DEFAULT NULL,
@@ -3257,7 +4178,6 @@ CREATE TABLE "invoices" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "invoices_tenant_id_invoice_number_unique" ON "invoices" ("tenant_id","invoice_number");
 
 CREATE TABLE "irrf_brackets" (
@@ -3270,7 +4190,6 @@ CREATE TABLE "irrf_brackets" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "irrf_brackets_year_min_base_unique" ON "irrf_brackets" ("year","min_base");
 
 CREATE TABLE "job_batches" (
@@ -3314,6 +4233,142 @@ CREATE TABLE "jobs" (
  "created_at" int NOT NULL
 );
 
+CREATE TABLE "journey_approvals" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "journey_day_id" integer DEFAULT NULL,
+ "level" varchar(255) NOT NULL,
+ "status" varchar(255) NOT NULL DEFAULT 'pending',
+ "approver_id" integer DEFAULT NULL,
+ "decided_at" datetime NULL DEFAULT NULL,
+ "notes" text,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "journey_entry_id" integer DEFAULT NULL
+);
+
+CREATE TABLE "journey_blocks" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "journey_day_id" integer DEFAULT NULL,
+ "user_id" integer NOT NULL,
+ "classification" varchar(255) NOT NULL,
+ "started_at" datetime NOT NULL,
+ "ended_at" datetime NULL DEFAULT NULL,
+ "duration_minutes" int DEFAULT NULL,
+ "work_order_id" integer DEFAULT NULL,
+ "time_clock_entry_id" integer DEFAULT NULL,
+ "fleet_trip_id" integer DEFAULT NULL,
+ "schedule_id" integer DEFAULT NULL,
+ "metadata" text DEFAULT NULL,
+ "source" varchar(255) NOT NULL,
+ "is_auto_classified" tinyint NOT NULL DEFAULT '1',
+ "is_manually_adjusted" tinyint NOT NULL DEFAULT '0',
+ "adjusted_by" integer DEFAULT NULL,
+ "adjustment_reason" text,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL,
+ "journey_entry_id" integer DEFAULT NULL
+);
+
+CREATE TABLE "journey_days" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "user_id" integer NOT NULL,
+ "reference_date" date NOT NULL,
+ "regime_type" varchar(255) NOT NULL DEFAULT 'clt_mensal',
+ "total_minutes_worked" int NOT NULL DEFAULT '0',
+ "total_minutes_overtime" int NOT NULL DEFAULT '0',
+ "total_minutes_travel" int NOT NULL DEFAULT '0',
+ "total_minutes_wait" int NOT NULL DEFAULT '0',
+ "total_minutes_break" int NOT NULL DEFAULT '0',
+ "total_minutes_overnight" int NOT NULL DEFAULT '0',
+ "total_minutes_oncall" int NOT NULL DEFAULT '0',
+ "operational_approval_status" varchar(255) NOT NULL DEFAULT 'pending',
+ "operational_approver_id" integer DEFAULT NULL,
+ "operational_approved_at" datetime NULL DEFAULT NULL,
+ "hr_approval_status" varchar(255) NOT NULL DEFAULT 'pending',
+ "hr_approver_id" integer DEFAULT NULL,
+ "hr_approved_at" datetime NULL DEFAULT NULL,
+ "is_closed" tinyint NOT NULL DEFAULT '0',
+ "notes" text,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "journey_days_tenant_id_user_id_reference_date_unique" ON "journey_days" ("tenant_id","user_id","reference_date");
+
+CREATE TABLE "journey_entries" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "user_id" integer NOT NULL,
+ "date" date NOT NULL,
+ "journey_rule_id" integer DEFAULT NULL,
+ "scheduled_hours" numeric NOT NULL DEFAULT '0.00',
+ "worked_hours" numeric NOT NULL DEFAULT '0.00',
+ "overtime_hours_50" numeric NOT NULL DEFAULT '0.00',
+ "overtime_hours_100" numeric NOT NULL DEFAULT '0.00',
+ "night_hours" numeric NOT NULL DEFAULT '0.00',
+ "absence_hours" numeric NOT NULL DEFAULT '0.00',
+ "hour_bank_balance" numeric NOT NULL DEFAULT '0.00',
+ "overtime_limit_exceeded" tinyint NOT NULL DEFAULT '0',
+ "tolerance_applied" tinyint NOT NULL DEFAULT '0',
+ "break_compliance" varchar(20) DEFAULT NULL,
+ "inter_shift_hours" numeric DEFAULT NULL,
+ "is_holiday" tinyint NOT NULL DEFAULT '0',
+ "is_dsr" tinyint NOT NULL DEFAULT '0',
+ "status" varchar(30) NOT NULL DEFAULT 'calculated',
+ "notes" text,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "total_minutes_worked" int NOT NULL DEFAULT '0',
+ "total_minutes_overtime" int NOT NULL DEFAULT '0',
+ "total_minutes_travel" int NOT NULL DEFAULT '0',
+ "total_minutes_wait" int NOT NULL DEFAULT '0',
+ "total_minutes_break" int NOT NULL DEFAULT '0',
+ "total_minutes_overnight" int NOT NULL DEFAULT '0',
+ "total_minutes_oncall" int NOT NULL DEFAULT '0',
+ "operational_approval_status" varchar(255) NOT NULL DEFAULT 'pending',
+ "operational_approver_id" integer DEFAULT NULL,
+ "operational_approved_at" datetime NULL DEFAULT NULL,
+ "hr_approval_status" varchar(255) NOT NULL DEFAULT 'pending',
+ "hr_approver_id" integer DEFAULT NULL,
+ "hr_approved_at" datetime NULL DEFAULT NULL,
+ "is_closed" tinyint NOT NULL DEFAULT '0',
+ "regime_type" varchar(255) NOT NULL DEFAULT 'clt_mensal',
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "journey_entries_user_id_date_unique" ON "journey_entries" ("user_id","date");
+
+CREATE TABLE "journey_policies" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "regime_type" varchar(255) NOT NULL DEFAULT 'clt_mensal',
+ "daily_hours_limit" int NOT NULL DEFAULT '480',
+ "weekly_hours_limit" int NOT NULL DEFAULT '2640',
+ "monthly_hours_limit" int DEFAULT NULL,
+ "break_minutes" int NOT NULL DEFAULT '60',
+ "displacement_counts_as_work" tinyint NOT NULL DEFAULT '0',
+ "wait_time_counts_as_work" tinyint NOT NULL DEFAULT '1',
+ "travel_meal_counts_as_break" tinyint NOT NULL DEFAULT '1',
+ "auto_suggest_clock_on_displacement" tinyint NOT NULL DEFAULT '1',
+ "pre_assigned_break" tinyint NOT NULL DEFAULT '0',
+ "overnight_min_hours" int NOT NULL DEFAULT '11',
+ "oncall_multiplier_percent" int NOT NULL DEFAULT '33',
+ "overtime_50_percent_limit" int DEFAULT NULL,
+ "overtime_100_percent_limit" int DEFAULT NULL,
+ "saturday_is_overtime" tinyint NOT NULL DEFAULT '0',
+ "sunday_is_overtime" tinyint NOT NULL DEFAULT '1',
+ "custom_rules" text DEFAULT NULL,
+ "is_default" tinyint NOT NULL DEFAULT '0',
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+
 CREATE TABLE "journey_rules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -3332,8 +4387,39 @@ CREATE TABLE "journey_rules" (
  "agreement_type" varchar(20) NOT NULL DEFAULT 'individual',
  "is_default" tinyint NOT NULL DEFAULT '0',
  "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL
-, "daily_hours_limit" integer not null default '480', "weekly_hours_limit" integer not null default '2640', "monthly_hours_limit" integer, "break_minutes" integer not null default '60', "displacement_counts_as_work" tinyint(1) not null default '0', "wait_time_counts_as_work" tinyint(1) not null default '1', "travel_meal_counts_as_break" tinyint(1) not null default '1', "auto_suggest_clock_on_displacement" tinyint(1) not null default '1', "pre_assigned_break" tinyint(1) not null default '0', "overnight_min_hours" integer not null default '11', "oncall_multiplier_percent" integer not null default '33', "overtime_50_percent_limit" integer, "overtime_100_percent_limit" integer, "saturday_is_overtime" tinyint(1) not null default '0', "sunday_is_overtime" tinyint(1) not null default '1', "custom_rules" text, "regime_type" varchar not null default 'clt_mensal', "is_active" tinyint(1) not null default '1', "compensation_period_days" integer not null default '30', "max_positive_balance_minutes" integer, "max_negative_balance_minutes" integer, "block_on_negative_exceeded" tinyint(1) not null default '1', "auto_compensate" tinyint(1) not null default '0', "convert_expired_to_payment" tinyint(1) not null default '0', "overtime_50_multiplier" numeric not null default '1.5', "overtime_100_multiplier" numeric not null default '2', "applicable_roles" text, "applicable_teams" text, "applicable_unions" text, "requires_two_level_approval" tinyint(1) not null default '1', "deleted_at" datetime);
+ "updated_at" datetime NULL DEFAULT NULL,
+ "daily_hours_limit" int NOT NULL DEFAULT '480',
+ "weekly_hours_limit" int NOT NULL DEFAULT '2640',
+ "monthly_hours_limit" int DEFAULT NULL,
+ "break_minutes" int NOT NULL DEFAULT '60',
+ "displacement_counts_as_work" tinyint NOT NULL DEFAULT '0',
+ "wait_time_counts_as_work" tinyint NOT NULL DEFAULT '1',
+ "travel_meal_counts_as_break" tinyint NOT NULL DEFAULT '1',
+ "auto_suggest_clock_on_displacement" tinyint NOT NULL DEFAULT '1',
+ "pre_assigned_break" tinyint NOT NULL DEFAULT '0',
+ "overnight_min_hours" int NOT NULL DEFAULT '11',
+ "oncall_multiplier_percent" int NOT NULL DEFAULT '33',
+ "overtime_50_percent_limit" int DEFAULT NULL,
+ "overtime_100_percent_limit" int DEFAULT NULL,
+ "saturday_is_overtime" tinyint NOT NULL DEFAULT '0',
+ "sunday_is_overtime" tinyint NOT NULL DEFAULT '1',
+ "custom_rules" text DEFAULT NULL,
+ "regime_type" varchar(255) NOT NULL DEFAULT 'clt_mensal',
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "compensation_period_days" int NOT NULL DEFAULT '30',
+ "max_positive_balance_minutes" int DEFAULT NULL,
+ "max_negative_balance_minutes" int DEFAULT NULL,
+ "block_on_negative_exceeded" tinyint NOT NULL DEFAULT '1',
+ "auto_compensate" tinyint NOT NULL DEFAULT '0',
+ "convert_expired_to_payment" tinyint NOT NULL DEFAULT '0',
+ "overtime_50_multiplier" numeric NOT NULL DEFAULT '1.50',
+ "overtime_100_multiplier" numeric NOT NULL DEFAULT '2.00',
+ "applicable_roles" text DEFAULT NULL,
+ "applicable_teams" text DEFAULT NULL,
+ "applicable_unions" text DEFAULT NULL,
+ "requires_two_level_approval" tinyint NOT NULL DEFAULT '1',
+ "deleted_at" datetime NULL DEFAULT NULL
+);
 
 CREATE TABLE "kiosk_sessions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3377,6 +4463,22 @@ CREATE TABLE "lab_logbook_entries" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "lead_sources" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "lead_sources_tid_slug_uq" ON "lead_sources" ("tenant_id","slug");
+
 CREATE TABLE "leave_requests" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -3394,6 +4496,168 @@ CREATE TABLE "leave_requests" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+
+CREATE TABLE "lgpd_anonymization_logs" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "entity_type" varchar(255) NOT NULL,
+ "entity_id" integer NOT NULL,
+ "holder_document" varchar(255) NOT NULL,
+ "anonymized_fields" text NOT NULL,
+ "legal_basis" varchar(255) NOT NULL,
+ "executed_by" integer DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "lgpd_consent_logs" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "holder_type" varchar(255) NOT NULL,
+ "holder_id" integer NOT NULL,
+ "holder_name" varchar(255) NOT NULL,
+ "holder_email" varchar(255) DEFAULT NULL,
+ "holder_document" varchar(255) DEFAULT NULL,
+ "purpose" varchar(255) NOT NULL,
+ "legal_basis" varchar(255) NOT NULL,
+ "status" varchar(255) NOT NULL DEFAULT 'granted',
+ "granted_at" datetime NULL DEFAULT NULL,
+ "revoked_at" datetime NULL DEFAULT NULL,
+ "ip_address" varchar(255) DEFAULT NULL,
+ "user_agent" varchar(255) DEFAULT NULL,
+ "revocation_reason" text,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "lgpd_data_requests" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "protocol" varchar(255) NOT NULL,
+ "holder_name" varchar(255) NOT NULL,
+ "holder_email" varchar(255) NOT NULL,
+ "holder_document" varchar(255) NOT NULL,
+ "request_type" varchar(255) NOT NULL,
+ "status" varchar(255) NOT NULL DEFAULT 'pending',
+ "description" text,
+ "response_notes" text,
+ "response_file_path" varchar(255) DEFAULT NULL,
+ "deadline" date NOT NULL,
+ "responded_at" datetime NULL DEFAULT NULL,
+ "responded_by" integer DEFAULT NULL,
+ "created_by" integer DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "lgpd_data_requests_protocol_unique" ON "lgpd_data_requests" ("protocol");
+
+CREATE TABLE "lgpd_data_treatments" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "data_category" varchar(255) NOT NULL,
+ "purpose" varchar(255) NOT NULL,
+ "legal_basis" varchar(255) NOT NULL,
+ "description" text,
+ "data_types" varchar(255) NOT NULL,
+ "retention_period" varchar(255) DEFAULT NULL,
+ "retention_legal_basis" varchar(255) DEFAULT NULL,
+ "created_by" integer DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "lgpd_dpo_configs" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "dpo_name" varchar(255) NOT NULL,
+ "dpo_email" varchar(255) NOT NULL,
+ "dpo_phone" varchar(255) DEFAULT NULL,
+ "is_public" tinyint NOT NULL DEFAULT '1',
+ "updated_by" integer DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "lgpd_dpo_configs_tenant_id_unique" ON "lgpd_dpo_configs" ("tenant_id");
+
+CREATE TABLE "lgpd_security_incidents" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "protocol" varchar(255) NOT NULL,
+ "severity" varchar(255) NOT NULL,
+ "description" text NOT NULL,
+ "affected_data" text NOT NULL,
+ "affected_holders_count" int NOT NULL DEFAULT '0',
+ "measures_taken" text,
+ "anpd_notification" text,
+ "holders_notified" tinyint NOT NULL DEFAULT '0',
+ "holders_notified_at" datetime NULL DEFAULT NULL,
+ "detected_at" datetime NOT NULL,
+ "anpd_reported_at" datetime NULL DEFAULT NULL,
+ "status" varchar(255) NOT NULL DEFAULT 'open',
+ "reported_by" integer DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "lgpd_security_incidents_protocol_unique" ON "lgpd_security_incidents" ("protocol");
+
+CREATE TABLE "linearity_tests" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "equipment_calibration_id" integer NOT NULL,
+ "point_order" int NOT NULL,
+ "reference_value" numeric NOT NULL,
+ "unit" varchar(20) NOT NULL DEFAULT 'g',
+ "indication_increasing" numeric DEFAULT NULL,
+ "indication_decreasing" numeric DEFAULT NULL,
+ "error_increasing" numeric DEFAULT NULL,
+ "error_decreasing" numeric DEFAULT NULL,
+ "hysteresis" numeric DEFAULT NULL,
+ "max_permissible_error" numeric DEFAULT NULL,
+ "conforms" tinyint NOT NULL DEFAULT '1',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "maintenance_reports" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "work_order_id" integer NOT NULL,
+ "equipment_id" integer NOT NULL,
+ "performed_by" integer DEFAULT NULL,
+ "approved_by" integer DEFAULT NULL,
+ "defect_found" text NOT NULL,
+ "probable_cause" text,
+ "corrective_action" text,
+ "parts_replaced" text DEFAULT NULL,
+ "seal_status" varchar(30) DEFAULT NULL,
+ "new_seal_number" varchar(50) DEFAULT NULL,
+ "condition_before" varchar(30) NOT NULL DEFAULT 'defective',
+ "condition_after" varchar(30) NOT NULL DEFAULT 'functional',
+ "requires_calibration_after" tinyint NOT NULL DEFAULT '1',
+ "requires_ipem_verification" tinyint NOT NULL DEFAULT '0',
+ "notes" text,
+ "photo_evidence" text DEFAULT NULL,
+ "started_at" datetime DEFAULT NULL,
+ "completed_at" datetime DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "maintenance_types" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "maintenance_types_tid_slug_uq" ON "maintenance_types" ("tenant_id","slug");
 
 CREATE TABLE "management_review_actions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3432,7 +4696,6 @@ CREATE TABLE "marketing_integrations" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "marketing_integrations_tenant_id_unique" ON "marketing_integrations" ("tenant_id");
 
 CREATE TABLE "marketplace_partners" (
@@ -3485,7 +4748,6 @@ CREATE TABLE "material_requests" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "material_requests_reference_unique" ON "material_requests" ("reference");
 
 CREATE TABLE "measurement_uncertainties" (
@@ -3508,6 +4770,24 @@ CREATE TABLE "measurement_uncertainties" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "measurement_units" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL,
+ "abbreviation" varchar(20) DEFAULT NULL,
+ "unit_type" varchar(30) DEFAULT NULL
+);
+CREATE UNIQUE INDEX "measurement_units_tid_slug_uq" ON "measurement_units" ("tenant_id","slug");
+
 CREATE TABLE "migrations" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "migration" varchar(255) NOT NULL,
@@ -3522,8 +4802,22 @@ CREATE TABLE "minimum_wages" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "minimum_wages_year_month_unique" ON "minimum_wages" ("year","month");
+
+CREATE TABLE "mobile_notifications" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
+ "user_id" integer NOT NULL,
+ "title" varchar(255) NOT NULL,
+ "body" text NOT NULL,
+ "type" varchar(30) DEFAULT NULL,
+ "entity_type" varchar(30) DEFAULT NULL,
+ "entity_id" integer DEFAULT NULL,
+ "response_action" varchar(20) DEFAULT NULL,
+ "responded_at" datetime NULL DEFAULT NULL,
+ "read" tinyint NOT NULL DEFAULT '0',
+ "created_at" datetime NOT NULL
+);
 
 CREATE TABLE "model_has_permissions" (
  "permission_id" integer NOT NULL,
@@ -3578,7 +4872,6 @@ CREATE TABLE "non_conformances" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "non_conformances_number_unique" ON "non_conformances" ("number");
 
 CREATE TABLE "non_conformities" (
@@ -3604,7 +4897,6 @@ CREATE TABLE "non_conformities" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "non_conformities_nc_number_unique" ON "non_conformities" ("nc_number");
 
 CREATE TABLE "notification_channels" (
@@ -3671,7 +4963,6 @@ CREATE TABLE "numbering_sequences" (
  "updated_at" datetime NULL DEFAULT NULL,
  "entity_type" varchar(50) DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "numbering_sequences_tenant_id_branch_id_entity_unique" ON "numbering_sequences" ("tenant_id","branch_id","entity");
 
 CREATE TABLE "offline_map_regions" (
@@ -3688,6 +4979,22 @@ CREATE TABLE "offline_map_regions" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "offline_sync_logs" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "user_id" integer NOT NULL,
+ "uuid" varchar(255) NOT NULL,
+ "event_type" varchar(255) NOT NULL,
+ "status" varchar(255) NOT NULL,
+ "local_timestamp" datetime NOT NULL,
+ "server_timestamp" datetime NOT NULL,
+ "payload" text DEFAULT NULL,
+ "error_message" text,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "offline_sync_logs_uuid_unique" ON "offline_sync_logs" ("uuid");
+
 CREATE TABLE "on_call_schedules" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -3697,7 +5004,6 @@ CREATE TABLE "on_call_schedules" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "on_call_schedules_tenant_id_date_shift_unique" ON "on_call_schedules" ("tenant_id","date","shift");
 
 CREATE TABLE "onboarding_checklist_items" (
@@ -3751,6 +5057,22 @@ CREATE TABLE "onboarding_steps" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "onboarding_template_types" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "onboarding_template_types_tid_slug_uq" ON "onboarding_template_types" ("tenant_id","slug");
+
 CREATE TABLE "onboarding_templates" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -3772,6 +5094,35 @@ CREATE TABLE "online_payments" (
  "amount" numeric DEFAULT NULL,
  "paid_at" datetime NULL DEFAULT NULL,
  "created_at" datetime NOT NULL
+);
+
+CREATE TABLE "operational_snapshots" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
+ "status" varchar(32) NOT NULL,
+ "alerts_count" int NOT NULL DEFAULT '0',
+ "health_payload" text NOT NULL,
+ "metrics_payload" text DEFAULT NULL,
+ "alerts_payload" text DEFAULT NULL,
+ "captured_at" datetime NOT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "overnight_stays" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "travel_request_id" integer NOT NULL,
+ "user_id" integer NOT NULL,
+ "stay_date" date NOT NULL,
+ "hotel_name" varchar(255) DEFAULT NULL,
+ "city" varchar(255) NOT NULL,
+ "state" varchar(255) DEFAULT NULL,
+ "cost" numeric DEFAULT NULL,
+ "receipt_path" varchar(255) DEFAULT NULL,
+ "status" varchar(255) NOT NULL DEFAULT 'pending',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
 );
 
 CREATE TABLE "partial_payments" (
@@ -3825,7 +5176,6 @@ CREATE TABLE "password_policies" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "password_policies_tenant_id_unique" ON "password_policies" ("tenant_id");
 
 CREATE TABLE "password_reset_tokens" (
@@ -3846,7 +5196,6 @@ CREATE TABLE "payment_gateway_configs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "payment_gateway_configs_tenant_id_unique" ON "payment_gateway_configs" ("tenant_id");
 
 CREATE TABLE "payment_methods" (
@@ -3859,7 +5208,6 @@ CREATE TABLE "payment_methods" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "payment_methods_tenant_id_code_unique" ON "payment_methods" ("tenant_id","code");
 
 CREATE TABLE "payment_receipts" (
@@ -3872,8 +5220,23 @@ CREATE TABLE "payment_receipts" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "payment_receipts_tenant_id_receipt_number_unique" ON "payment_receipts" ("tenant_id","receipt_number");
+
+CREATE TABLE "payment_terms" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "payment_terms_tid_slug_uq" ON "payment_terms" ("tenant_id","slug");
 
 CREATE TABLE "payments" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -3961,7 +5324,6 @@ CREATE TABLE "payrolls" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "payrolls_tenant_id_reference_month_type_unique" ON "payrolls" ("tenant_id","reference_month","type");
 
 CREATE TABLE "payslips" (
@@ -4016,7 +5378,6 @@ CREATE TABLE "permissions" (
  "group_id" integer DEFAULT NULL,
  "criticality" varchar NOT NULL DEFAULT 'MED'
 );
-
 CREATE UNIQUE INDEX "permissions_name_guard_name_unique" ON "permissions" ("name","guard_name");
 
 CREATE TABLE "personal_access_tokens" (
@@ -4031,7 +5392,6 @@ CREATE TABLE "personal_access_tokens" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "personal_access_tokens_token_unique" ON "personal_access_tokens" ("token");
 
 CREATE TABLE "photo_annotations" (
@@ -4058,7 +5418,6 @@ CREATE TABLE "portal_guest_links" (
  "single_use" tinyint NOT NULL DEFAULT '1',
  "consumed_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "portal_guest_links_token_unique" ON "portal_guest_links" ("token");
 
 CREATE TABLE "portal_ticket_comments" (
@@ -4116,7 +5475,6 @@ CREATE TABLE "portal_white_label" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "portal_white_label_tenant_id_unique" ON "portal_white_label" ("tenant_id");
 
 CREATE TABLE "positions" (
@@ -4146,6 +5504,22 @@ CREATE TABLE "price_histories" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+
+CREATE TABLE "price_table_adjustment_types" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "price_table_adjustment_types_tid_slug_uq" ON "price_table_adjustment_types" ("tenant_id","slug");
 
 CREATE TABLE "price_table_items" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -4205,7 +5579,6 @@ CREATE TABLE "product_categories" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "product_categories_tenant_id_name_unique" ON "product_categories" ("tenant_id","name");
 
 CREATE TABLE "product_kits" (
@@ -4228,7 +5601,6 @@ CREATE TABLE "product_serials" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "ps_unique" ON "product_serials" ("tenant_id","serial_number");
 
 CREATE TABLE "products" (
@@ -4271,11 +5643,8 @@ CREATE TABLE "products" (
  "height" numeric DEFAULT NULL,
  "depth" numeric DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "products_tenant_id_code_unique" ON "products" ("tenant_id","code");
-
 CREATE UNIQUE INDEX "products_qr_hash_unique" ON "products" ("qr_hash");
-
 CREATE UNIQUE INDEX "products_sku_unique" ON "products" ("sku");
 
 CREATE TABLE "project_milestones" (
@@ -4357,7 +5726,6 @@ CREATE TABLE "projects" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "prj_tenant_code_uq" ON "projects" ("tenant_id","code");
 
 CREATE TABLE "psei_submissions" (
@@ -4380,6 +5748,18 @@ CREATE TABLE "psei_submissions" (
  "submitted_by" integer DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "purchase_quotation_items" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "purchase_quotation_id" integer NOT NULL,
+ "product_id" integer NOT NULL,
+ "quantity" numeric NOT NULL,
+ "unit_price" numeric NOT NULL,
+ "total" numeric NOT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer DEFAULT NULL
 );
 
 CREATE TABLE "purchase_quotations" (
@@ -4440,7 +5820,6 @@ CREATE TABLE "purchase_quotes" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "purchase_quotes_reference_unique" ON "purchase_quotes" ("reference");
 
 CREATE TABLE "push_subscriptions" (
@@ -4454,7 +5833,6 @@ CREATE TABLE "push_subscriptions" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "push_sub_user_endpoint_unique" ON "push_subscriptions" ("user_id","endpoint");
 
 CREATE TABLE "qa_alerts" (
@@ -4466,6 +5844,17 @@ CREATE TABLE "qa_alerts" (
  "status" varchar(255) NOT NULL DEFAULT 'pending',
  "reviewed_by" integer DEFAULT NULL,
  "reviewed_at" datetime NULL DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "qr_scans" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
+ "work_order_id" integer NOT NULL,
+ "ip_address" varchar(45) DEFAULT NULL,
+ "user_agent" varchar(500) DEFAULT NULL,
+ "scanned_at" datetime NOT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
@@ -4584,6 +5973,74 @@ CREATE TABLE "quote_emails" (
  "error_message" text
 );
 
+CREATE TABLE "quote_equipments" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "quote_id" integer NOT NULL,
+ "equipment_id" integer DEFAULT NULL,
+ "description" text,
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL
+);
+
+CREATE TABLE "quote_items" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "quote_equipment_id" integer NOT NULL,
+ "type" varchar(10) NOT NULL,
+ "product_id" integer DEFAULT NULL,
+ "service_id" integer DEFAULT NULL,
+ "custom_description" varchar(255) DEFAULT NULL,
+ "quantity" numeric NOT NULL DEFAULT '1.00',
+ "original_price" numeric NOT NULL,
+ "unit_price" numeric NOT NULL,
+ "discount_percentage" numeric NOT NULL DEFAULT '0.00',
+ "subtotal" numeric NOT NULL DEFAULT '0.00',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL,
+ "cost_price" numeric NOT NULL DEFAULT '0.00',
+ "internal_note" text,
+ "quote_id" integer DEFAULT NULL,
+ "total" numeric DEFAULT NULL
+);
+
+CREATE TABLE "quote_photos" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "quote_equipment_id" integer DEFAULT NULL,
+ "quote_item_id" integer DEFAULT NULL,
+ "path" varchar(255) NOT NULL,
+ "caption" varchar(255) DEFAULT NULL,
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL
+);
+
+CREATE TABLE "quote_quote_tag" (
+ "quote_id" integer NOT NULL,
+ "quote_tag_id" integer NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
+ PRIMARY KEY ("quote_id","quote_tag_id")
+);
+
+CREATE TABLE "quote_sources" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "quote_sources_tid_slug_uq" ON "quote_sources" ("tenant_id","slug");
+
 CREATE TABLE "quote_tags" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -4592,7 +6049,6 @@ CREATE TABLE "quote_tags" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "quote_tags_tenant_id_name_unique" ON "quote_tags" ("tenant_id","name");
 
 CREATE TABLE "quote_templates" (
@@ -4679,9 +6135,7 @@ CREATE TABLE "quotes" (
  "discount" numeric DEFAULT NULL,
  "validity_days" int DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "quotes_tenant_id_quote_number_unique" ON "quotes" ("tenant_id","quote_number");
-
 CREATE UNIQUE INDEX "quotes_magic_token_unique" ON "quotes" ("magic_token");
 
 CREATE TABLE "raw_data_backups" (
@@ -4742,6 +6196,18 @@ CREATE TABLE "recurring_commissions" (
  "frequency" varchar(20) DEFAULT NULL
 );
 
+CREATE TABLE "recurring_contract_items" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "recurring_contract_id" integer NOT NULL,
+ "type" varchar(255) NOT NULL,
+ "description" varchar(255) NOT NULL,
+ "quantity" numeric NOT NULL DEFAULT '1.00',
+ "unit_price" numeric NOT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL
+);
+
 CREATE TABLE "recurring_contracts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -4778,7 +6244,6 @@ CREATE TABLE "referral_codes" (
  "is_active" tinyint NOT NULL DEFAULT '1',
  "created_at" datetime NOT NULL
 );
-
 CREATE UNIQUE INDEX "referral_codes_code_unique" ON "referral_codes" ("code");
 
 CREATE TABLE "repair_seal_alerts" (
@@ -4831,7 +6296,6 @@ CREATE TABLE "repair_seal_batches" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "repair_seal_batches_tenant_id_batch_code_unique" ON "repair_seal_batches" ("tenant_id","batch_code");
 
 CREATE TABLE "repeatability_tests" (
@@ -4963,7 +6427,6 @@ CREATE TABLE "rma_requests" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "rma_requests_rma_number_unique" ON "rma_requests" ("rma_number");
 
 CREATE TABLE "role_has_permissions" (
@@ -4982,9 +6445,7 @@ CREATE TABLE "roles" (
  "description" varchar(500) DEFAULT NULL,
  "display_name" varchar(150) DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "roles_tenant_id_name_guard_name_unique" ON "roles" ("tenant_id","name","guard_name");
-
 CREATE UNIQUE INDEX "roles_name_guard_name_tenant_id_unique" ON "roles" ("name","guard_name","tenant_id");
 
 CREATE TABLE "route_plans" (
@@ -5024,6 +6485,44 @@ CREATE TABLE "rr_studies" (
  "status" varchar(255) NOT NULL DEFAULT 'draft',
  "results" text DEFAULT NULL,
  "conclusion" text,
+ "created_by" integer DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "saas_plans" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" text,
+ "monthly_price" numeric NOT NULL DEFAULT '0.00',
+ "annual_price" numeric NOT NULL DEFAULT '0.00',
+ "modules" text DEFAULT NULL,
+ "max_users" int NOT NULL DEFAULT '5',
+ "max_work_orders_month" int DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "saas_plans_slug_unique" ON "saas_plans" ("slug");
+
+CREATE TABLE "saas_subscriptions" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "plan_id" integer NOT NULL,
+ "status" varchar(255) NOT NULL DEFAULT 'trial',
+ "billing_cycle" varchar(255) NOT NULL DEFAULT 'monthly',
+ "price" numeric NOT NULL,
+ "discount" numeric NOT NULL DEFAULT '0.00',
+ "started_at" date NOT NULL,
+ "trial_ends_at" date DEFAULT NULL,
+ "current_period_start" date NOT NULL,
+ "current_period_end" date NOT NULL,
+ "cancelled_at" date DEFAULT NULL,
+ "cancellation_reason" varchar(255) DEFAULT NULL,
+ "payment_gateway" varchar(255) DEFAULT NULL,
+ "gateway_subscription_id" varchar(255) DEFAULT NULL,
  "created_by" integer DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
@@ -5180,7 +6679,6 @@ CREATE TABLE "serial_numbers" (
  "batch_number" varchar(100) DEFAULT NULL,
  "location" varchar(255) DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "serial_numbers_tenant_id_serial_unique" ON "serial_numbers" ("tenant_id","serial");
 
 CREATE TABLE "service_call_comments" (
@@ -5191,6 +6689,16 @@ CREATE TABLE "service_call_comments" (
  "content" text NOT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "service_call_equipments" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "service_call_id" integer NOT NULL,
+ "equipment_id" integer NOT NULL,
+ "observations" text,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer DEFAULT NULL
 );
 
 CREATE TABLE "service_call_templates" (
@@ -5264,7 +6772,6 @@ CREATE TABLE "service_catalogs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "service_catalogs_slug_unique" ON "service_catalogs" ("slug");
 
 CREATE TABLE "service_categories" (
@@ -5275,7 +6782,6 @@ CREATE TABLE "service_categories" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "service_categories_tenant_id_name_unique" ON "service_categories" ("tenant_id","name");
 
 CREATE TABLE "service_checklist_items" (
@@ -5299,6 +6805,33 @@ CREATE TABLE "service_checklists" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "service_skills" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "service_id" integer NOT NULL,
+ "skill_id" integer NOT NULL,
+ "required_level" int NOT NULL DEFAULT '1',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer DEFAULT NULL
+);
+CREATE UNIQUE INDEX "service_skills_service_id_skill_id_unique" ON "service_skills" ("service_id","skill_id");
+
+CREATE TABLE "service_types" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "service_types_tid_slug_uq" ON "service_types" ("tenant_id","slug");
+
 CREATE TABLE "services" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -5313,7 +6846,6 @@ CREATE TABLE "services" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "services_tenant_id_code_unique" ON "services" ("tenant_id","code");
 
 CREATE TABLE "sessions" (
@@ -5381,7 +6913,6 @@ CREATE TABLE "sso_configurations" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "sso_configurations_tenant_id_provider_unique" ON "sso_configurations" ("tenant_id","provider");
 
 CREATE TABLE "standard_weights" (
@@ -5400,6 +6931,8 @@ CREATE TABLE "standard_weights" (
  "certificate_expiry" date DEFAULT NULL,
  "certificate_file" varchar(500) DEFAULT NULL,
  "laboratory" varchar(200) DEFAULT NULL,
+ "laboratory_accreditation" varchar(100) DEFAULT NULL,
+ "traceability_chain" varchar(500) DEFAULT NULL,
  "status" varchar(30) NOT NULL DEFAULT 'active',
  "notes" text,
  "deleted_at" datetime NULL DEFAULT NULL,
@@ -5410,8 +6943,7 @@ CREATE TABLE "standard_weights" (
  "current_location" varchar(255) DEFAULT NULL,
  "wear_rate_percentage" numeric DEFAULT NULL,
  "expected_failure_date" date DEFAULT NULL
-, "laboratory_accreditation" varchar, "traceability_chain" varchar);
-
+);
 CREATE UNIQUE INDEX "standard_weights_tenant_id_code_unique" ON "standard_weights" ("tenant_id","code");
 
 CREATE TABLE "stock_demand_forecasts" (
@@ -5458,7 +6990,6 @@ CREATE TABLE "stock_disposals" (
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "stock_disposals_reference_unique" ON "stock_disposals" ("reference");
 
 CREATE TABLE "stock_movements" (
@@ -5510,6 +7041,22 @@ CREATE TABLE "stock_transfers" (
  "quantity" numeric DEFAULT NULL
 );
 
+CREATE TABLE "supplier_contract_payment_frequencies" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "supp_ctrt_pay_freq_tid_slug_uq" ON "supplier_contract_payment_frequencies" ("tenant_id","slug");
+
 CREATE TABLE "supplier_contracts" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -5534,7 +7081,8 @@ CREATE TABLE "suppliers" (
  "tenant_id" integer NOT NULL,
  "type" varchar NOT NULL DEFAULT 'PJ',
  "name" varchar(255) NOT NULL,
- "document" varchar(20) DEFAULT NULL,
+ "document" text,
+ "document_hash" varchar(64) DEFAULT NULL,
  "trade_name" varchar(255) DEFAULT NULL,
  "email" varchar(255) DEFAULT NULL,
  "phone" varchar(20) DEFAULT NULL,
@@ -5551,7 +7099,7 @@ CREATE TABLE "suppliers" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
-, "document_hash" varchar, "document_hash_active_key" TEXT GENERATED ALWAYS AS (IFNULL("deleted_at", '1970-01-01 00:00:00')) STORED);
+);
 
 CREATE TABLE "support_tickets" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5680,7 +7228,6 @@ CREATE TABLE "system_settings" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "system_settings_tenant_id_key_unique" ON "system_settings" ("tenant_id","key");
 
 CREATE TABLE "tax_calculations" (
@@ -5724,8 +7271,42 @@ CREATE TABLE "technician_cash_funds" (
  "credit_limit" numeric DEFAULT NULL,
  "status" varchar(30) NOT NULL DEFAULT 'active'
 );
-
 CREATE UNIQUE INDEX "technician_cash_funds_tenant_id_user_id_unique" ON "technician_cash_funds" ("tenant_id","user_id");
+
+CREATE TABLE "technician_cash_transactions" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "fund_id" integer NOT NULL,
+ "type" varchar NOT NULL,
+ "amount" numeric NOT NULL,
+ "balance_after" numeric NOT NULL,
+ "expense_id" integer DEFAULT NULL,
+ "work_order_id" integer DEFAULT NULL,
+ "created_by" integer DEFAULT NULL,
+ "description" varchar(255) NOT NULL,
+ "transaction_date" date NOT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL,
+ "payment_method" varchar(20) NOT NULL DEFAULT 'cash'
+);
+
+CREATE TABLE "technician_certifications" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "user_id" integer NOT NULL,
+ "type" varchar(255) NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "number" varchar(255) DEFAULT NULL,
+ "issued_at" date NOT NULL,
+ "expires_at" date DEFAULT NULL,
+ "issuer" varchar(255) DEFAULT NULL,
+ "document_path" varchar(255) DEFAULT NULL,
+ "status" varchar(255) NOT NULL DEFAULT 'valid',
+ "required_for_service_types" text DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
 
 CREATE TABLE "technician_feedbacks" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5739,7 +7320,6 @@ CREATE TABLE "technician_feedbacks" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "technician_feedbacks_tenant_id_user_id_date_unique" ON "technician_feedbacks" ("tenant_id","user_id","date");
 
 CREATE TABLE "technician_fund_requests" (
@@ -5780,7 +7360,6 @@ CREATE TABLE "telescope_entries" (
  "content" text NOT NULL,
  "created_at" datetime DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "telescope_entries_uuid_unique" ON "telescope_entries" ("uuid");
 
 CREATE TABLE "telescope_entries_tags" (
@@ -5802,7 +7381,6 @@ CREATE TABLE "tenant_holidays" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "tenant_holidays_tenant_id_date_unique" ON "tenant_holidays" ("tenant_id","date");
 
 CREATE TABLE "tenant_settings" (
@@ -5814,8 +7392,53 @@ CREATE TABLE "tenant_settings" (
  "updated_at" datetime NULL DEFAULT NULL,
  "value" text
 );
-
 CREATE UNIQUE INDEX "tenant_settings_tenant_id_key_unique" ON "tenant_settings" ("tenant_id","key");
+
+CREATE TABLE "tenants" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "document" varchar(20) DEFAULT NULL,
+ "email" varchar(255) DEFAULT NULL,
+ "phone" varchar(20) DEFAULT NULL,
+ "status" varchar(20) NOT NULL DEFAULT 'active',
+ "current_plan_id" integer DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "inmetro_config" text DEFAULT NULL,
+ "trade_name" varchar(255) DEFAULT NULL,
+ "website" varchar(255) DEFAULT NULL,
+ "state_registration" varchar(30) DEFAULT NULL,
+ "city_registration" varchar(30) DEFAULT NULL,
+ "address_street" varchar(255) DEFAULT NULL,
+ "address_number" varchar(20) DEFAULT NULL,
+ "address_complement" varchar(100) DEFAULT NULL,
+ "address_neighborhood" varchar(100) DEFAULT NULL,
+ "address_city" varchar(100) DEFAULT NULL,
+ "address_state" varchar(2) DEFAULT NULL,
+ "address_zip" varchar(10) DEFAULT NULL,
+ "fiscal_regime" tinyint NOT NULL DEFAULT '1',
+ "cnae_code" varchar(20) DEFAULT NULL,
+ "fiscal_certificate_path" varchar(255) DEFAULT NULL,
+ "fiscal_certificate_password" text,
+ "fiscal_certificate_expires_at" date DEFAULT NULL,
+ "fiscal_nfse_token" varchar(255) DEFAULT NULL,
+ "fiscal_nfse_city" varchar(50) DEFAULT NULL,
+ "fiscal_nfe_series" integer NOT NULL DEFAULT '1',
+ "fiscal_nfe_next_number" int NOT NULL DEFAULT '1',
+ "fiscal_nfse_rps_series" varchar(10) NOT NULL DEFAULT 'RPS',
+ "fiscal_nfse_rps_next_number" int NOT NULL DEFAULT '1',
+ "fiscal_environment" varchar(20) NOT NULL DEFAULT 'homologation',
+ "slug" varchar(255) DEFAULT NULL,
+ "is_active" tinyint DEFAULT NULL,
+ "signing_key" varchar(64) DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL,
+ "logo_path" varchar(255) DEFAULT NULL,
+ "rep_p_program_name" varchar(100) NOT NULL DEFAULT 'Kalibrium ERP',
+ "rep_p_version" varchar(20) NOT NULL DEFAULT '1.0.0',
+ "rep_p_developer_name" varchar(100) NOT NULL DEFAULT 'Kalibrium Sistemas',
+ "rep_p_developer_cnpj" varchar(14) DEFAULT NULL,
+ "timezone" varchar(50) NOT NULL DEFAULT 'America/Sao_Paulo'
+);
 
 CREATE TABLE "ticket_categories" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -5909,7 +7532,6 @@ CREATE TABLE "time_clock_entries" (
  "speed_in" numeric DEFAULT NULL,
  "location_spoofing_detected" tinyint NOT NULL DEFAULT '0'
 );
-
 CREATE UNIQUE INDEX "time_clock_entries_tenant_nsr_unique" ON "time_clock_entries" ("tenant_id","nsr");
 
 CREATE TABLE "time_entries" (
@@ -6053,6 +7675,91 @@ CREATE TABLE "trainings" (
  "instructor" varchar(255) DEFAULT NULL
 );
 
+CREATE TABLE "travel_advances" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "travel_request_id" integer NOT NULL,
+ "user_id" integer NOT NULL,
+ "amount" numeric NOT NULL,
+ "status" varchar(255) NOT NULL DEFAULT 'pending',
+ "paid_at" date DEFAULT NULL,
+ "approved_by" integer DEFAULT NULL,
+ "notes" text,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "travel_expense_items" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "travel_expense_report_id" integer NOT NULL,
+ "type" varchar(255) NOT NULL,
+ "description" varchar(255) NOT NULL,
+ "amount" numeric NOT NULL,
+ "expense_date" date NOT NULL,
+ "receipt_path" varchar(255) DEFAULT NULL,
+ "is_within_policy" tinyint NOT NULL DEFAULT '1',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "travel_expense_reports" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "travel_request_id" integer NOT NULL,
+ "created_by" integer NOT NULL,
+ "total_expenses" numeric NOT NULL DEFAULT '0.00',
+ "total_advances" numeric NOT NULL DEFAULT '0.00',
+ "balance" numeric NOT NULL DEFAULT '0.00',
+ "status" varchar(255) NOT NULL DEFAULT 'draft',
+ "approved_by" integer DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "travel_requests" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "user_id" integer NOT NULL,
+ "approved_by" integer DEFAULT NULL,
+ "status" varchar(255) NOT NULL DEFAULT 'pending',
+ "destination" varchar(255) NOT NULL,
+ "purpose" text NOT NULL,
+ "departure_date" date NOT NULL,
+ "return_date" date NOT NULL,
+ "departure_time" time DEFAULT NULL,
+ "return_time" time DEFAULT NULL,
+ "estimated_days" int NOT NULL,
+ "daily_allowance_amount" numeric DEFAULT NULL,
+ "total_advance_requested" numeric DEFAULT NULL,
+ "requires_vehicle" tinyint NOT NULL DEFAULT '0',
+ "fleet_vehicle_id" integer DEFAULT NULL,
+ "requires_overnight" tinyint NOT NULL DEFAULT '0',
+ "rest_days_after" int NOT NULL DEFAULT '0',
+ "overtime_authorized" tinyint NOT NULL DEFAULT '0',
+ "work_orders" text DEFAULT NULL,
+ "itinerary" text DEFAULT NULL,
+ "meal_policy" text DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "tv_camera_types" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "name" varchar(255) NOT NULL,
+ "slug" varchar(255) NOT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "color" varchar(20) DEFAULT NULL,
+ "icon" varchar(50) DEFAULT NULL,
+ "is_active" tinyint NOT NULL DEFAULT '1',
+ "sort_order" int NOT NULL DEFAULT '0',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "tv_camera_types_tid_slug_uq" ON "tv_camera_types" ("tenant_id","slug");
+
 CREATE TABLE "tv_dashboard_configs" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -6092,6 +7799,19 @@ CREATE TABLE "used_stock_items" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "user_2fa" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "user_id" integer NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "secret" text NOT NULL,
+ "method" varchar(20) NOT NULL DEFAULT 'email',
+ "is_enabled" tinyint NOT NULL DEFAULT '0',
+ "verified_at" datetime NULL DEFAULT NULL,
+ "backup_codes" text,
+ "created_at" datetime NOT NULL
+);
+CREATE UNIQUE INDEX "user_2fa_user_id_unique" ON "user_2fa" ("user_id");
+
 CREATE TABLE "user_competencies" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -6106,6 +7826,42 @@ CREATE TABLE "user_competencies" (
  "notes" text,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "user_favorites" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
+ "user_id" integer NOT NULL,
+ "favoritable_type" varchar(255) NOT NULL,
+ "favoritable_id" integer NOT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "user_favorites_unique" ON "user_favorites" ("user_id","favoritable_type","favoritable_id");
+
+CREATE TABLE "user_preferences" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
+ "user_id" integer NOT NULL,
+ "dark_mode" tinyint NOT NULL DEFAULT '0',
+ "language" varchar(5) NOT NULL DEFAULT 'pt_BR',
+ "notifications" tinyint NOT NULL DEFAULT '1',
+ "data_saver" tinyint NOT NULL DEFAULT '0',
+ "offline_sync" tinyint NOT NULL DEFAULT '1',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "user_preferences_user_id_unique" ON "user_preferences" ("user_id");
+
+CREATE TABLE "user_sessions" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
+ "user_id" integer NOT NULL,
+ "token_id" varchar(255) DEFAULT NULL,
+ "ip_address" varchar(45) DEFAULT NULL,
+ "user_agent" text,
+ "last_activity" datetime NOT NULL,
+ "created_at" datetime NOT NULL
 );
 
 CREATE TABLE "user_skills" (
@@ -6128,7 +7884,6 @@ CREATE TABLE "user_tenants" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "user_tenants_user_id_tenant_id_unique" ON "user_tenants" ("user_id","tenant_id");
 
 CREATE TABLE "users" (
@@ -6142,7 +7897,8 @@ CREATE TABLE "users" (
  "updated_at" datetime NULL DEFAULT NULL,
  "phone" varchar(20) DEFAULT NULL,
  "pis_number" varchar(11) DEFAULT NULL,
- "cpf" varchar(11) DEFAULT NULL,
+ "cpf" text,
+ "cpf_hash" varchar(64) DEFAULT NULL,
  "ctps_number" varchar(20) DEFAULT NULL,
  "ctps_series" varchar(10) DEFAULT NULL,
  "admission_date" date DEFAULT NULL,
@@ -6187,8 +7943,7 @@ CREATE TABLE "users" (
  "google_calendar_email" varchar(255) DEFAULT NULL,
  "google_calendar_synced_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
-, "cpf_hash" varchar);
-
+);
 CREATE UNIQUE INDEX "users_email_unique" ON "users" ("email");
 
 CREATE TABLE "vacation_balances" (
@@ -6205,6 +7960,24 @@ CREATE TABLE "vacation_balances" (
  "status" varchar(30) NOT NULL DEFAULT 'accruing',
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "vehicle_accidents" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL,
+ "fleet_vehicle_id" integer DEFAULT NULL,
+ "driver_id" integer DEFAULT NULL,
+ "occurrence_date" date DEFAULT NULL,
+ "location" varchar(255) DEFAULT NULL,
+ "description" text,
+ "third_party_involved" tinyint NOT NULL DEFAULT '0',
+ "third_party_info" text,
+ "police_report_number" varchar(255) DEFAULT NULL,
+ "photos" text DEFAULT NULL,
+ "estimated_cost" numeric DEFAULT NULL,
+ "status" varchar(30) NOT NULL DEFAULT 'investigating'
 );
 
 CREATE TABLE "vehicle_gps_positions" (
@@ -6250,6 +8023,21 @@ CREATE TABLE "vehicle_insurances" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL,
  "deleted_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "vehicle_pool_requests" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL,
+ "user_id" integer DEFAULT NULL,
+ "fleet_vehicle_id" integer DEFAULT NULL,
+ "requested_start" datetime NULL DEFAULT NULL,
+ "requested_end" datetime NULL DEFAULT NULL,
+ "actual_start" datetime NULL DEFAULT NULL,
+ "actual_end" datetime NULL DEFAULT NULL,
+ "purpose" text,
+ "status" varchar(30) NOT NULL DEFAULT 'pending'
 );
 
 CREATE TABLE "vehicle_tires" (
@@ -6307,6 +8095,30 @@ CREATE TABLE "visit_checkins" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "visit_reports" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "customer_id" integer NOT NULL,
+ "user_id" integer NOT NULL,
+ "checkin_id" integer DEFAULT NULL,
+ "deal_id" integer DEFAULT NULL,
+ "visit_date" date NOT NULL,
+ "visit_type" varchar(255) NOT NULL DEFAULT 'in_person',
+ "contact_name" varchar(255) DEFAULT NULL,
+ "contact_role" varchar(255) DEFAULT NULL,
+ "summary" text NOT NULL,
+ "decisions" text,
+ "next_steps" text,
+ "overall_sentiment" varchar(255) DEFAULT NULL,
+ "topics" text DEFAULT NULL,
+ "attachments" text DEFAULT NULL,
+ "follow_up_scheduled" tinyint NOT NULL DEFAULT '0',
+ "next_contact_at" datetime NULL DEFAULT NULL,
+ "next_contact_type" varchar(255) DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
 CREATE TABLE "visit_route_stops" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "visit_route_id" integer NOT NULL,
@@ -6353,7 +8165,6 @@ CREATE TABLE "visit_surveys" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "visit_surveys_token_unique" ON "visit_surveys" ("token");
 
 CREATE TABLE "voice_reports" (
@@ -6379,6 +8190,18 @@ CREATE TABLE "vulnerability_scans" (
  "scanned_at" datetime NOT NULL,
  "completed_at" datetime NULL DEFAULT NULL
 );
+
+CREATE TABLE "warehouse_stocks" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
+ "warehouse_id" integer NOT NULL,
+ "product_id" integer NOT NULL,
+ "batch_id" integer DEFAULT NULL,
+ "quantity" numeric NOT NULL DEFAULT '0.00',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+CREATE UNIQUE INDEX "ws_unique" ON "warehouse_stocks" ("warehouse_id","product_id","batch_id");
 
 CREATE TABLE "warehouses" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6423,7 +8246,6 @@ CREATE TABLE "watermark_configs" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "watermark_configs_tenant_id_unique" ON "watermark_configs" ("tenant_id");
 
 CREATE TABLE "webhook_configs" (
@@ -6439,6 +8261,20 @@ CREATE TABLE "webhook_configs" (
  "updated_at" datetime NULL DEFAULT NULL,
  "last_triggered_at" datetime NULL DEFAULT NULL,
  "failure_count" int NOT NULL DEFAULT '0'
+);
+
+CREATE TABLE "webhook_logs" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer DEFAULT NULL,
+ "webhook_id" integer NOT NULL,
+ "event" varchar(100) NOT NULL,
+ "payload" text DEFAULT NULL,
+ "response_status" int DEFAULT NULL,
+ "response_body" text,
+ "duration_ms" int DEFAULT NULL,
+ "status" varchar(20) NOT NULL DEFAULT 'pending',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
 );
 
 CREATE TABLE "webhooks" (
@@ -6486,6 +8322,32 @@ CREATE TABLE "whatsapp_configs" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "whatsapp_messages" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "tenant_id" integer NOT NULL,
+ "direction" varchar(10) NOT NULL DEFAULT 'outbound',
+ "phone_to" varchar(50) DEFAULT NULL,
+ "phone_from" varchar(50) DEFAULT NULL,
+ "customer_id" integer DEFAULT NULL,
+ "phone" varchar(255) DEFAULT NULL,
+ "message" text NOT NULL,
+ "message_type" varchar(30) NOT NULL DEFAULT 'text',
+ "template_name" varchar(255) DEFAULT NULL,
+ "template_params" text DEFAULT NULL,
+ "template" varchar(255) DEFAULT NULL,
+ "status" varchar(255) NOT NULL DEFAULT 'queued',
+ "external_id" varchar(255) DEFAULT NULL,
+ "error_message" text,
+ "related_type" varchar(255) DEFAULT NULL,
+ "related_id" integer DEFAULT NULL,
+ "sent_at" datetime NULL DEFAULT NULL,
+ "delivered_at" datetime NULL DEFAULT NULL,
+ "read_at" datetime NULL DEFAULT NULL,
+ "created_by" integer DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL
+);
+
 CREATE TABLE "work_order_approvals" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "work_order_id" integer NOT NULL,
@@ -6497,6 +8359,21 @@ CREATE TABLE "work_order_approvals" (
  "response_notes" text,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "work_order_attachments" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "work_order_id" integer NOT NULL,
+ "uploaded_by" integer DEFAULT NULL,
+ "file_name" varchar(255) NOT NULL,
+ "file_path" varchar(255) NOT NULL,
+ "file_type" varchar(50) DEFAULT NULL,
+ "file_size" int DEFAULT NULL,
+ "description" varchar(255) DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL,
+ "category" varchar(30) NOT NULL DEFAULT 'general'
 );
 
 CREATE TABLE "work_order_chats" (
@@ -6549,6 +8426,16 @@ CREATE TABLE "work_order_displacement_stops" (
  "updated_at" datetime NULL DEFAULT NULL
 );
 
+CREATE TABLE "work_order_equipments" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "work_order_id" integer NOT NULL,
+ "equipment_id" integer NOT NULL,
+ "observations" text,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer DEFAULT NULL
+);
+
 CREATE TABLE "work_order_events" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "tenant_id" integer NOT NULL,
@@ -6560,6 +8447,23 @@ CREATE TABLE "work_order_events" (
  "metadata" text DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
+);
+
+CREATE TABLE "work_order_items" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "work_order_id" integer NOT NULL,
+ "type" varchar(10) NOT NULL,
+ "reference_id" integer DEFAULT NULL,
+ "description" varchar(255) NOT NULL,
+ "quantity" numeric NOT NULL DEFAULT '1.00',
+ "unit_price" numeric NOT NULL DEFAULT '0.00',
+ "discount" numeric NOT NULL DEFAULT '0.00',
+ "total" numeric NOT NULL DEFAULT '0.00',
+ "warehouse_id" integer DEFAULT NULL,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "cost_price" numeric DEFAULT NULL,
+ "tenant_id" integer NOT NULL
 );
 
 CREATE TABLE "work_order_ratings" (
@@ -6612,6 +8516,29 @@ CREATE TABLE "work_order_signatures" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
+
+CREATE TABLE "work_order_status_history" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "work_order_id" integer NOT NULL,
+ "user_id" integer DEFAULT NULL,
+ "from_status" varchar(30) DEFAULT NULL,
+ "to_status" varchar(30) NOT NULL,
+ "notes" text,
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer NOT NULL
+);
+
+CREATE TABLE "work_order_technicians" (
+ "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+ "work_order_id" integer NOT NULL,
+ "user_id" integer NOT NULL,
+ "role" varchar(20) NOT NULL DEFAULT 'tecnico',
+ "created_at" datetime NULL DEFAULT NULL,
+ "updated_at" datetime NULL DEFAULT NULL,
+ "tenant_id" integer DEFAULT NULL
+);
+CREATE UNIQUE INDEX "work_order_technicians_work_order_id_user_id_unique" ON "work_order_technicians" ("work_order_id","user_id");
 
 CREATE TABLE "work_order_templates" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -6738,6 +8665,19 @@ CREATE TABLE "work_orders" (
  "arrival_latitude" numeric DEFAULT NULL,
  "arrival_longitude" numeric DEFAULT NULL,
  "service_type" varchar(50) DEFAULT NULL,
+ "service_modality" varchar(30) DEFAULT NULL,
+ "requires_adjustment" tinyint NOT NULL DEFAULT '0',
+ "requires_maintenance" tinyint NOT NULL DEFAULT '0',
+ "client_wants_conformity_declaration" tinyint NOT NULL DEFAULT '0',
+ "decision_rule_agreed" varchar(30) DEFAULT NULL,
+ "subject_to_legal_metrology" tinyint NOT NULL DEFAULT '0',
+ "needs_ipem_interaction" tinyint NOT NULL DEFAULT '0',
+ "site_conditions" text,
+ "calibration_scope_notes" text,
+ "applicable_procedure" varchar(500) DEFAULT NULL,
+ "will_emit_complementary_report" tinyint NOT NULL DEFAULT '0',
+ "client_accepted_at" datetime DEFAULT NULL,
+ "client_accepted_by" varchar(255) DEFAULT NULL,
  "manual_justification" text,
  "return_started_at" datetime NULL DEFAULT NULL,
  "return_arrived_at" datetime NULL DEFAULT NULL,
@@ -6752,10 +8692,8 @@ CREATE TABLE "work_orders" (
  "zip_code" varchar(10) DEFAULT NULL,
  "contact_phone" varchar(20) DEFAULT NULL,
  "project_id" integer DEFAULT NULL
-, "service_modality" varchar, "requires_adjustment" tinyint(1) not null default '0', "requires_maintenance" tinyint(1) not null default '0', "client_wants_conformity_declaration" tinyint(1) not null default '0', "decision_rule_agreed" varchar, "subject_to_legal_metrology" tinyint(1) not null default '0', "needs_ipem_interaction" tinyint(1) not null default '0', "site_conditions" text, "calibration_scope_notes" text, "will_emit_complementary_report" tinyint(1) not null default '0', "client_accepted_at" datetime, "client_accepted_by" varchar, "applicable_procedure" varchar);
-
+);
 CREATE UNIQUE INDEX "work_orders_tenant_id_number_unique" ON "work_orders" ("tenant_id","number");
-
 CREATE UNIQUE INDEX "work_orders_rating_token_unique" ON "work_orders" ("rating_token");
 
 CREATE TABLE "work_schedules" (
@@ -6771,1360 +8709,7 @@ CREATE TABLE "work_schedules" (
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL
 );
-
 CREATE UNIQUE INDEX "work_schedules_user_id_date_unique" ON "work_schedules" ("user_id","date");
-
-CREATE INDEX "crm_web_form_submissions_tenant_id_index" on "crm_web_form_submissions" ("tenant_id");
-
-CREATE INDEX "account_receivable_installments_psp_external_id_index" on "account_receivable_installments" ("psp_external_id");
-
-CREATE TABLE "lgpd_data_treatments" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "data_category" varchar not null, "purpose" varchar not null, "legal_basis" varchar not null, "description" text, "data_types" varchar not null, "retention_period" varchar, "retention_legal_basis" varchar, "created_by" integer, "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id") on delete cascade, foreign key("created_by") references "users"("id") on delete set null);
-
-CREATE TABLE "lgpd_consent_logs" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "holder_type" varchar not null, "holder_id" integer not null, "holder_name" varchar not null, "holder_email" varchar, "holder_document" varchar, "purpose" varchar not null, "legal_basis" varchar not null, "status" varchar not null default 'granted', "granted_at" datetime, "revoked_at" datetime, "ip_address" varchar, "user_agent" varchar, "revocation_reason" text, "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id") on delete cascade);
-
-CREATE INDEX "lgpd_consent_logs_holder_type_holder_id_index" on "lgpd_consent_logs" ("holder_type", "holder_id");
-
-CREATE TABLE "lgpd_data_requests" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "protocol" varchar not null, "holder_name" varchar not null, "holder_email" varchar not null, "holder_document" varchar not null, "request_type" varchar not null, "status" varchar not null default 'pending', "description" text, "response_notes" text, "response_file_path" varchar, "deadline" date not null, "responded_at" datetime, "responded_by" integer, "created_by" integer, "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id") on delete cascade, foreign key("responded_by") references "users"("id") on delete set null, foreign key("created_by") references "users"("id") on delete set null);
-
-CREATE UNIQUE INDEX "lgpd_data_requests_protocol_unique" on "lgpd_data_requests" ("protocol");
-
-CREATE TABLE "lgpd_dpo_configs" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "dpo_name" varchar not null, "dpo_email" varchar not null, "dpo_phone" varchar, "is_public" tinyint(1) not null default '1', "updated_by" integer, "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id") on delete cascade, foreign key("updated_by") references "users"("id") on delete set null);
-
-CREATE UNIQUE INDEX "lgpd_dpo_configs_tenant_id_unique" on "lgpd_dpo_configs" ("tenant_id");
-
-CREATE TABLE "lgpd_security_incidents" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "protocol" varchar not null, "severity" varchar not null, "description" text not null, "affected_data" text not null, "affected_holders_count" integer not null default '0', "measures_taken" text, "anpd_notification" text, "holders_notified" tinyint(1) not null default '0', "holders_notified_at" datetime, "detected_at" datetime not null, "anpd_reported_at" datetime, "status" varchar not null default 'open', "reported_by" integer, "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id") on delete cascade, foreign key("reported_by") references "users"("id") on delete set null);
-
-CREATE UNIQUE INDEX "lgpd_security_incidents_protocol_unique" on "lgpd_security_incidents" ("protocol");
-
-CREATE TABLE "lgpd_anonymization_logs" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "entity_type" varchar not null, "entity_id" integer not null, "holder_document" varchar not null, "anonymized_fields" text not null, "legal_basis" varchar not null, "executed_by" integer, "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id") on delete cascade, foreign key("executed_by") references "users"("id") on delete set null);
-
-CREATE INDEX "lgpd_anonymization_logs_entity_type_entity_id_index" on "lgpd_anonymization_logs" ("entity_type", "entity_id");
-
-CREATE TABLE "saas_plans" ("id" integer primary key autoincrement not null, "name" varchar not null, "slug" varchar not null, "description" text, "monthly_price" numeric not null default '0', "annual_price" numeric not null default '0', "modules" text, "max_users" integer not null default '5', "max_work_orders_month" integer, "is_active" tinyint(1) not null default '1', "sort_order" integer not null default '0', "created_at" datetime, "updated_at" datetime);
-
-CREATE UNIQUE INDEX "saas_plans_slug_unique" on "saas_plans" ("slug");
-
-CREATE TABLE "saas_subscriptions" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "plan_id" integer not null, "status" varchar not null default 'trial', "billing_cycle" varchar not null default 'monthly', "price" numeric not null, "discount" numeric not null default '0', "started_at" date not null, "trial_ends_at" date, "current_period_start" date not null, "current_period_end" date not null, "cancelled_at" date, "cancellation_reason" varchar, "payment_gateway" varchar, "gateway_subscription_id" varchar, "created_by" integer, "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id") on delete cascade, foreign key("plan_id") references "saas_plans"("id"), foreign key("created_by") references "users"("id") on delete set null);
-
-CREATE TABLE "tenants" ("id" integer primary key autoincrement not null, "name" varchar(255) not null, "document" varchar(20) default (NULL), "email" varchar(255) default (NULL), "phone" varchar(20) default (NULL), "status" varchar(20) not null default ('active'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "inmetro_config" text default (NULL), "trade_name" varchar(255) default (NULL), "website" varchar(255) default (NULL), "state_registration" varchar(30) default (NULL), "city_registration" varchar(30) default (NULL), "address_street" varchar(255) default (NULL), "address_number" varchar(20) default (NULL), "address_complement" varchar(100) default (NULL), "address_neighborhood" varchar(100) default (NULL), "address_city" varchar(100) default (NULL), "address_state" varchar(2) default (NULL), "address_zip" varchar(10) default (NULL), "fiscal_regime" tinyint not null default ('1'), "cnae_code" varchar(20) default (NULL), "fiscal_certificate_path" varchar(255) default (NULL), "fiscal_certificate_password" text, "fiscal_certificate_expires_at" date default (NULL), "fiscal_nfse_token" varchar(255) default (NULL), "fiscal_nfse_city" varchar(50) default (NULL), "fiscal_nfe_series" integer not null default ('1'), "fiscal_nfe_next_number" int not null default ('1'), "fiscal_nfse_rps_series" varchar(10) not null default ('RPS'), "fiscal_nfse_rps_next_number" int not null default ('1'), "fiscal_environment" varchar(20) not null default ('homologation'), "slug" varchar(255) default (NULL), "is_active" tinyint default (NULL), "signing_key" varchar(64) default (NULL), "deleted_at" datetime default (NULL), "logo_path" varchar(255) default (NULL), "rep_p_program_name" varchar(100) not null default ('Kalibrium ERP'), "rep_p_version" varchar(20) not null default ('1.0.0'), "rep_p_developer_name" varchar(100) not null default ('Kalibrium Sistemas'), "rep_p_developer_cnpj" varchar(14) default (NULL), "timezone" varchar(50) not null default ('America/Sao_Paulo'), "current_plan_id" integer, foreign key("current_plan_id") references "saas_plans"("id") on delete set null);
-
-CREATE TABLE "crm_funnel_automations" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "pipeline_id" integer, "stage_id" integer, "name" varchar not null, "trigger_event" varchar not null, "conditions" text, "actions" text not null, "is_active" tinyint(1) not null default '1', "sort_order" integer not null default '0', "created_by" integer, "created_at" datetime, "updated_at" datetime, "deleted_at" datetime, foreign key("tenant_id") references "tenants"("id") on delete cascade, foreign key("pipeline_id") references "crm_pipelines"("id") on delete set null, foreign key("stage_id") references "crm_pipeline_stages"("id") on delete set null, foreign key("created_by") references "users"("id") on delete set null);
-
-CREATE INDEX "crm_funnel_automations_tenant_id_index" on "crm_funnel_automations" ("tenant_id");
-
-CREATE INDEX "central_item_history_tenant_id_index" on "central_item_history" ("tenant_id");
-
-CREATE INDEX "central_item_comments_tenant_id_index" on "central_item_comments" ("tenant_id");
-
-CREATE INDEX "crm_deal_competitors_tenant_id_index" on "crm_deal_competitors" ("tenant_id");
-
-CREATE INDEX "crm_sequence_steps_tenant_id_index" on "crm_sequence_steps" ("tenant_id");
-
-CREATE INDEX "crm_territory_members_tenant_id_index" on "crm_territory_members" ("tenant_id");
-
-CREATE INDEX "customers_asaas_id_index" on "customers" ("asaas_id");
-
-CREATE TABLE "maintenance_reports" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "work_order_id" integer not null, "equipment_id" integer not null, "performed_by" integer, "approved_by" integer, "defect_found" text not null, "probable_cause" text, "corrective_action" text, "parts_replaced" text, "seal_status" varchar, "new_seal_number" varchar, "condition_before" varchar not null default 'defective', "condition_after" varchar not null default 'functional', "requires_calibration_after" tinyint(1) not null default '1', "requires_ipem_verification" tinyint(1) not null default '0', "notes" text, "photo_evidence" text, "started_at" datetime, "completed_at" datetime, "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id") on delete cascade on update cascade, foreign key("work_order_id") references "work_orders"("id") on delete cascade on update cascade, foreign key("equipment_id") references "equipments"("id") on delete cascade on update cascade, foreign key("performed_by") references "users"("id") on delete set null on update cascade, foreign key("approved_by") references "users"("id") on delete set null on update cascade);
-
-CREATE INDEX "maintenance_reports_tenant_id_work_order_id_index" on "maintenance_reports" ("tenant_id", "work_order_id");
-
-CREATE INDEX "maintenance_reports_tenant_id_equipment_id_index" on "maintenance_reports" ("tenant_id", "equipment_id");
-
-CREATE TABLE "certificate_emission_checklists" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "equipment_calibration_id" integer not null, "verified_by" integer not null, "equipment_identified" tinyint(1) not null default '0', "scope_defined" tinyint(1) not null default '0', "critical_analysis_done" tinyint(1) not null default '0', "procedure_defined" tinyint(1) not null default '0', "standards_traceable" tinyint(1) not null default '0', "raw_data_recorded" tinyint(1) not null default '0', "uncertainty_calculated" tinyint(1) not null default '0', "adjustment_documented" tinyint(1) not null default '0', "no_undue_interval" tinyint(1) not null default '0', "conformity_declaration_valid" tinyint(1) not null default '0', "accreditation_mark_correct" tinyint(1) not null default '0', "observations" text, "approved" tinyint(1) not null default '0', "verified_at" datetime, "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id") on delete cascade on update cascade, foreign key("equipment_calibration_id") references "equipment_calibrations"("id") on delete cascade on update cascade, foreign key("verified_by") references "users"("id") on delete cascade on update cascade);
-
-CREATE UNIQUE INDEX "cert_checklist_cal_unique" on "certificate_emission_checklists" ("equipment_calibration_id");
-
-CREATE INDEX "certificate_emission_checklists_tenant_id_index" on "certificate_emission_checklists" ("tenant_id");
-
-CREATE TABLE "journey_days" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "user_id" integer not null, "reference_date" date not null, "regime_type" varchar not null default 'clt_mensal', "total_minutes_worked" integer not null default '0', "total_minutes_overtime" integer not null default '0', "total_minutes_travel" integer not null default '0', "total_minutes_wait" integer not null default '0', "total_minutes_break" integer not null default '0', "total_minutes_overnight" integer not null default '0', "total_minutes_oncall" integer not null default '0', "operational_approval_status" varchar not null default 'pending', "operational_approver_id" integer, "operational_approved_at" datetime, "hr_approval_status" varchar not null default 'pending', "hr_approver_id" integer, "hr_approved_at" datetime, "is_closed" tinyint(1) not null default '0', "notes" text, "created_at" datetime, "updated_at" datetime, "deleted_at" datetime, foreign key("tenant_id") references "tenants"("id"), foreign key("user_id") references "users"("id"), foreign key("operational_approver_id") references "users"("id"), foreign key("hr_approver_id") references "users"("id"));
-
-CREATE UNIQUE INDEX "journey_days_tenant_id_user_id_reference_date_unique" on "journey_days" ("tenant_id", "user_id", "reference_date");
-
-CREATE INDEX "journey_days_tenant_id_reference_date_index" on "journey_days" ("tenant_id", "reference_date");
-
-CREATE TABLE "journey_policies" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar not null, "regime_type" varchar not null default 'clt_mensal', "daily_hours_limit" integer not null default '480', "weekly_hours_limit" integer not null default '2640', "monthly_hours_limit" integer, "break_minutes" integer not null default '60', "displacement_counts_as_work" tinyint(1) not null default '0', "wait_time_counts_as_work" tinyint(1) not null default '1', "travel_meal_counts_as_break" tinyint(1) not null default '1', "auto_suggest_clock_on_displacement" tinyint(1) not null default '1', "pre_assigned_break" tinyint(1) not null default '0', "overnight_min_hours" integer not null default '11', "oncall_multiplier_percent" integer not null default '33', "overtime_50_percent_limit" integer, "overtime_100_percent_limit" integer, "saturday_is_overtime" tinyint(1) not null default '0', "sunday_is_overtime" tinyint(1) not null default '1', "custom_rules" text, "is_default" tinyint(1) not null default '0', "is_active" tinyint(1) not null default '1', "created_at" datetime, "updated_at" datetime, "deleted_at" datetime, foreign key("tenant_id") references "tenants"("id"));
-
-CREATE INDEX "journey_policies_tenant_id_is_active_index" on "journey_policies" ("tenant_id", "is_active");
-
-CREATE TABLE "hour_bank_policies" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar not null, "regime_type" varchar not null default 'individual_mensal', "compensation_period_days" integer not null default '30', "max_positive_balance_minutes" integer, "max_negative_balance_minutes" integer, "block_on_negative_exceeded" tinyint(1) not null default '1', "auto_compensate" tinyint(1) not null default '0', "convert_expired_to_payment" tinyint(1) not null default '0', "overtime_50_multiplier" numeric not null default '1.5', "overtime_100_multiplier" numeric not null default '2', "applicable_roles" text, "applicable_teams" text, "applicable_unions" text, "requires_two_level_approval" tinyint(1) not null default '1', "is_active" tinyint(1) not null default '1', "created_at" datetime, "updated_at" datetime, "deleted_at" datetime, foreign key("tenant_id") references "tenants"("id"));
-
-CREATE INDEX "hour_bank_policies_tenant_id_is_active_index" on "hour_bank_policies" ("tenant_id", "is_active");
-
-CREATE TABLE "travel_requests" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "user_id" integer not null, "approved_by" integer, "status" varchar not null default 'pending', "destination" varchar not null, "purpose" text not null, "departure_date" date not null, "return_date" date not null, "departure_time" time, "return_time" time, "estimated_days" integer not null, "daily_allowance_amount" numeric, "total_advance_requested" numeric, "requires_vehicle" tinyint(1) not null default '0', "fleet_vehicle_id" integer, "requires_overnight" tinyint(1) not null default '0', "rest_days_after" integer not null default '0', "overtime_authorized" tinyint(1) not null default '0', "work_orders" text, "itinerary" text, "meal_policy" text, "created_at" datetime, "updated_at" datetime, "deleted_at" datetime, foreign key("tenant_id") references "tenants"("id"), foreign key("user_id") references "users"("id"), foreign key("approved_by") references "users"("id"), foreign key("fleet_vehicle_id") references "fleet_vehicles"("id"));
-
-CREATE INDEX "travel_requests_tenant_id_user_id_status_index" on "travel_requests" ("tenant_id", "user_id", "status");
-
-CREATE INDEX "travel_requests_tenant_id_departure_date_index" on "travel_requests" ("tenant_id", "departure_date");
-
-CREATE TABLE "overnight_stays" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "travel_request_id" integer not null, "user_id" integer not null, "stay_date" date not null, "hotel_name" varchar, "city" varchar not null, "state" varchar, "cost" numeric, "receipt_path" varchar, "status" varchar not null default 'pending', "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id"), foreign key("travel_request_id") references "travel_requests"("id"), foreign key("user_id") references "users"("id"));
-
-CREATE INDEX "overnight_stays_tenant_id_travel_request_id_index" on "overnight_stays" ("tenant_id", "travel_request_id");
-
-CREATE TABLE "travel_advances" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "travel_request_id" integer not null, "user_id" integer not null, "amount" numeric not null, "status" varchar not null default 'pending', "paid_at" date, "approved_by" integer, "notes" text, "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id"), foreign key("travel_request_id") references "travel_requests"("id"), foreign key("user_id") references "users"("id"), foreign key("approved_by") references "users"("id"));
-
-CREATE INDEX "travel_advances_tenant_id_travel_request_id_index" on "travel_advances" ("tenant_id", "travel_request_id");
-
-CREATE TABLE "travel_expense_reports" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "travel_request_id" integer not null, "created_by" integer not null, "total_expenses" numeric not null default '0', "total_advances" numeric not null default '0', "balance" numeric not null default '0', "status" varchar not null default 'draft', "approved_by" integer, "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id"), foreign key("travel_request_id") references "travel_requests"("id"), foreign key("created_by") references "users"("id"), foreign key("approved_by") references "users"("id"));
-
-CREATE INDEX "travel_expense_reports_tenant_id_travel_request_id_index" on "travel_expense_reports" ("tenant_id", "travel_request_id");
-
-CREATE TABLE "travel_expense_items" ("id" integer primary key autoincrement not null, "travel_expense_report_id" integer not null, "type" varchar not null, "description" varchar not null, "amount" numeric not null, "expense_date" date not null, "receipt_path" varchar, "is_within_policy" tinyint(1) not null default '1', "created_at" datetime, "updated_at" datetime, foreign key("travel_expense_report_id") references "travel_expense_reports"("id"));
-
-CREATE TABLE "technician_certifications" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "user_id" integer not null, "type" varchar not null, "name" varchar not null, "number" varchar, "issued_at" date not null, "expires_at" date, "issuer" varchar, "document_path" varchar, "status" varchar not null default 'valid', "required_for_service_types" text, "created_at" datetime, "updated_at" datetime, "deleted_at" datetime, foreign key("tenant_id") references "tenants"("id"), foreign key("user_id") references "users"("id"));
-
-CREATE INDEX "technician_certifications_tenant_id_user_id_type_index" on "technician_certifications" ("tenant_id", "user_id", "type");
-
-CREATE INDEX "technician_certifications_tenant_id_expires_at_index" on "technician_certifications" ("tenant_id", "expires_at");
-
-CREATE TABLE "biometric_consents" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "user_id" integer not null, "data_type" varchar not null, "legal_basis" varchar not null, "purpose" text not null, "consented_at" date not null, "expires_at" date, "revoked_at" date, "alternative_method" varchar, "retention_days" integer not null default '365', "is_active" tinyint(1) not null default '1', "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id"), foreign key("user_id") references "users"("id"));
-
-CREATE INDEX "biometric_consents_tenant_id_user_id_data_type_index" on "biometric_consents" ("tenant_id", "user_id", "data_type");
-
-CREATE TABLE "offline_sync_logs" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "user_id" integer not null, "uuid" varchar not null, "event_type" varchar not null, "status" varchar not null, "local_timestamp" datetime not null, "server_timestamp" datetime not null, "payload" text, "error_message" text, "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id"), foreign key("user_id") references "users"("id"));
-
-CREATE INDEX "offline_sync_logs_tenant_id_user_id_index" on "offline_sync_logs" ("tenant_id", "user_id");
-
-CREATE INDEX "offline_sync_logs_uuid_index" on "offline_sync_logs" ("uuid");
-
-CREATE UNIQUE INDEX "offline_sync_logs_uuid_unique" on "offline_sync_logs" ("uuid");
-
-CREATE TABLE "journey_entries" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "user_id" integer not null, "date" date not null, "journey_rule_id" integer default (NULL), "scheduled_hours" numeric not null default ('0.00'), "worked_hours" numeric not null default ('0.00'), "overtime_hours_50" numeric not null default ('0.00'), "overtime_hours_100" numeric not null default ('0.00'), "night_hours" numeric not null default ('0.00'), "absence_hours" numeric not null default ('0.00'), "hour_bank_balance" numeric not null default ('0.00'), "overtime_limit_exceeded" tinyint not null default ('0'), "tolerance_applied" tinyint not null default ('0'), "break_compliance" varchar(20) default (NULL), "inter_shift_hours" numeric default (NULL), "is_holiday" tinyint not null default ('0'), "is_dsr" tinyint not null default ('0'), "status" varchar(30) not null default ('calculated'), "notes" text, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "total_minutes_worked" integer not null default '0', "total_minutes_overtime" integer not null default '0', "total_minutes_travel" integer not null default '0', "total_minutes_wait" integer not null default '0', "total_minutes_break" integer not null default '0', "total_minutes_overnight" integer not null default '0', "total_minutes_oncall" integer not null default '0', "operational_approval_status" varchar not null default 'pending', "operational_approver_id" integer, "operational_approved_at" datetime, "hr_approval_status" varchar not null default 'pending', "hr_approver_id" integer, "hr_approved_at" datetime, "is_closed" tinyint(1) not null default '0', "regime_type" varchar not null default 'clt_mensal', "deleted_at" datetime, foreign key("operational_approver_id") references "users"("id"), foreign key("hr_approver_id") references "users"("id"));
-
-CREATE UNIQUE INDEX "journey_entries_user_id_date_unique" on "journey_entries" ("user_id", "date");
-
-CREATE TABLE "journey_blocks" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "journey_day_id" integer, "user_id" integer not null, "classification" varchar not null, "started_at" datetime not null, "ended_at" datetime, "duration_minutes" integer, "work_order_id" integer, "time_clock_entry_id" integer, "fleet_trip_id" integer, "schedule_id" integer, "metadata" text, "source" varchar not null, "is_auto_classified" tinyint(1) not null default ('1'), "is_manually_adjusted" tinyint(1) not null default ('0'), "adjusted_by" integer, "adjustment_reason" text, "created_at" datetime, "updated_at" datetime, "deleted_at" datetime, "journey_entry_id" integer, foreign key("adjusted_by") references users("id") on delete no action on update no action, foreign key("schedule_id") references schedules("id") on delete no action on update no action, foreign key("fleet_trip_id") references fleet_trips("id") on delete no action on update no action, foreign key("time_clock_entry_id") references time_clock_entries("id") on delete no action on update no action, foreign key("work_order_id") references work_orders("id") on delete no action on update no action, foreign key("user_id") references users("id") on delete no action on update no action, foreign key("journey_day_id") references journey_days("id") on delete no action on update no action, foreign key("tenant_id") references tenants("id") on delete no action on update no action, foreign key("journey_entry_id") references "journey_entries"("id"));
-
-CREATE INDEX "journey_blocks_journey_day_id_classification_index" on "journey_blocks" ("journey_day_id", "classification");
-
-CREATE INDEX "journey_blocks_tenant_id_user_id_started_at_index" on "journey_blocks" ("tenant_id", "user_id", "started_at");
-
-CREATE TABLE "journey_approvals" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "journey_day_id" integer, "level" varchar not null, "status" varchar not null default ('pending'), "approver_id" integer, "decided_at" datetime, "notes" text, "created_at" datetime, "updated_at" datetime, "journey_entry_id" integer, foreign key("approver_id") references users("id") on delete no action on update no action, foreign key("journey_day_id") references journey_days("id") on delete no action on update no action, foreign key("tenant_id") references tenants("id") on delete no action on update no action, foreign key("journey_entry_id") references "journey_entries"("id"));
-
-CREATE INDEX "journey_approvals_tenant_id_journey_day_id_level_index" on "journey_approvals" ("tenant_id", "journey_day_id", "level");
-
-CREATE INDEX "journey_approvals_tenant_id_status_index" on "journey_approvals" ("tenant_id", "status");
-
-CREATE TABLE "whatsapp_messages" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "customer_id" integer default (NULL), "phone" varchar, "message" text not null, "template" varchar(255) default (NULL), "status" varchar(255) not null default ('queued'), "created_by" integer default (NULL), "created_at" datetime default (NULL), "direction" varchar not null default ('outbound'), "phone_to" varchar, "phone_from" varchar, "message_type" varchar not null default ('text'), "template_name" varchar, "template_params" text, "external_id" varchar, "error_message" text, "related_type" varchar, "related_id" integer, "sent_at" datetime, "delivered_at" datetime, "read_at" datetime, "updated_at" datetime);
-
-CREATE TABLE "linearity_tests" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "equipment_calibration_id" integer not null, "point_order" integer not null, "reference_value" numeric not null, "unit" varchar not null default 'g', "indication_increasing" numeric, "indication_decreasing" numeric, "error_increasing" numeric, "error_decreasing" numeric, "hysteresis" numeric, "max_permissible_error" numeric, "conforms" tinyint(1) not null default '1', "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id") on delete cascade, foreign key("equipment_calibration_id") references "equipment_calibrations"("id") on delete cascade);
-
-CREATE INDEX "linearity_tests_tenant_id_equipment_calibration_id_index" on "linearity_tests" ("tenant_id", "equipment_calibration_id");
-
-CREATE TABLE "calibration_decision_logs" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "equipment_calibration_id" integer not null, "user_id" integer not null, "decision_rule" varchar not null, "inputs" text not null, "outputs" text not null, "engine_version" varchar not null, "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id") on delete cascade, foreign key("equipment_calibration_id") references "equipment_calibrations"("id") on delete cascade, foreign key("user_id") references "users"("id"));
-
-CREATE INDEX "cal_decision_logs_tenant_cal_idx" on "calibration_decision_logs" ("tenant_id", "equipment_calibration_id");
-
-CREATE TABLE "accreditation_scopes" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "accreditation_number" varchar not null, "accrediting_body" varchar not null default 'Cgcre/Inmetro', "scope_description" text not null, "equipment_categories" text not null, "valid_from" date not null, "valid_until" date not null, "certificate_file" varchar, "is_active" tinyint(1) not null default '1', "created_at" datetime, "updated_at" datetime, foreign key("tenant_id") references "tenants"("id") on delete cascade);
-
-CREATE INDEX "accreditation_scopes_tenant_id_is_active_index" on "accreditation_scopes" ("tenant_id", "is_active");
-
-CREATE INDEX "customers_tenant_document_hash_idx" on "customers" ("tenant_id", "document_hash");
-
-CREATE INDEX "suppliers_tenant_document_hash_idx" on "suppliers" ("tenant_id", "document_hash");
-
-CREATE INDEX "users_tenant_cpf_hash_idx" on "users" ("tenant_id", "cpf_hash");
-
-CREATE INDEX "employee_dependents_tenant_cpf_hash_idx" on "employee_dependents" ("tenant_id", "cpf_hash");
-
-CREATE TABLE "mobile_notifications" ("id" integer primary key autoincrement not null, "user_id" integer not null, "title" varchar(255) not null, "body" text not null, "type" varchar(30) default (NULL), "entity_type" varchar(30) default (NULL), "entity_id" integer default (NULL), "response_action" varchar(20) default (NULL), "responded_at" datetime default (NULL), "read" tinyint not null default ('0'), "created_at" datetime not null, "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
-
-CREATE INDEX "mobile_notifications_tenant_id_idx" on "mobile_notifications" ("tenant_id");
-
-CREATE TABLE "qr_scans" ("id" integer primary key autoincrement not null, "work_order_id" integer not null, "ip_address" varchar(45) default (NULL), "user_agent" varchar(500) default (NULL), "scanned_at" datetime not null, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
-
-CREATE INDEX "qr_scans_tenant_id_idx" on "qr_scans" ("tenant_id");
-
-CREATE TABLE "asset_tag_scans" ("id" integer primary key autoincrement not null, "asset_tag_id" integer not null, "scanned_by" integer not null, "action" varchar(50) not null default ('scan'), "location" varchar(255) default (NULL), "latitude" numeric default (NULL), "longitude" numeric default (NULL), "metadata" text default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
-
-CREATE INDEX "asset_tag_scans_tenant_id_idx" on "asset_tag_scans" ("tenant_id");
-
-CREATE TABLE "biometric_configs" ("id" integer primary key autoincrement not null, "user_id" integer not null, "enabled" tinyint not null default ('0'), "type" varchar(20) default (NULL), "device_id" varchar(255) default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
-
-CREATE INDEX "biometric_configs_tenant_id_idx" on "biometric_configs" ("tenant_id");
-
-CREATE UNIQUE INDEX "biometric_configs_user_id_unique" on "biometric_configs" ("user_id");
-
-CREATE TABLE "warehouse_stocks" ("id" integer primary key autoincrement not null, "warehouse_id" integer not null, "product_id" integer not null, "batch_id" integer default (NULL), "quantity" numeric not null default ('0.00'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
-
-CREATE INDEX "warehouse_stocks_tenant_id_idx" on "warehouse_stocks" ("tenant_id");
-
-CREATE UNIQUE INDEX "ws_unique" on "warehouse_stocks" ("warehouse_id", "product_id", "batch_id");
-
-CREATE TABLE "webhook_logs" ("id" integer primary key autoincrement not null, "webhook_id" integer not null, "event" varchar(100) not null, "payload" text default (NULL), "response_status" int default (NULL), "response_body" text, "duration_ms" int default (NULL), "status" varchar(20) not null default ('pending'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
-
-CREATE INDEX "webhook_logs_tenant_id_idx" on "webhook_logs" ("tenant_id");
-
-CREATE TABLE "user_favorites" ("id" integer primary key autoincrement not null, "user_id" integer not null, "favoritable_type" varchar(255) not null, "favoritable_id" integer not null, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
-
-CREATE INDEX "user_favorites_tenant_id_idx" on "user_favorites" ("tenant_id");
-
-CREATE UNIQUE INDEX "user_favorites_unique" on "user_favorites" ("user_id", "favoritable_type", "favoritable_id");
-
-CREATE TABLE "user_preferences" ("id" integer primary key autoincrement not null, "user_id" integer not null, "dark_mode" tinyint not null default ('0'), "language" varchar(5) not null default ('pt_BR'), "notifications" tinyint not null default ('1'), "data_saver" tinyint not null default ('0'), "offline_sync" tinyint not null default ('1'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
-
-CREATE INDEX "user_preferences_tenant_id_idx" on "user_preferences" ("tenant_id");
-
-CREATE UNIQUE INDEX "user_preferences_user_id_unique" on "user_preferences" ("user_id");
-
-CREATE TABLE "user_sessions" ("id" integer primary key autoincrement not null, "user_id" integer not null, "token_id" varchar(255) default (NULL), "ip_address" varchar(45) default (NULL), "user_agent" text, "last_activity" datetime not null, "created_at" datetime not null, "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
-
-CREATE INDEX "user_sessions_tenant_id_idx" on "user_sessions" ("tenant_id");
-
-CREATE TABLE "operational_snapshots" ("id" integer primary key autoincrement not null, "status" varchar(32) not null, "alerts_count" int not null default ('0'), "health_payload" text not null, "metrics_payload" text default (NULL), "alerts_payload" text default (NULL), "captured_at" datetime not null, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
-
-CREATE INDEX "operational_snapshots_tenant_id_idx" on "operational_snapshots" ("tenant_id");
-
-CREATE TABLE "inmetro_history" ("id" integer primary key autoincrement not null, "instrument_id" integer not null, "event_type" varchar not null default ('verification'), "event_date" date not null, "result" varchar not null default ('approved'), "executor" varchar(255) default (NULL), "executor_document" varchar(20) default (NULL), "validity_date" date default (NULL), "notes" text, "osint_threat_level" varchar(50) default (NULL), "source" varchar(30) not null default ('psie_import'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "competitor_id" integer default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
-
-CREATE INDEX "inmetro_history_tenant_id_idx" on "inmetro_history" ("tenant_id");
-
-CREATE TABLE "inventory_tables_v3" ("id" integer primary key autoincrement not null, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, foreign key("tenant_id") references "tenants"("id") on delete cascade);
-
-CREATE INDEX "inventory_tables_v3_tenant_id_idx" on "inventory_tables_v3" ("tenant_id");
-
-CREATE TABLE "customer_contacts" ("id" integer primary key autoincrement not null, "customer_id" integer not null, "name" varchar(255) not null, "role" varchar(100) default (NULL), "phone" varchar(20) default (NULL), "email" varchar(255) default (NULL), "is_primary" tinyint not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null);
-
-CREATE TABLE "work_order_attachments" ("id" integer primary key autoincrement not null, "work_order_id" integer not null, "uploaded_by" integer default (NULL), "file_name" varchar(255) not null, "file_path" varchar(255) not null, "file_type" varchar(50) default (NULL), "file_size" int default (NULL), "description" varchar(255) default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null, "category" varchar(30) not null default ('general'));
-
-CREATE TABLE "work_order_equipments" ("id" integer primary key autoincrement not null, "work_order_id" integer not null, "equipment_id" integer not null, "observations" text, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer);
-
-CREATE TABLE "work_order_items" ("id" integer primary key autoincrement not null, "work_order_id" integer not null, "type" varchar(10) not null, "reference_id" integer default (NULL), "description" varchar(255) not null, "quantity" numeric not null default ('1.00'), "unit_price" numeric not null default ('0.00'), "discount" numeric not null default ('0.00'), "total" numeric not null default ('0.00'), "warehouse_id" integer default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "cost_price" numeric default (NULL), "tenant_id" integer not null);
-
-CREATE TABLE "work_order_status_history" ("id" integer primary key autoincrement not null, "work_order_id" integer not null, "user_id" integer default (NULL), "from_status" varchar(30) default (NULL), "to_status" varchar(30) not null, "notes" text, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null);
-
-CREATE TABLE "work_order_technicians" ("id" integer primary key autoincrement not null, "work_order_id" integer not null, "user_id" integer not null, "role" varchar(20) not null default ('tecnico'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer);
-
-CREATE UNIQUE INDEX "work_order_technicians_work_order_id_user_id_unique" on "work_order_technicians" ("work_order_id", "user_id");
-
-CREATE TABLE "equipment_documents" ("id" integer primary key autoincrement not null, "equipment_id" integer not null, "type" varchar(30) not null default ('certificado'), "name" varchar(150) not null, "file_path" varchar(255) not null, "expires_at" date default (NULL), "uploaded_by" integer default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null);
-
-CREATE TABLE "equipment_maintenances" ("id" integer primary key autoincrement not null, "equipment_id" integer not null, "type" varchar(30) not null default ('corretiva'), "description" text not null, "parts_replaced" text, "cost" numeric default (NULL), "downtime_hours" numeric default (NULL), "performed_by" integer default (NULL), "work_order_id" integer default (NULL), "next_maintenance_at" date default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null);
-
-CREATE TABLE "calibration_standard_weight" ("id" integer primary key autoincrement not null, "equipment_calibration_id" integer not null, "standard_weight_id" integer not null, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer);
-
-CREATE UNIQUE INDEX "cal_sw_unique" on "calibration_standard_weight" ("equipment_calibration_id", "standard_weight_id");
-
-CREATE TABLE "expense_status_history" ("id" integer primary key autoincrement not null, "expense_id" integer not null, "changed_by" integer not null, "from_status" varchar(20) default (NULL), "to_status" varchar(20) not null, "reason" varchar(500) default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null);
-
-CREATE TABLE "fuel_logs" ("id" integer primary key autoincrement not null, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null, "fleet_vehicle_id" integer default (NULL), "driver_id" integer default (NULL), "date" date default (NULL), "odometer_km" int default (NULL), "liters" numeric default (NULL), "price_per_liter" numeric default (NULL), "total_value" numeric default (NULL), "fuel_type" varchar(50) default (NULL), "gas_station" varchar(255) default (NULL), "consumption_km_l" numeric default (NULL), "receipt_path" varchar(255) default (NULL), "distance_km" numeric default (NULL), "total_cost" numeric default (NULL), "created_by" integer default (NULL));
-
-CREATE TABLE "vehicle_accidents" ("id" integer primary key autoincrement not null, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null, "fleet_vehicle_id" integer default (NULL), "driver_id" integer default (NULL), "occurrence_date" date default (NULL), "location" varchar(255) default (NULL), "description" text, "third_party_involved" tinyint not null default ('0'), "third_party_info" text, "police_report_number" varchar(255) default (NULL), "photos" text default (NULL), "estimated_cost" numeric default (NULL), "status" varchar(30) not null default ('investigating'));
-
-CREATE TABLE "vehicle_pool_requests" ("id" integer primary key autoincrement not null, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null, "user_id" integer default (NULL), "fleet_vehicle_id" integer default (NULL), "requested_start" datetime default (NULL), "requested_end" datetime default (NULL), "actual_start" datetime default (NULL), "actual_end" datetime default (NULL), "purpose" text, "status" varchar(30) not null default ('pending'));
-
-CREATE TABLE "quote_equipments" ("id" integer primary key autoincrement not null, "quote_id" integer not null, "equipment_id" integer default (NULL), "description" text, "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null);
-
-CREATE TABLE "quote_items" ("id" integer primary key autoincrement not null, "quote_equipment_id" integer not null, "type" varchar(10) not null, "product_id" integer default (NULL), "service_id" integer default (NULL), "custom_description" varchar(255) default (NULL), "quantity" numeric not null default ('1.00'), "original_price" numeric not null, "unit_price" numeric not null, "discount_percentage" numeric not null default ('0.00'), "subtotal" numeric not null default ('0.00'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null, "cost_price" numeric not null default ('0.00'), "internal_note" text, "quote_id" integer default (NULL), "total" numeric default (NULL));
-
-CREATE TABLE "quote_photos" ("id" integer primary key autoincrement not null, "quote_equipment_id" integer default (NULL), "quote_item_id" integer default (NULL), "path" varchar(255) not null, "caption" varchar(255) default (NULL), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null);
-
-CREATE TABLE "quote_quote_tag" ("quote_id" integer not null, "quote_tag_id" integer not null, "tenant_id" integer, primary key ("quote_id", "quote_tag_id"));
-
-CREATE TABLE "purchase_quotation_items" ("id" integer primary key autoincrement not null, "purchase_quotation_id" integer not null, "product_id" integer not null, "quantity" numeric not null, "unit_price" numeric not null, "total" numeric not null, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer);
-
-CREATE TABLE "recurring_contract_items" ("id" integer primary key autoincrement not null, "recurring_contract_id" integer not null, "type" varchar(255) not null, "description" varchar(255) not null, "quantity" numeric not null default ('1.00'), "unit_price" numeric not null, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null);
-
-CREATE TABLE "service_call_equipments" ("id" integer primary key autoincrement not null, "service_call_id" integer not null, "equipment_id" integer not null, "observations" text, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer);
-
-CREATE TABLE "service_skills" ("id" integer primary key autoincrement not null, "service_id" integer not null, "skill_id" integer not null, "required_level" int not null default ('1'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer);
-
-CREATE UNIQUE INDEX "service_skills_service_id_skill_id_unique" on "service_skills" ("service_id", "skill_id");
-
-CREATE TABLE "inventory_items" ("id" integer primary key autoincrement not null, "inventory_id" integer not null, "product_id" integer not null, "batch_id" integer default (NULL), "product_serial_id" integer default (NULL), "expected_quantity" numeric not null, "counted_quantity" numeric default (NULL), "adjustment_quantity" numeric default (NULL), "notes" text, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer);
-
-CREATE TABLE "debt_renegotiation_items" ("id" integer primary key autoincrement not null, "debt_renegotiation_id" integer not null, "account_receivable_id" integer not null, "original_amount" numeric not null, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null);
-
-CREATE TABLE "central_item_dependencies" ("id" integer primary key autoincrement not null, "item_id" integer not null, "depends_on_id" integer not null, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null);
-
-CREATE UNIQUE INDEX "central_item_dependencies_item_id_depends_on_id_unique" on "central_item_dependencies" ("item_id", "depends_on_id");
-
-CREATE TABLE "central_item_watchers" ("id" integer primary key autoincrement not null, "agenda_item_id" integer not null, "user_id" integer not null, "role" varchar(20) not null default ('watcher'), "notify_status_change" tinyint not null default ('1'), "notify_comment" tinyint not null default ('1'), "notify_due_date" tinyint not null default ('1'), "notify_assignment" tinyint not null default ('1'), "added_by_type" varchar(20) not null default ('manual'), "added_by_user_id" integer default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null);
-
-CREATE UNIQUE INDEX "ciw_item_user_unique" on "central_item_watchers" ("agenda_item_id", "user_id");
-
-CREATE TABLE "technician_cash_transactions" ("id" integer primary key autoincrement not null, "fund_id" integer not null, "type" varchar not null, "amount" numeric not null, "balance_after" numeric not null, "expense_id" integer default (NULL), "work_order_id" integer default (NULL), "created_by" integer default (NULL), "description" varchar(255) not null, "transaction_date" date not null, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null, "payment_method" varchar(20) not null default ('cash'));
-
-CREATE TABLE "email_email_tag" ("id" integer primary key autoincrement not null, "email_id" integer not null, "email_tag_id" integer not null, "tenant_id" integer);
-
-CREATE TABLE "equipment_model_product" ("equipment_model_id" integer not null, "product_id" integer not null, "tenant_id" integer, primary key ("equipment_model_id", "product_id"));
-
-CREATE TABLE "inmetro_instruments" ("id" integer primary key autoincrement not null, "location_id" integer not null, "inmetro_number" varchar(30) not null, "serial_number" varchar(50) default (NULL), "brand" varchar(50) default (NULL), "model" varchar(50) default (NULL), "capacity" varchar(30) default (NULL), "instrument_type" varchar(80) not null default ('Balança'), "current_status" varchar not null default ('unknown'), "last_verification_at" date default (NULL), "next_verification_at" date default (NULL), "last_executor" varchar(255) default (NULL), "source" varchar(30) not null default ('xml_import'), "last_scrape_status" varchar(50) default (NULL), "next_deep_scrape_at" datetime default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "linked_equipment_id" integer default (NULL), "tenant_id" integer, "type" varchar(50) default (NULL));
-
-CREATE TABLE "user_2fa" ("id" integer primary key autoincrement not null, "user_id" integer not null, "tenant_id" integer not null, "secret" text not null, "method" varchar(20) not null default ('email'), "is_enabled" tinyint not null default ('0'), "verified_at" datetime default (NULL), "backup_codes" text, "created_at" datetime not null);
-
-CREATE UNIQUE INDEX "user_2fa_user_id_unique" on "user_2fa" ("user_id");
-
-CREATE TABLE "account_receivable_categories" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "account_receivable_categories_tid_slug_uq" on "account_receivable_categories" ("tenant_id", "slug");
-
-CREATE TABLE "automation_report_formats" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "automation_report_formats_tid_slug_uq" on "automation_report_formats" ("tenant_id", "slug");
-
-CREATE TABLE "automation_report_frequencies" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "automation_report_frequencies_tid_slug_uq" on "automation_report_frequencies" ("tenant_id", "slug");
-
-CREATE TABLE "automation_report_types" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "automation_report_types_tid_slug_uq" on "automation_report_types" ("tenant_id", "slug");
-
-CREATE TABLE "bank_account_types" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "bank_account_types_tid_slug_uq" on "bank_account_types" ("tenant_id", "slug");
-
-CREATE TABLE "calibration_types" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "calibration_types_tid_slug_uq" on "calibration_types" ("tenant_id", "slug");
-
-CREATE TABLE "cancellation_reasons" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL), "applies_to" text default (NULL));
-
-CREATE UNIQUE INDEX "cancellation_reasons_tid_slug_uq" on "cancellation_reasons" ("tenant_id", "slug");
-
-CREATE TABLE "contract_types" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "contract_types_tid_slug_uq" on "contract_types" ("tenant_id", "slug");
-
-CREATE TABLE "customer_company_sizes" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "customer_company_sizes_tid_slug_uq" on "customer_company_sizes" ("tenant_id", "slug");
-
-CREATE TABLE "customer_ratings" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "customer_ratings_tid_slug_uq" on "customer_ratings" ("tenant_id", "slug");
-
-CREATE TABLE "customer_segments" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "customer_segments_tid_slug_uq" on "customer_segments" ("tenant_id", "slug");
-
-CREATE TABLE "document_types" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "document_types_tid_slug_uq" on "document_types" ("tenant_id", "slug");
-
-CREATE TABLE "equipment_brands" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "equipment_brands_tid_slug_uq" on "equipment_brands" ("tenant_id", "slug");
-
-CREATE TABLE "equipment_categories" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "equipment_categories_tid_slug_uq" on "equipment_categories" ("tenant_id", "slug");
-
-CREATE TABLE "equipment_types" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "equipment_types_tid_slug_uq" on "equipment_types" ("tenant_id", "slug");
-
-CREATE TABLE "fleet_fuel_types" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "fleet_fuel_types_tid_slug_uq" on "fleet_fuel_types" ("tenant_id", "slug");
-
-CREATE TABLE "fleet_vehicle_statuses" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "fleet_vehicle_statuses_tid_slug_uq" on "fleet_vehicle_statuses" ("tenant_id", "slug");
-
-CREATE TABLE "fleet_vehicle_types" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "fleet_vehicle_types_tid_slug_uq" on "fleet_vehicle_types" ("tenant_id", "slug");
-
-CREATE TABLE "follow_up_channels" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "follow_up_channels_tid_slug_uq" on "follow_up_channels" ("tenant_id", "slug");
-
-CREATE TABLE "follow_up_statuses" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "follow_up_statuses_tid_slug_uq" on "follow_up_statuses" ("tenant_id", "slug");
-
-CREATE TABLE "fueling_fuel_types" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "fueling_fuel_types_tid_slug_uq" on "fueling_fuel_types" ("tenant_id", "slug");
-
-CREATE TABLE "inmetro_seal_statuses" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "inmetro_seal_statuses_tid_slug_uq" on "inmetro_seal_statuses" ("tenant_id", "slug");
-
-CREATE TABLE "inmetro_seal_types" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "inmetro_seal_types_tid_slug_uq" on "inmetro_seal_types" ("tenant_id", "slug");
-
-CREATE TABLE "lead_sources" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "lead_sources_tid_slug_uq" on "lead_sources" ("tenant_id", "slug");
-
-CREATE TABLE "maintenance_types" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "maintenance_types_tid_slug_uq" on "maintenance_types" ("tenant_id", "slug");
-
-CREATE TABLE "measurement_units" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL), "abbreviation" varchar(20) default (NULL), "unit_type" varchar(30) default (NULL));
-
-CREATE UNIQUE INDEX "measurement_units_tid_slug_uq" on "measurement_units" ("tenant_id", "slug");
-
-CREATE TABLE "onboarding_template_types" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "onboarding_template_types_tid_slug_uq" on "onboarding_template_types" ("tenant_id", "slug");
-
-CREATE TABLE "payment_terms" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "payment_terms_tid_slug_uq" on "payment_terms" ("tenant_id", "slug");
-
-CREATE TABLE "price_table_adjustment_types" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "price_table_adjustment_types_tid_slug_uq" on "price_table_adjustment_types" ("tenant_id", "slug");
-
-CREATE TABLE "quote_sources" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "quote_sources_tid_slug_uq" on "quote_sources" ("tenant_id", "slug");
-
-CREATE TABLE "service_types" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "service_types_tid_slug_uq" on "service_types" ("tenant_id", "slug");
-
-CREATE TABLE "supplier_contract_payment_frequencies" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "supp_ctrt_pay_freq_tid_slug_uq" on "supplier_contract_payment_frequencies" ("tenant_id", "slug");
-
-CREATE TABLE "tv_camera_types" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "name" varchar(255) not null, "slug" varchar(255) not null, "description" varchar(255) default (NULL), "color" varchar(20) default (NULL), "icon" varchar(50) default (NULL), "is_active" tinyint not null default ('1'), "sort_order" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL));
-
-CREATE UNIQUE INDEX "tv_camera_types_tid_slug_uq" on "tv_camera_types" ("tenant_id", "slug");
-
-CREATE TABLE "cameras" ("id" integer primary key autoincrement not null, "name" varchar(255) not null, "stream_url" varchar(255) not null, "is_active" tinyint not null default ('1'), "position" int not null default ('0'), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer, "location" varchar(255) default (NULL), "type" varchar(255) not null default ('ip'));
-
-CREATE TABLE "audit_logs" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "user_id" integer default (NULL), "action" varchar(50) not null, "auditable_type" varchar(255) default (NULL), "auditable_id" integer default (NULL), "description" varchar(255) default (NULL), "old_values" text default (NULL), "new_values" text default (NULL), "ip_address" varchar(45) default (NULL), "user_agent" varchar(255) default (NULL), "created_at" datetime not null default (CURRENT_TIMESTAMP));
-
-CREATE INDEX "access_time_restrictions_tenant_id_idx" on "access_time_restrictions" ("tenant_id");
-
-CREATE INDEX "account_payable_categories_tenant_id_idx" on "account_payable_categories" ("tenant_id");
-
-CREATE INDEX "account_payable_installments_tenant_id_idx" on "account_payable_installments" ("tenant_id");
-
-CREATE INDEX "account_payable_payments_tenant_id_idx" on "account_payable_payments" ("tenant_id");
-
-CREATE INDEX "account_plans_tenant_id_idx" on "account_plans" ("tenant_id");
-
-CREATE INDEX "account_receivable_installments_tenant_id_idx" on "account_receivable_installments" ("tenant_id");
-
-CREATE INDEX "admissions_tenant_id_idx" on "admissions" ("tenant_id");
-
-CREATE INDEX "analytics_datasets_tenant_id_idx" on "analytics_datasets" ("tenant_id");
-
-CREATE INDEX "api_keys_tenant_id_idx" on "api_keys" ("tenant_id");
-
-CREATE INDEX "asset_disposals_tenant_id_idx" on "asset_disposals" ("tenant_id");
-
-CREATE INDEX "asset_inventories_tenant_id_idx" on "asset_inventories" ("tenant_id");
-
-CREATE INDEX "asset_movements_tenant_id_idx" on "asset_movements" ("tenant_id");
-
-CREATE INDEX "asset_tags_tenant_id_idx" on "asset_tags" ("tenant_id");
-
-CREATE INDEX "audit_blockchain_hashes_tenant_id_idx" on "audit_blockchain_hashes" ("tenant_id");
-
-CREATE INDEX "auto_assignment_rules_tenant_id_idx" on "auto_assignment_rules" ("tenant_id");
-
-CREATE INDEX "automation_rules_tenant_id_idx" on "automation_rules" ("tenant_id");
-
-CREATE INDEX "auvo_imports_tenant_id_idx" on "auvo_imports" ("tenant_id");
-
-CREATE INDEX "auxiliary_tools_tenant_id_idx" on "auxiliary_tools" ("tenant_id");
-
-CREATE INDEX "bank_accounts_tenant_id_idx" on "bank_accounts" ("tenant_id");
-
-CREATE INDEX "bank_statement_entries_tenant_id_idx" on "bank_statement_entries" ("tenant_id");
-
-CREATE INDEX "bank_statements_tenant_id_idx" on "bank_statements" ("tenant_id");
-
-CREATE INDEX "batches_tenant_id_idx" on "batches" ("tenant_id");
-
-CREATE INDEX "branches_tenant_id_idx" on "branches" ("tenant_id");
-
-CREATE INDEX "calibration_readings_tenant_id_idx" on "calibration_readings" ("tenant_id");
-
-CREATE INDEX "capa_records_tenant_id_idx" on "capa_records" ("tenant_id");
-
-CREATE INDEX "central_attachments_tenant_id_idx" on "central_attachments" ("tenant_id");
-
-CREATE INDEX "central_notification_prefs_tenant_id_idx" on "central_notification_prefs" ("tenant_id");
-
-CREATE INDEX "central_rules_tenant_id_idx" on "central_rules" ("tenant_id");
-
-CREATE INDEX "central_subtasks_tenant_id_idx" on "central_subtasks" ("tenant_id");
-
-CREATE INDEX "central_time_entries_tenant_id_idx" on "central_time_entries" ("tenant_id");
-
-CREATE INDEX "certificate_signatures_tenant_id_idx" on "certificate_signatures" ("tenant_id");
-
-CREATE INDEX "certificate_templates_tenant_id_idx" on "certificate_templates" ("tenant_id");
-
-CREATE INDEX "chat_messages_tenant_id_idx" on "chat_messages" ("tenant_id");
-
-CREATE INDEX "checklist_submissions_tenant_id_idx" on "checklist_submissions" ("tenant_id");
-
-CREATE INDEX "checklists_tenant_id_idx" on "checklists" ("tenant_id");
-
-CREATE INDEX "clt_violations_tenant_id_idx" on "clt_violations" ("tenant_id");
-
-CREATE INDEX "collection_action_logs_tenant_id_idx" on "collection_action_logs" ("tenant_id");
-
-CREATE INDEX "collection_actions_tenant_id_idx" on "collection_actions" ("tenant_id");
-
-CREATE INDEX "collection_logs_tenant_id_idx" on "collection_logs" ("tenant_id");
-
-CREATE INDEX "collection_rules_tenant_id_idx" on "collection_rules" ("tenant_id");
-
-CREATE INDEX "commission_campaigns_tenant_id_idx" on "commission_campaigns" ("tenant_id");
-
-CREATE INDEX "commission_disputes_tenant_id_idx" on "commission_disputes" ("tenant_id");
-
-CREATE INDEX "commission_events_tenant_id_idx" on "commission_events" ("tenant_id");
-
-CREATE INDEX "commission_rules_tenant_id_idx" on "commission_rules" ("tenant_id");
-
-CREATE INDEX "commission_splits_tenant_id_idx" on "commission_splits" ("tenant_id");
-
-CREATE INDEX "commitments_tenant_id_idx" on "commitments" ("tenant_id");
-
-CREATE INDEX "contact_policies_tenant_id_idx" on "contact_policies" ("tenant_id");
-
-CREATE INDEX "continuous_feedback_tenant_id_idx" on "continuous_feedback" ("tenant_id");
-
-CREATE INDEX "contract_addendums_tenant_id_idx" on "contract_addendums" ("tenant_id");
-
-CREATE INDEX "contract_adjustments_tenant_id_idx" on "contract_adjustments" ("tenant_id");
-
-CREATE INDEX "contract_measurements_tenant_id_idx" on "contract_measurements" ("tenant_id");
-
-CREATE INDEX "contracts_tenant_id_idx" on "contracts" ("tenant_id");
-
-CREATE INDEX "corrective_actions_tenant_id_idx" on "corrective_actions" ("tenant_id");
-
-CREATE INDEX "cost_centers_tenant_id_idx" on "cost_centers" ("tenant_id");
-
-CREATE INDEX "crm_activities_tenant_id_idx" on "crm_activities" ("tenant_id");
-
-CREATE INDEX "crm_calendar_events_tenant_id_idx" on "crm_calendar_events" ("tenant_id");
-
-CREATE INDEX "crm_contract_renewals_tenant_id_idx" on "crm_contract_renewals" ("tenant_id");
-
-CREATE INDEX "crm_deal_stage_histories_tenant_id_idx" on "crm_deal_stage_histories" ("tenant_id");
-
-CREATE INDEX "crm_deals_tenant_id_idx" on "crm_deals" ("tenant_id");
-
-CREATE INDEX "crm_email_threads_tenant_id_idx" on "crm_email_threads" ("tenant_id");
-
-CREATE INDEX "crm_external_leads_tenant_id_idx" on "crm_external_leads" ("tenant_id");
-
-CREATE INDEX "crm_follow_up_tasks_tenant_id_idx" on "crm_follow_up_tasks" ("tenant_id");
-
-CREATE INDEX "crm_forecast_snapshots_tenant_id_idx" on "crm_forecast_snapshots" ("tenant_id");
-
-CREATE INDEX "crm_interactive_proposals_tenant_id_idx" on "crm_interactive_proposals" ("tenant_id");
-
-CREATE INDEX "crm_lead_scoring_rules_tenant_id_idx" on "crm_lead_scoring_rules" ("tenant_id");
-
-CREATE INDEX "crm_loss_reasons_tenant_id_idx" on "crm_loss_reasons" ("tenant_id");
-
-CREATE INDEX "crm_messages_tenant_id_idx" on "crm_messages" ("tenant_id");
-
-CREATE INDEX "crm_pipeline_stages_tenant_id_idx" on "crm_pipeline_stages" ("tenant_id");
-
-CREATE INDEX "crm_referrals_tenant_id_idx" on "crm_referrals" ("tenant_id");
-
-CREATE INDEX "crm_sales_goals_tenant_id_idx" on "crm_sales_goals" ("tenant_id");
-
-CREATE INDEX "crm_sequence_enrollments_tenant_id_idx" on "crm_sequence_enrollments" ("tenant_id");
-
-CREATE INDEX "crm_smart_alerts_tenant_id_idx" on "crm_smart_alerts" ("tenant_id");
-
-CREATE INDEX "crm_territories_tenant_id_idx" on "crm_territories" ("tenant_id");
-
-CREATE INDEX "customer_addresses_tenant_id_idx" on "customer_addresses" ("tenant_id");
-
-CREATE INDEX "customer_complaints_tenant_id_idx" on "customer_complaints" ("tenant_id");
-
-CREATE INDEX "customer_documents_tenant_id_idx" on "customer_documents" ("tenant_id");
-
-CREATE INDEX "customer_locations_tenant_id_idx" on "customer_locations" ("tenant_id");
-
-CREATE INDEX "data_masking_rules_tenant_id_idx" on "data_masking_rules" ("tenant_id");
-
-CREATE INDEX "debt_renegotiations_tenant_id_idx" on "debt_renegotiations" ("tenant_id");
-
-CREATE INDEX "departments_tenant_id_idx" on "departments" ("tenant_id");
-
-CREATE INDEX "document_versions_tenant_id_idx" on "document_versions" ("tenant_id");
-
-CREATE INDEX "ecological_disposals_tenant_id_idx" on "ecological_disposals" ("tenant_id");
-
-CREATE INDEX "email_activities_tenant_id_idx" on "email_activities" ("tenant_id");
-
-CREATE INDEX "email_campaigns_tenant_id_idx" on "email_campaigns" ("tenant_id");
-
-CREATE INDEX "email_logs_tenant_id_idx" on "email_logs" ("tenant_id");
-
-CREATE INDEX "email_notes_tenant_id_idx" on "email_notes" ("tenant_id");
-
-CREATE INDEX "email_rules_tenant_id_idx" on "email_rules" ("tenant_id");
-
-CREATE INDEX "email_signatures_tenant_id_idx" on "email_signatures" ("tenant_id");
-
-CREATE INDEX "email_tags_tenant_id_idx" on "email_tags" ("tenant_id");
-
-CREATE INDEX "email_templates_tenant_id_idx" on "email_templates" ("tenant_id");
-
-CREATE INDEX "emails_tenant_id_idx" on "emails" ("tenant_id");
-
-CREATE INDEX "embedded_dashboards_tenant_id_idx" on "embedded_dashboards" ("tenant_id");
-
-CREATE INDEX "employee_benefits_tenant_id_idx" on "employee_benefits" ("tenant_id");
-
-CREATE INDEX "epi_records_tenant_id_idx" on "epi_records" ("tenant_id");
-
-CREATE INDEX "equipment_models_tenant_id_idx" on "equipment_models" ("tenant_id");
-
-CREATE INDEX "equipments_tenant_id_idx" on "equipments" ("tenant_id");
-
-CREATE INDEX "erp_sync_logs_tenant_id_idx" on "erp_sync_logs" ("tenant_id");
-
-CREATE INDEX "escalation_rules_tenant_id_idx" on "escalation_rules" ("tenant_id");
-
-CREATE INDEX "esocial_certificates_tenant_id_idx" on "esocial_certificates" ("tenant_id");
-
-CREATE INDEX "esocial_events_tenant_id_idx" on "esocial_events" ("tenant_id");
-
-CREATE INDEX "espelho_confirmations_tenant_id_idx" on "espelho_confirmations" ("tenant_id");
-
-CREATE INDEX "excentricity_tests_tenant_id_idx" on "excentricity_tests" ("tenant_id");
-
-CREATE INDEX "expense_categories_tenant_id_idx" on "expense_categories" ("tenant_id");
-
-CREATE INDEX "expenses_tenant_id_idx" on "expenses" ("tenant_id");
-
-CREATE INDEX "export_jobs_tenant_id_idx" on "export_jobs" ("tenant_id");
-
-CREATE INDEX "financial_checks_tenant_id_idx" on "financial_checks" ("tenant_id");
-
-CREATE INDEX "fiscal_audit_logs_tenant_id_idx" on "fiscal_audit_logs" ("tenant_id");
-
-CREATE INDEX "fiscal_events_tenant_id_idx" on "fiscal_events" ("tenant_id");
-
-CREATE INDEX "fiscal_invoice_items_tenant_id_idx" on "fiscal_invoice_items" ("tenant_id");
-
-CREATE INDEX "fiscal_notes_tenant_id_idx" on "fiscal_notes" ("tenant_id");
-
-CREATE INDEX "fiscal_scheduled_emissions_tenant_id_idx" on "fiscal_scheduled_emissions" ("tenant_id");
-
-CREATE INDEX "fiscal_templates_tenant_id_idx" on "fiscal_templates" ("tenant_id");
-
-CREATE INDEX "fiscal_webhooks_tenant_id_idx" on "fiscal_webhooks" ("tenant_id");
-
-CREATE INDEX "fleet_fuel_entries_tenant_id_idx" on "fleet_fuel_entries" ("tenant_id");
-
-CREATE INDEX "fleet_maintenances_tenant_id_idx" on "fleet_maintenances" ("tenant_id");
-
-CREATE INDEX "fleet_telemetry_tenant_id_idx" on "fleet_telemetry" ("tenant_id");
-
-CREATE INDEX "fleet_trips_tenant_id_idx" on "fleet_trips" ("tenant_id");
-
-CREATE INDEX "fleet_vehicles_tenant_id_idx" on "fleet_vehicles" ("tenant_id");
-
-CREATE INDEX "fleets_tenant_id_idx" on "fleets" ("tenant_id");
-
-CREATE INDEX "follow_ups_tenant_id_idx" on "follow_ups" ("tenant_id");
-
-CREATE INDEX "fueling_logs_tenant_id_idx" on "fueling_logs" ("tenant_id");
-
-CREATE INDEX "fund_transfers_tenant_id_idx" on "fund_transfers" ("tenant_id");
-
-CREATE INDEX "funnel_email_automations_tenant_id_idx" on "funnel_email_automations" ("tenant_id");
-
-CREATE INDEX "gamification_badges_tenant_id_idx" on "gamification_badges" ("tenant_id");
-
-CREATE INDEX "gamification_user_badges_tenant_id_idx" on "gamification_user_badges" ("tenant_id");
-
-CREATE INDEX "geo_login_alerts_tenant_id_idx" on "geo_login_alerts" ("tenant_id");
-
-CREATE INDEX "geofence_locations_tenant_id_idx" on "geofence_locations" ("tenant_id");
-
-CREATE INDEX "hour_bank_transactions_tenant_id_idx" on "hour_bank_transactions" ("tenant_id");
-
-CREATE INDEX "immutable_backups_tenant_id_idx" on "immutable_backups" ("tenant_id");
-
-CREATE INDEX "important_dates_tenant_id_idx" on "important_dates" ("tenant_id");
-
-CREATE INDEX "imports_tenant_id_idx" on "imports" ("tenant_id");
-
-CREATE INDEX "inmetro_competitor_snapshots_tenant_id_idx" on "inmetro_competitor_snapshots" ("tenant_id");
-
-CREATE INDEX "inmetro_competitors_tenant_id_idx" on "inmetro_competitors" ("tenant_id");
-
-CREATE INDEX "inmetro_compliance_checklists_tenant_id_idx" on "inmetro_compliance_checklists" ("tenant_id");
-
-CREATE INDEX "inmetro_lead_interactions_tenant_id_idx" on "inmetro_lead_interactions" ("tenant_id");
-
-CREATE INDEX "inmetro_lead_scores_tenant_id_idx" on "inmetro_lead_scores" ("tenant_id");
-
-CREATE INDEX "inmetro_locations_tenant_id_idx" on "inmetro_locations" ("tenant_id");
-
-CREATE INDEX "inmetro_prospection_queue_tenant_id_idx" on "inmetro_prospection_queue" ("tenant_id");
-
-CREATE INDEX "inmetro_snapshots_tenant_id_idx" on "inmetro_snapshots" ("tenant_id");
-
-CREATE INDEX "inmetro_webhooks_tenant_id_idx" on "inmetro_webhooks" ("tenant_id");
-
-CREATE INDEX "inmetro_win_loss_tenant_id_idx" on "inmetro_win_loss" ("tenant_id");
-
-CREATE INDEX "inventories_tenant_id_idx" on "inventories" ("tenant_id");
-
-CREATE INDEX "inventory_counts_tenant_id_idx" on "inventory_counts" ("tenant_id");
-
-CREATE INDEX "job_postings_tenant_id_idx" on "job_postings" ("tenant_id");
-
-CREATE INDEX "journey_rules_tenant_id_idx" on "journey_rules" ("tenant_id");
-
-CREATE INDEX "knowledge_base_articles_tenant_id_idx" on "knowledge_base_articles" ("tenant_id");
-
-CREATE INDEX "lab_logbook_entries_tenant_id_idx" on "lab_logbook_entries" ("tenant_id");
-
-CREATE INDEX "leave_requests_tenant_id_idx" on "leave_requests" ("tenant_id");
-
-CREATE INDEX "management_reviews_tenant_id_idx" on "management_reviews" ("tenant_id");
-
-CREATE INDEX "marketplace_requests_tenant_id_idx" on "marketplace_requests" ("tenant_id");
-
-CREATE INDEX "material_requests_tenant_id_idx" on "material_requests" ("tenant_id");
-
-CREATE INDEX "measurement_uncertainties_tenant_id_idx" on "measurement_uncertainties" ("tenant_id");
-
-CREATE INDEX "model_has_permissions_tenant_id_idx" on "model_has_permissions" ("tenant_id");
-
-CREATE INDEX "model_has_roles_tenant_id_idx" on "model_has_roles" ("tenant_id");
-
-CREATE INDEX "nfse_emissions_tenant_id_idx" on "nfse_emissions" ("tenant_id");
-
-CREATE INDEX "non_conformances_tenant_id_idx" on "non_conformances" ("tenant_id");
-
-CREATE INDEX "non_conformities_tenant_id_idx" on "non_conformities" ("tenant_id");
-
-CREATE INDEX "notification_channels_tenant_id_idx" on "notification_channels" ("tenant_id");
-
-CREATE INDEX "notifications_tenant_id_idx" on "notifications" ("tenant_id");
-
-CREATE INDEX "nps_responses_tenant_id_idx" on "nps_responses" ("tenant_id");
-
-CREATE INDEX "nps_surveys_tenant_id_idx" on "nps_surveys" ("tenant_id");
-
-CREATE INDEX "offline_map_regions_tenant_id_idx" on "offline_map_regions" ("tenant_id");
-
-CREATE INDEX "onboarding_checklist_items_tenant_id_idx" on "onboarding_checklist_items" ("tenant_id");
-
-CREATE INDEX "onboarding_checklists_tenant_id_idx" on "onboarding_checklists" ("tenant_id");
-
-CREATE INDEX "onboarding_processes_tenant_id_idx" on "onboarding_processes" ("tenant_id");
-
-CREATE INDEX "onboarding_templates_tenant_id_idx" on "onboarding_templates" ("tenant_id");
-
-CREATE INDEX "online_payments_tenant_id_idx" on "online_payments" ("tenant_id");
-
-CREATE INDEX "partial_payments_tenant_id_idx" on "partial_payments" ("tenant_id");
-
-CREATE INDEX "parts_kits_tenant_id_idx" on "parts_kits" ("tenant_id");
-
-CREATE INDEX "payments_tenant_id_idx" on "payments" ("tenant_id");
-
-CREATE INDEX "payroll_lines_tenant_id_idx" on "payroll_lines" ("tenant_id");
-
-CREATE INDEX "payslips_tenant_id_idx" on "payslips" ("tenant_id");
-
-CREATE INDEX "performance_reviews_tenant_id_idx" on "performance_reviews" ("tenant_id");
-
-CREATE INDEX "photo_annotations_tenant_id_idx" on "photo_annotations" ("tenant_id");
-
-CREATE INDEX "portal_guest_links_tenant_id_idx" on "portal_guest_links" ("tenant_id");
-
-CREATE INDEX "portal_ticket_comments_tenant_id_idx" on "portal_ticket_comments" ("tenant_id");
-
-CREATE INDEX "portal_tickets_tenant_id_idx" on "portal_tickets" ("tenant_id");
-
-CREATE INDEX "positions_tenant_id_idx" on "positions" ("tenant_id");
-
-CREATE INDEX "price_histories_tenant_id_idx" on "price_histories" ("tenant_id");
-
-CREATE INDEX "price_tables_tenant_id_idx" on "price_tables" ("tenant_id");
-
-CREATE INDEX "print_jobs_tenant_id_idx" on "print_jobs" ("tenant_id");
-
-CREATE INDEX "privacy_consents_tenant_id_idx" on "privacy_consents" ("tenant_id");
-
-CREATE INDEX "project_milestones_tenant_id_idx" on "project_milestones" ("tenant_id");
-
-CREATE INDEX "project_resources_tenant_id_idx" on "project_resources" ("tenant_id");
-
-CREATE INDEX "project_time_entries_tenant_id_idx" on "project_time_entries" ("tenant_id");
-
-CREATE INDEX "psei_submissions_tenant_id_idx" on "psei_submissions" ("tenant_id");
-
-CREATE INDEX "purchase_quotations_tenant_id_idx" on "purchase_quotations" ("tenant_id");
-
-CREATE INDEX "purchase_quotes_tenant_id_idx" on "purchase_quotes" ("tenant_id");
-
-CREATE INDEX "push_subscriptions_tenant_id_idx" on "push_subscriptions" ("tenant_id");
-
-CREATE INDEX "qa_alerts_tenant_id_idx" on "qa_alerts" ("tenant_id");
-
-CREATE INDEX "quality_audits_tenant_id_idx" on "quality_audits" ("tenant_id");
-
-CREATE INDEX "quality_corrective_actions_tenant_id_idx" on "quality_corrective_actions" ("tenant_id");
-
-CREATE INDEX "quality_procedures_tenant_id_idx" on "quality_procedures" ("tenant_id");
-
-CREATE INDEX "quick_notes_tenant_id_idx" on "quick_notes" ("tenant_id");
-
-CREATE INDEX "quote_approval_thresholds_tenant_id_idx" on "quote_approval_thresholds" ("tenant_id");
-
-CREATE INDEX "quote_emails_tenant_id_idx" on "quote_emails" ("tenant_id");
-
-CREATE INDEX "quote_templates_tenant_id_idx" on "quote_templates" ("tenant_id");
-
-CREATE INDEX "raw_data_backups_tenant_id_idx" on "raw_data_backups" ("tenant_id");
-
-CREATE INDEX "recall_logs_tenant_id_idx" on "recall_logs" ("tenant_id");
-
-CREATE INDEX "reconciliation_rules_tenant_id_idx" on "reconciliation_rules" ("tenant_id");
-
-CREATE INDEX "recurring_commissions_tenant_id_idx" on "recurring_commissions" ("tenant_id");
-
-CREATE INDEX "recurring_contracts_tenant_id_idx" on "recurring_contracts" ("tenant_id");
-
-CREATE INDEX "referral_codes_tenant_id_idx" on "referral_codes" ("tenant_id");
-
-CREATE INDEX "repair_seal_alerts_tenant_id_idx" on "repair_seal_alerts" ("tenant_id");
-
-CREATE INDEX "repair_seal_assignments_tenant_id_idx" on "repair_seal_assignments" ("tenant_id");
-
-CREATE INDEX "repeatability_tests_tenant_id_idx" on "repeatability_tests" ("tenant_id");
-
-CREATE INDEX "rescissions_tenant_id_idx" on "rescissions" ("tenant_id");
-
-CREATE INDEX "retention_samples_tenant_id_idx" on "retention_samples" ("tenant_id");
-
-CREATE INDEX "rma_requests_tenant_id_idx" on "rma_requests" ("tenant_id");
-
-CREATE INDEX "route_plans_tenant_id_idx" on "route_plans" ("tenant_id");
-
-CREATE INDEX "routes_planning_tenant_id_idx" on "routes_planning" ("tenant_id");
-
-CREATE INDEX "rr_studies_tenant_id_idx" on "rr_studies" ("tenant_id");
-
-CREATE INDEX "satisfaction_surveys_tenant_id_idx" on "satisfaction_surveys" ("tenant_id");
-
-CREATE INDEX "scale_readings_tenant_id_idx" on "scale_readings" ("tenant_id");
-
-CREATE INDEX "scheduled_appointments_tenant_id_idx" on "scheduled_appointments" ("tenant_id");
-
-CREATE INDEX "scheduled_report_exports_tenant_id_idx" on "scheduled_report_exports" ("tenant_id");
-
-CREATE INDEX "scheduled_reports_tenant_id_idx" on "scheduled_reports" ("tenant_id");
-
-CREATE INDEX "schedules_tenant_id_idx" on "schedules" ("tenant_id");
-
-CREATE INDEX "seal_applications_tenant_id_idx" on "seal_applications" ("tenant_id");
-
-CREATE INDEX "search_index_tenant_id_idx" on "search_index" ("tenant_id");
-
-CREATE INDEX "self_service_quote_requests_tenant_id_idx" on "self_service_quote_requests" ("tenant_id");
-
-CREATE INDEX "sensor_readings_tenant_id_idx" on "sensor_readings" ("tenant_id");
-
-CREATE INDEX "service_call_comments_tenant_id_idx" on "service_call_comments" ("tenant_id");
-
-CREATE INDEX "service_call_templates_tenant_id_idx" on "service_call_templates" ("tenant_id");
-
-CREATE INDEX "service_calls_tenant_id_idx" on "service_calls" ("tenant_id");
-
-CREATE INDEX "service_catalogs_tenant_id_idx" on "service_catalogs" ("tenant_id");
-
-CREATE INDEX "service_checklists_tenant_id_idx" on "service_checklists" ("tenant_id");
-
-CREATE INDEX "skill_requirements_tenant_id_idx" on "skill_requirements" ("tenant_id");
-
-CREATE INDEX "skills_tenant_id_idx" on "skills" ("tenant_id");
-
-CREATE INDEX "sla_policies_tenant_id_idx" on "sla_policies" ("tenant_id");
-
-CREATE INDEX "sla_violations_tenant_id_idx" on "sla_violations" ("tenant_id");
-
-CREATE INDEX "stock_disposals_tenant_id_idx" on "stock_disposals" ("tenant_id");
-
-CREATE INDEX "stock_movements_tenant_id_idx" on "stock_movements" ("tenant_id");
-
-CREATE INDEX "stock_transfers_tenant_id_idx" on "stock_transfers" ("tenant_id");
-
-CREATE INDEX "supplier_contracts_tenant_id_idx" on "supplier_contracts" ("tenant_id");
-
-CREATE INDEX "survey_responses_tenant_id_idx" on "survey_responses" ("tenant_id");
-
-CREATE INDEX "surveys_tenant_id_idx" on "surveys" ("tenant_id");
-
-CREATE INDEX "sync_conflict_logs_tenant_id_idx" on "sync_conflict_logs" ("tenant_id");
-
-CREATE INDEX "sync_queue_tenant_id_idx" on "sync_queue" ("tenant_id");
-
-CREATE INDEX "sync_queue_items_tenant_id_idx" on "sync_queue_items" ("tenant_id");
-
-CREATE INDEX "system_alerts_tenant_id_idx" on "system_alerts" ("tenant_id");
-
-CREATE INDEX "system_revisions_tenant_id_idx" on "system_revisions" ("tenant_id");
-
-CREATE INDEX "tax_calculations_tenant_id_idx" on "tax_calculations" ("tenant_id");
-
-CREATE INDEX "tech_cash_advances_tenant_id_idx" on "tech_cash_advances" ("tenant_id");
-
-CREATE INDEX "technician_fund_requests_tenant_id_idx" on "technician_fund_requests" ("tenant_id");
-
-CREATE INDEX "technician_skills_tenant_id_idx" on "technician_skills" ("tenant_id");
-
-CREATE INDEX "ticket_categories_tenant_id_idx" on "ticket_categories" ("tenant_id");
-
-CREATE INDEX "time_clock_adjustments_tenant_id_idx" on "time_clock_adjustments" ("tenant_id");
-
-CREATE INDEX "time_clock_audit_logs_tenant_id_idx" on "time_clock_audit_logs" ("tenant_id");
-
-CREATE INDEX "time_entries_tenant_id_idx" on "time_entries" ("tenant_id");
-
-CREATE INDEX "toll_transactions_tenant_id_idx" on "toll_transactions" ("tenant_id");
-
-CREATE INDEX "tool_calibrations_tenant_id_idx" on "tool_calibrations" ("tenant_id");
-
-CREATE INDEX "tool_checkouts_tenant_id_idx" on "tool_checkouts" ("tenant_id");
-
-CREATE INDEX "tool_inventories_tenant_id_idx" on "tool_inventories" ("tenant_id");
-
-CREATE INDEX "traffic_fines_tenant_id_idx" on "traffic_fines" ("tenant_id");
-
-CREATE INDEX "training_courses_tenant_id_idx" on "training_courses" ("tenant_id");
-
-CREATE INDEX "training_enrollments_tenant_id_idx" on "training_enrollments" ("tenant_id");
-
-CREATE INDEX "trainings_tenant_id_idx" on "trainings" ("tenant_id");
-
-CREATE INDEX "tv_dashboard_configs_tenant_id_idx" on "tv_dashboard_configs" ("tenant_id");
-
-CREATE INDEX "used_stock_items_tenant_id_idx" on "used_stock_items" ("tenant_id");
-
-CREATE INDEX "user_competencies_tenant_id_idx" on "user_competencies" ("tenant_id");
-
-CREATE INDEX "user_skills_tenant_id_idx" on "user_skills" ("tenant_id");
-
-CREATE INDEX "user_tenants_tenant_id_idx" on "user_tenants" ("tenant_id");
-
-CREATE INDEX "vehicle_gps_positions_tenant_id_idx" on "vehicle_gps_positions" ("tenant_id");
-
-CREATE INDEX "vehicle_inspections_tenant_id_idx" on "vehicle_inspections" ("tenant_id");
-
-CREATE INDEX "vehicle_insurances_tenant_id_idx" on "vehicle_insurances" ("tenant_id");
-
-CREATE INDEX "vehicle_tires_tenant_id_idx" on "vehicle_tires" ("tenant_id");
-
-CREATE INDEX "virtual_cards_tenant_id_idx" on "virtual_cards" ("tenant_id");
-
-CREATE INDEX "visit_checkins_tenant_id_idx" on "visit_checkins" ("tenant_id");
-
-CREATE INDEX "visit_routes_tenant_id_idx" on "visit_routes" ("tenant_id");
-
-CREATE INDEX "visit_surveys_tenant_id_idx" on "visit_surveys" ("tenant_id");
-
-CREATE INDEX "voice_reports_tenant_id_idx" on "voice_reports" ("tenant_id");
-
-CREATE INDEX "vulnerability_scans_tenant_id_idx" on "vulnerability_scans" ("tenant_id");
-
-CREATE INDEX "warehouses_tenant_id_idx" on "warehouses" ("tenant_id");
-
-CREATE INDEX "warranty_tracking_tenant_id_idx" on "warranty_tracking" ("tenant_id");
-
-CREATE INDEX "webhook_configs_tenant_id_idx" on "webhook_configs" ("tenant_id");
-
-CREATE INDEX "webhooks_tenant_id_idx" on "webhooks" ("tenant_id");
-
-CREATE INDEX "weight_assignments_tenant_id_idx" on "weight_assignments" ("tenant_id");
-
-CREATE INDEX "whatsapp_configs_tenant_id_idx" on "whatsapp_configs" ("tenant_id");
-
-CREATE INDEX "work_order_chats_tenant_id_idx" on "work_order_chats" ("tenant_id");
-
-CREATE INDEX "work_order_checklist_responses_tenant_id_idx" on "work_order_checklist_responses" ("tenant_id");
-
-CREATE INDEX "work_order_displacement_locations_tenant_id_idx" on "work_order_displacement_locations" ("tenant_id");
-
-CREATE INDEX "work_order_displacement_stops_tenant_id_idx" on "work_order_displacement_stops" ("tenant_id");
-
-CREATE INDEX "work_order_events_tenant_id_idx" on "work_order_events" ("tenant_id");
-
-CREATE INDEX "work_order_ratings_tenant_id_idx" on "work_order_ratings" ("tenant_id");
-
-CREATE INDEX "work_order_recurrences_tenant_id_idx" on "work_order_recurrences" ("tenant_id");
-
-CREATE INDEX "work_order_signatures_tenant_id_idx" on "work_order_signatures" ("tenant_id");
-
-CREATE INDEX "work_order_templates_tenant_id_idx" on "work_order_templates" ("tenant_id");
-
-CREATE INDEX "work_order_time_logs_tenant_id_idx" on "work_order_time_logs" ("tenant_id");
-
-CREATE INDEX "account_payable_categories_deleted_at_idx" on "account_payable_categories" ("deleted_at");
-
-CREATE INDEX "account_receivable_categories_deleted_at_idx" on "account_receivable_categories" ("deleted_at");
-
-CREATE INDEX "asset_records_deleted_at_idx" on "asset_records" ("deleted_at");
-
-CREATE INDEX "auto_assignment_rules_deleted_at_idx" on "auto_assignment_rules" ("deleted_at");
-
-CREATE INDEX "automation_report_formats_deleted_at_idx" on "automation_report_formats" ("deleted_at");
-
-CREATE INDEX "automation_report_frequencies_deleted_at_idx" on "automation_report_frequencies" ("deleted_at");
-
-CREATE INDEX "automation_report_types_deleted_at_idx" on "automation_report_types" ("deleted_at");
-
-CREATE INDEX "automation_rules_deleted_at_idx" on "automation_rules" ("deleted_at");
-
-CREATE INDEX "auxiliary_tools_deleted_at_idx" on "auxiliary_tools" ("deleted_at");
-
-CREATE INDEX "bank_account_types_deleted_at_idx" on "bank_account_types" ("deleted_at");
-
-CREATE INDEX "bank_accounts_deleted_at_idx" on "bank_accounts" ("deleted_at");
-
-CREATE INDEX "batches_deleted_at_idx" on "batches" ("deleted_at");
-
-CREATE INDEX "calibration_types_deleted_at_idx" on "calibration_types" ("deleted_at");
-
-CREATE INDEX "cancellation_reasons_deleted_at_idx" on "cancellation_reasons" ("deleted_at");
-
-CREATE INDEX "commission_events_deleted_at_idx" on "commission_events" ("deleted_at");
-
-CREATE INDEX "commission_rules_deleted_at_idx" on "commission_rules" ("deleted_at");
-
-CREATE INDEX "contract_types_deleted_at_idx" on "contract_types" ("deleted_at");
-
-CREATE INDEX "contracts_deleted_at_idx" on "contracts" ("deleted_at");
-
-CREATE INDEX "cost_centers_deleted_at_idx" on "cost_centers" ("deleted_at");
-
-CREATE INDEX "crm_deals_deleted_at_idx" on "crm_deals" ("deleted_at");
-
-CREATE INDEX "crm_funnel_automations_deleted_at_idx" on "crm_funnel_automations" ("deleted_at");
-
-CREATE INDEX "crm_pipelines_deleted_at_idx" on "crm_pipelines" ("deleted_at");
-
-CREATE INDEX "crm_sequences_deleted_at_idx" on "crm_sequences" ("deleted_at");
-
-CREATE INDEX "crm_territories_deleted_at_idx" on "crm_territories" ("deleted_at");
-
-CREATE INDEX "crm_web_forms_deleted_at_idx" on "crm_web_forms" ("deleted_at");
-
-CREATE INDEX "customer_company_sizes_deleted_at_idx" on "customer_company_sizes" ("deleted_at");
-
-CREATE INDEX "customer_ratings_deleted_at_idx" on "customer_ratings" ("deleted_at");
-
-CREATE INDEX "customer_segments_deleted_at_idx" on "customer_segments" ("deleted_at");
-
-CREATE INDEX "customers_deleted_at_idx" on "customers" ("deleted_at");
-
-CREATE INDEX "document_types_deleted_at_idx" on "document_types" ("deleted_at");
-
-CREATE INDEX "document_versions_deleted_at_idx" on "document_versions" ("deleted_at");
-
-CREATE INDEX "equipment_brands_deleted_at_idx" on "equipment_brands" ("deleted_at");
-
-CREATE INDEX "equipment_categories_deleted_at_idx" on "equipment_categories" ("deleted_at");
-
-CREATE INDEX "equipment_types_deleted_at_idx" on "equipment_types" ("deleted_at");
-
-CREATE INDEX "equipments_deleted_at_idx" on "equipments" ("deleted_at");
-
-CREATE INDEX "expense_categories_deleted_at_idx" on "expense_categories" ("deleted_at");
-
-CREATE INDEX "expenses_deleted_at_idx" on "expenses" ("deleted_at");
-
-CREATE INDEX "financial_checks_deleted_at_idx" on "financial_checks" ("deleted_at");
-
-CREATE INDEX "fiscal_invoices_deleted_at_idx" on "fiscal_invoices" ("deleted_at");
-
-CREATE INDEX "fiscal_notes_deleted_at_idx" on "fiscal_notes" ("deleted_at");
-
-CREATE INDEX "fleet_fuel_types_deleted_at_idx" on "fleet_fuel_types" ("deleted_at");
-
-CREATE INDEX "fleet_vehicle_statuses_deleted_at_idx" on "fleet_vehicle_statuses" ("deleted_at");
-
-CREATE INDEX "fleet_vehicle_types_deleted_at_idx" on "fleet_vehicle_types" ("deleted_at");
-
-CREATE INDEX "fleet_vehicles_deleted_at_idx" on "fleet_vehicles" ("deleted_at");
-
-CREATE INDEX "fleets_deleted_at_idx" on "fleets" ("deleted_at");
-
-CREATE INDEX "follow_up_channels_deleted_at_idx" on "follow_up_channels" ("deleted_at");
-
-CREATE INDEX "follow_up_statuses_deleted_at_idx" on "follow_up_statuses" ("deleted_at");
-
-CREATE INDEX "fueling_fuel_types_deleted_at_idx" on "fueling_fuel_types" ("deleted_at");
-
-CREATE INDEX "fueling_logs_deleted_at_idx" on "fueling_logs" ("deleted_at");
-
-CREATE INDEX "fund_transfers_deleted_at_idx" on "fund_transfers" ("deleted_at");
-
-CREATE INDEX "hour_bank_policies_deleted_at_idx" on "hour_bank_policies" ("deleted_at");
-
-CREATE INDEX "inmetro_competitors_deleted_at_idx" on "inmetro_competitors" ("deleted_at");
-
-CREATE INDEX "inmetro_owners_deleted_at_idx" on "inmetro_owners" ("deleted_at");
-
-CREATE INDEX "inmetro_seal_statuses_deleted_at_idx" on "inmetro_seal_statuses" ("deleted_at");
-
-CREATE INDEX "inmetro_seal_types_deleted_at_idx" on "inmetro_seal_types" ("deleted_at");
-
-CREATE INDEX "inmetro_seals_deleted_at_idx" on "inmetro_seals" ("deleted_at");
-
-CREATE INDEX "inventories_deleted_at_idx" on "inventories" ("deleted_at");
-
-CREATE INDEX "invoices_deleted_at_idx" on "invoices" ("deleted_at");
-
-CREATE INDEX "journey_blocks_deleted_at_idx" on "journey_blocks" ("deleted_at");
-
-CREATE INDEX "journey_days_deleted_at_idx" on "journey_days" ("deleted_at");
-
-CREATE INDEX "journey_entries_deleted_at_idx" on "journey_entries" ("deleted_at");
-
-CREATE INDEX "journey_policies_deleted_at_idx" on "journey_policies" ("deleted_at");
-
-CREATE INDEX "journey_rules_deleted_at_idx" on "journey_rules" ("deleted_at");
-
-CREATE INDEX "lead_sources_deleted_at_idx" on "lead_sources" ("deleted_at");
-
-CREATE INDEX "maintenance_types_deleted_at_idx" on "maintenance_types" ("deleted_at");
-
-CREATE INDEX "material_requests_deleted_at_idx" on "material_requests" ("deleted_at");
-
-CREATE INDEX "measurement_units_deleted_at_idx" on "measurement_units" ("deleted_at");
-
-CREATE INDEX "non_conformities_deleted_at_idx" on "non_conformities" ("deleted_at");
-
-CREATE INDEX "onboarding_template_types_deleted_at_idx" on "onboarding_template_types" ("deleted_at");
-
-CREATE INDEX "parts_kits_deleted_at_idx" on "parts_kits" ("deleted_at");
-
-CREATE INDEX "payment_terms_deleted_at_idx" on "payment_terms" ("deleted_at");
-
-CREATE INDEX "price_table_adjustment_types_deleted_at_idx" on "price_table_adjustment_types" ("deleted_at");
-
-CREATE INDEX "price_tables_deleted_at_idx" on "price_tables" ("deleted_at");
-
-CREATE INDEX "product_serials_deleted_at_idx" on "product_serials" ("deleted_at");
-
-CREATE INDEX "products_deleted_at_idx" on "products" ("deleted_at");
-
-CREATE INDEX "projects_deleted_at_idx" on "projects" ("deleted_at");
-
-CREATE INDEX "purchase_quotations_deleted_at_idx" on "purchase_quotations" ("deleted_at");
-
-CREATE INDEX "purchase_quotes_deleted_at_idx" on "purchase_quotes" ("deleted_at");
-
-CREATE INDEX "quality_procedures_deleted_at_idx" on "quality_procedures" ("deleted_at");
-
-CREATE INDEX "quote_sources_deleted_at_idx" on "quote_sources" ("deleted_at");
-
-CREATE INDEX "quotes_deleted_at_idx" on "quotes" ("deleted_at");
-
-CREATE INDEX "recurring_contracts_deleted_at_idx" on "recurring_contracts" ("deleted_at");
-
-CREATE INDEX "repair_seal_batches_deleted_at_idx" on "repair_seal_batches" ("deleted_at");
-
-CREATE INDEX "rma_requests_deleted_at_idx" on "rma_requests" ("deleted_at");
-
-CREATE INDEX "schedules_deleted_at_idx" on "schedules" ("deleted_at");
-
-CREATE INDEX "service_calls_deleted_at_idx" on "service_calls" ("deleted_at");
-
-CREATE INDEX "service_types_deleted_at_idx" on "service_types" ("deleted_at");
-
-CREATE INDEX "services_deleted_at_idx" on "services" ("deleted_at");
-
-CREATE INDEX "standard_weights_deleted_at_idx" on "standard_weights" ("deleted_at");
-
-CREATE INDEX "stock_disposals_deleted_at_idx" on "stock_disposals" ("deleted_at");
-
-CREATE INDEX "stock_movements_deleted_at_idx" on "stock_movements" ("deleted_at");
-
-CREATE INDEX "supplier_contract_payment_frequencies_deleted_at_idx" on "supplier_contract_payment_frequencies" ("deleted_at");
-
-CREATE INDEX "supplier_contracts_deleted_at_idx" on "supplier_contracts" ("deleted_at");
-
-CREATE INDEX "suppliers_deleted_at_idx" on "suppliers" ("deleted_at");
-
-CREATE INDEX "surveys_deleted_at_idx" on "surveys" ("deleted_at");
-
-CREATE INDEX "technician_certifications_deleted_at_idx" on "technician_certifications" ("deleted_at");
-
-CREATE INDEX "tenants_deleted_at_idx" on "tenants" ("deleted_at");
-
-CREATE INDEX "time_entries_deleted_at_idx" on "time_entries" ("deleted_at");
-
-CREATE INDEX "tool_checkouts_deleted_at_idx" on "tool_checkouts" ("deleted_at");
-
-CREATE INDEX "tool_inventories_deleted_at_idx" on "tool_inventories" ("deleted_at");
-
-CREATE INDEX "travel_requests_deleted_at_idx" on "travel_requests" ("deleted_at");
-
-CREATE INDEX "tv_camera_types_deleted_at_idx" on "tv_camera_types" ("deleted_at");
-
-CREATE INDEX "users_deleted_at_idx" on "users" ("deleted_at");
-
-CREATE INDEX "vehicle_insurances_deleted_at_idx" on "vehicle_insurances" ("deleted_at");
-
-CREATE INDEX "vehicle_tires_deleted_at_idx" on "vehicle_tires" ("deleted_at");
-
-CREATE INDEX "warehouses_deleted_at_idx" on "warehouses" ("deleted_at");
-
-CREATE INDEX "webhooks_deleted_at_idx" on "webhooks" ("deleted_at");
-
-CREATE INDEX "work_order_recurrences_deleted_at_idx" on "work_order_recurrences" ("deleted_at");
-
-CREATE INDEX "work_order_templates_deleted_at_idx" on "work_order_templates" ("deleted_at");
-
-CREATE INDEX "work_orders_deleted_at_idx" on "work_orders" ("deleted_at");
-
-CREATE INDEX "audit_logs_tenant_id_idx" on "audit_logs" ("tenant_id");
-
-CREATE INDEX "calibration_standard_weight_tenant_id_idx" on "calibration_standard_weight" ("tenant_id");
-
-CREATE INDEX "cameras_tenant_id_idx" on "cameras" ("tenant_id");
-
-CREATE INDEX "candidates_tenant_id_idx" on "candidates" ("tenant_id");
-
-CREATE INDEX "central_item_dependencies_tenant_id_idx" on "central_item_dependencies" ("tenant_id");
-
-CREATE INDEX "central_item_watchers_tenant_id_idx" on "central_item_watchers" ("tenant_id");
-
-CREATE INDEX "crm_deal_products_tenant_id_idx" on "crm_deal_products" ("tenant_id");
-
-CREATE INDEX "crm_sequences_tenant_id_idx" on "crm_sequences" ("tenant_id");
-
-CREATE INDEX "crm_tracking_events_tenant_id_idx" on "crm_tracking_events" ("tenant_id");
-
-CREATE INDEX "customer_contacts_tenant_id_idx" on "customer_contacts" ("tenant_id");
-
-CREATE INDEX "data_export_jobs_tenant_id_idx" on "data_export_jobs" ("tenant_id");
-
-CREATE INDEX "debt_renegotiation_items_tenant_id_idx" on "debt_renegotiation_items" ("tenant_id");
-
-CREATE INDEX "email_email_tag_tenant_id_idx" on "email_email_tag" ("tenant_id");
-
-CREATE INDEX "employee_documents_tenant_id_idx" on "employee_documents" ("tenant_id");
-
-CREATE INDEX "equipment_documents_tenant_id_idx" on "equipment_documents" ("tenant_id");
-
-CREATE INDEX "equipment_maintenances_tenant_id_idx" on "equipment_maintenances" ("tenant_id");
-
-CREATE INDEX "equipment_model_product_tenant_id_idx" on "equipment_model_product" ("tenant_id");
-
-CREATE INDEX "expense_status_history_tenant_id_idx" on "expense_status_history" ("tenant_id");
-
-CREATE INDEX "fuel_logs_tenant_id_idx" on "fuel_logs" ("tenant_id");
-
-CREATE INDEX "inmetro_instruments_tenant_id_idx" on "inmetro_instruments" ("tenant_id");
-
-CREATE INDEX "inventory_items_tenant_id_idx" on "inventory_items" ("tenant_id");
-
-CREATE INDEX "journey_entries_tenant_id_idx" on "journey_entries" ("tenant_id");
-
-CREATE INDEX "kiosk_sessions_tenant_id_idx" on "kiosk_sessions" ("tenant_id");
-
-CREATE INDEX "lgpd_anonymization_logs_tenant_id_idx" on "lgpd_anonymization_logs" ("tenant_id");
-
-CREATE INDEX "lgpd_consent_logs_tenant_id_idx" on "lgpd_consent_logs" ("tenant_id");
-
-CREATE INDEX "lgpd_data_requests_tenant_id_idx" on "lgpd_data_requests" ("tenant_id");
-
-CREATE INDEX "lgpd_data_treatments_tenant_id_idx" on "lgpd_data_treatments" ("tenant_id");
-
-CREATE INDEX "lgpd_security_incidents_tenant_id_idx" on "lgpd_security_incidents" ("tenant_id");
-
-CREATE INDEX "purchase_quotation_items_tenant_id_idx" on "purchase_quotation_items" ("tenant_id");
-
-CREATE INDEX "quote_equipments_tenant_id_idx" on "quote_equipments" ("tenant_id");
-
-CREATE INDEX "quote_items_tenant_id_idx" on "quote_items" ("tenant_id");
-
-CREATE INDEX "quote_photos_tenant_id_idx" on "quote_photos" ("tenant_id");
-
-CREATE INDEX "quote_quote_tag_tenant_id_idx" on "quote_quote_tag" ("tenant_id");
-
-CREATE INDEX "recurring_contract_items_tenant_id_idx" on "recurring_contract_items" ("tenant_id");
-
-CREATE INDEX "saas_subscriptions_tenant_id_idx" on "saas_subscriptions" ("tenant_id");
-
-CREATE INDEX "service_call_equipments_tenant_id_idx" on "service_call_equipments" ("tenant_id");
-
-CREATE INDEX "service_skills_tenant_id_idx" on "service_skills" ("tenant_id");
-
-CREATE INDEX "stock_demand_forecasts_tenant_id_idx" on "stock_demand_forecasts" ("tenant_id");
-
-CREATE INDEX "support_tickets_tenant_id_idx" on "support_tickets" ("tenant_id");
-
-CREATE INDEX "technician_cash_transactions_tenant_id_idx" on "technician_cash_transactions" ("tenant_id");
-
-CREATE INDEX "user_2fa_tenant_id_idx" on "user_2fa" ("tenant_id");
-
-CREATE INDEX "vacation_balances_tenant_id_idx" on "vacation_balances" ("tenant_id");
-
-CREATE INDEX "vehicle_accidents_tenant_id_idx" on "vehicle_accidents" ("tenant_id");
-
-CREATE INDEX "vehicle_pool_requests_tenant_id_idx" on "vehicle_pool_requests" ("tenant_id");
-
-CREATE INDEX "whatsapp_messages_tenant_id_idx" on "whatsapp_messages" ("tenant_id");
-
-CREATE INDEX "work_order_attachments_tenant_id_idx" on "work_order_attachments" ("tenant_id");
-
-CREATE INDEX "work_order_equipments_tenant_id_idx" on "work_order_equipments" ("tenant_id");
-
-CREATE INDEX "work_order_items_tenant_id_idx" on "work_order_items" ("tenant_id");
-
-CREATE INDEX "work_order_status_history_tenant_id_idx" on "work_order_status_history" ("tenant_id");
-
-CREATE INDEX "work_order_technicians_tenant_id_idx" on "work_order_technicians" ("tenant_id");
-
-CREATE INDEX "work_schedules_tenant_id_idx" on "work_schedules" ("tenant_id");
-
-CREATE TABLE "accounts_payable" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "created_by" integer default (NULL), "supplier" varchar(255) default (NULL), "category" varchar(50) default (NULL), "description" varchar(255) not null, "amount" numeric not null, "amount_paid" numeric not null default ('0.00'), "due_date" date not null, "paid_at" date default (NULL), "status" varchar(20) not null default ('pending'), "payment_method" varchar(30) default (NULL), "notes" text, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL), "category_id" integer default (NULL), "supplier_id" integer default (NULL), "chart_of_account_id" integer default (NULL), "cost_center_id" integer default (NULL), "penalty_amount" numeric not null default ('0.00'), "interest_amount" numeric not null default ('0.00'), "discount_amount" numeric not null default ('0.00'), "work_order_id" integer default (NULL), "updated_by" integer, "deleted_by" integer, foreign key("updated_by") references "users"("id") on delete set null, foreign key("deleted_by") references "users"("id") on delete set null);
-
-CREATE INDEX "accounts_payable_deleted_at_idx" on "accounts_payable" ("deleted_at");
-
-CREATE INDEX "accounts_payable_tenant_id_idx" on "accounts_payable" ("tenant_id");
-
-CREATE TABLE "accounts_receivable" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "customer_id" integer not null, "work_order_id" integer default (NULL), "quote_id" integer default (NULL), "origin_type" varchar(30) default (NULL), "invoice_id" integer default (NULL), "created_by" integer default (NULL), "description" varchar(255) not null, "amount" numeric not null, "amount_paid" numeric not null default ('0.00'), "due_date" date not null, "paid_at" date default (NULL), "status" varchar(20) not null default ('pending'), "payment_method" varchar(30) default (NULL), "notes" text, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL), "chart_of_account_id" integer default (NULL), "collection_rule_id" integer default (NULL), "last_collection_action_at" datetime default (NULL), "days_overdue" int not null default ('0'), "nosso_numero" varchar(30) default (NULL), "numero_documento" varchar(30) default (NULL), "penalty_amount" numeric not null default ('0.00'), "interest_amount" numeric not null default ('0.00'), "discount_amount" numeric not null default ('0.00'), "cost_center_id" integer default (NULL), "reference_id" integer default (NULL), "updated_by" integer, "deleted_by" integer, foreign key("updated_by") references "users"("id") on delete set null, foreign key("deleted_by") references "users"("id") on delete set null);
-
-CREATE INDEX "accounts_receivable_deleted_at_idx" on "accounts_receivable" ("deleted_at");
-
-CREATE INDEX "accounts_receivable_tenant_id_idx" on "accounts_receivable" ("tenant_id");
-
-CREATE UNIQUE INDEX "customers_tenant_active_document_hash_unique" on "customers" ("tenant_id", "document_hash", "document_hash_active_key");
-
-CREATE UNIQUE INDEX "suppliers_tenant_active_document_hash_unique" on "suppliers" ("tenant_id", "document_hash", "document_hash_active_key");
-
-CREATE TABLE "equipment_calibrations" ("id" integer primary key autoincrement not null, "equipment_id" integer not null, "calibration_date" date not null, "next_due_date" date default (NULL), "calibration_type" varchar(30) not null default ('externa'), "result" varchar not null default 'approved', "laboratory" varchar(150) default (NULL), "certificate_number" varchar(50) default (NULL), "certificate_file" varchar(255) default (NULL), "uncertainty" varchar(50) default (NULL), "errors_found" text default (NULL), "corrections_applied" text, "performed_by" integer default (NULL), "approved_by" integer default (NULL), "cost" numeric default (NULL), "work_order_id" integer default (NULL), "notes" text, "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "tenant_id" integer not null, "certificate_pdf_path" varchar(255) default (NULL), "standard_used" varchar(255) default (NULL), "error_found" numeric default (NULL), "technician_notes" text, "temperature" numeric default (NULL), "humidity" numeric default (NULL), "pressure" numeric default (NULL), "status" varchar(20) default (NULL), "nominal_mass" varchar(255) default (NULL), "error_after_adjustment" numeric default (NULL), "traceability" text, "eccentricity_data" text default (NULL), "has_nonconformity" tinyint not null default ('0'), "nonconformity_details" text, "batch_generated" tinyint not null default ('0'), "verification_token" varchar(64) default (NULL), "certificate_template_id" integer default (NULL), "conformity_declaration" varchar(255) default (NULL), "max_permissible_error" numeric default (NULL), "max_error_found" numeric default (NULL), "mass_unit" varchar(10) not null default ('kg'), "calibration_method" varchar(255) default (NULL), "precision_class" varchar(10) default (NULL), "received_date" date default (NULL), "issued_date" date default (NULL), "calibration_location" varchar(500) default (NULL), "calibration_location_type" varchar(30) default (NULL), "before_adjustment_data" text default (NULL), "after_adjustment_data" text default (NULL), "verification_type" varchar(30) default (NULL), "verification_division_e" numeric default (NULL), "prefilled_from_id" integer default (NULL), "gravity_acceleration" numeric default (NULL), "decision_rule" varchar(30) default ('simple'), "uncertainty_budget" text default (NULL), "laboratory_address" varchar(500) default (NULL), "scope_declaration" text, "icp_signature_status" varchar(255) default (NULL), "calibration_started_at" datetime, "calibration_completed_at" datetime, "condition_as_found" text, "condition_as_left" text, "adjustment_performed" tinyint(1) not null default ('0'), "accreditation_scope_id" integer, "coverage_factor_k" numeric, "confidence_level" numeric, "guard_band_mode" varchar, "guard_band_value" numeric, "producer_risk_alpha" numeric, "consumer_risk_beta" numeric, "decision_result" varchar, "decision_z_value" numeric, "decision_false_accept_prob" numeric, "decision_guard_band_applied" numeric, "decision_calculated_at" datetime, "decision_calculated_by" integer, "decision_notes" text, foreign key("decision_calculated_by") references users("id") on delete set null on update no action, foreign key("accreditation_scope_id") references accreditation_scopes("id") on delete set null on update no action);
-
-CREATE INDEX "eq_cal_decision_result_idx" on "equipment_calibrations" ("tenant_id", "decision_result");
-
-CREATE UNIQUE INDEX "equipment_calibrations_verification_token_unique" on "equipment_calibrations" ("verification_token");
-
-CREATE TABLE "central_items" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "type" varchar(20) not null, "origin" varchar not null default 'manual', "ref_type" varchar(100) default (NULL), "ref_id" integer default (NULL), "title" varchar(255) not null, "short_description" text, "assignee_user_id" integer default (NULL), "created_by_user_id" integer default (NULL), "status" varchar not null default 'open', "priority" varchar not null default 'medium', "visibility" varchar not null default 'team', "due_at" datetime default (NULL), "remind_at" datetime default (NULL), "snooze_until" datetime default (NULL), "sla_due_at" datetime default (NULL), "closed_at" datetime default (NULL), "closed_by" integer default (NULL), "context" text default (NULL), "tags" text default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL), "deleted_at" datetime default (NULL), "remind_notified_at" datetime default (NULL), "recurrence_pattern" varchar(30) default (NULL), "recurrence_interval" integer not null default ('1'), "recurrence_next_at" datetime default (NULL), "escalation_hours" integer default (NULL), "visibility_departments" text default (NULL), "visibility_users" text default (NULL), "user_id" integer default (NULL), "completed" tinyint default (NULL));
-
-CREATE INDEX "central_items_deleted_at_idx" on "central_items" ("deleted_at");
-
-CREATE UNIQUE INDEX "ci_ref_unique" on "central_items" ("tenant_id", "ref_type", "ref_id");
-
-CREATE TABLE "central_templates" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "nome" varchar(150) not null, "description" text, "type" varchar(20) not null default ('TAREFA'), "priority" varchar not null default 'medium', "visibility" varchar not null default 'team', "categoria" varchar(60) default (NULL), "due_days" int default (NULL), "subtasks" text default (NULL), "default_watchers" text default (NULL), "tags" text default (NULL), "ativo" tinyint not null default ('1'), "created_by" integer default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL));
-
-CREATE INDEX "central_templates_tenant_id_idx" on "central_templates" ("tenant_id");
-
-CREATE TABLE "visit_reports" ("id" integer primary key autoincrement not null, "tenant_id" integer not null, "customer_id" integer not null, "user_id" integer not null, "checkin_id" integer default (NULL), "deal_id" integer default (NULL), "visit_date" date not null, "visit_type" varchar not null default 'in_person', "contact_name" varchar(255) default (NULL), "contact_role" varchar(255) default (NULL), "summary" text not null, "decisions" text, "next_steps" text, "overall_sentiment" varchar(255) default (NULL), "topics" text default (NULL), "attachments" text default (NULL), "follow_up_scheduled" tinyint not null default ('0'), "next_contact_at" datetime default (NULL), "next_contact_type" varchar(255) default (NULL), "created_at" datetime default (NULL), "updated_at" datetime default (NULL));
-
-CREATE INDEX "visit_reports_tenant_id_idx" on "visit_reports" ("tenant_id");
 
 -- Migration records
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (1, '0001_01_01_000000_create_users_table', 1);
@@ -8577,24 +9162,29 @@ INSERT INTO "migrations" ("id", "migration", "batch") VALUES (447, '2026_04_10_2
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (448, '2026_04_10_210003_create_calibration_decision_logs_table', 7);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (449, '2026_04_10_300001_create_accreditation_scopes_table', 7);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (450, '2026_04_10_500000_fix_production_schema_drifts', 7);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (451, '2026_04_17_120000_add_document_hash_for_encrypted_search', 7);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (452, '2026_04_17_140000_add_tenant_id_to_tenant_safe_tables', 8);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (451, '2026_04_17_120000_add_document_hash_for_encrypted_search', 8);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (452, '2026_04_17_140000_add_tenant_id_to_tenant_safe_tables', 9);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (453, '2026_04_17_150000_backfill_tenant_id_and_make_not_null', 9);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (454, '2026_04_17_160000_revert_tenant_id_not_null_on_pivots', 10);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (455, '2026_04_17_170000_add_tenant_id_indexes_to_remaining_tables', 11);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (456, '2026_04_17_180000_add_deleted_at_indexes_to_remaining_tables', 12);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (457, '2026_04_17_190000_add_tenant_id_indexes_wave2e', 13);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (458, '2026_04_17_200000_add_hardening_to_client_portal_users', 14);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (459, '2026_04_17_210000_add_updated_by_deleted_by_to_financial_tables', 14);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (462, '2026_04_17_220000_normalize_monetary_precision', 8);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (463, '2026_04_17_230000_add_unique_composite_for_documents', 8);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (464, '2026_04_17_240000_normalize_standard_weight_shape_to_english', 15);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (465, '2026_04_17_250000_normalize_calibration_result_to_english', 16);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (466, '2026_04_17_260000_drop_pt_columns_from_customer_locations', 17);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (467, '2026_04_17_270000_drop_user_id_from_expenses', 18);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (468, '2026_04_17_280000_rename_user_id_to_created_by_in_travel_expense_reports', 19);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (469, '2026_04_17_290000_normalize_central_enums_defaults_to_english', 20);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (470, '2026_04_17_300000_rename_central_pt_columns_to_english', 21);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (471, '2026_04_17_310000_rename_central_source_to_origin', 22);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (472, '2026_04_17_320000_rename_central_rules_pt_columns', 23);
-INSERT INTO "migrations" ("id", "migration", "batch") VALUES (473, '2026_04_17_330000_normalize_visit_report_visit_type_to_english', 24);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (454, '2026_04_17_160000_revert_tenant_id_not_null_on_pivots', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (455, '2026_04_17_170000_add_tenant_id_indexes_to_remaining_tables', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (456, '2026_04_17_180000_add_deleted_at_indexes_to_remaining_tables', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (457, '2026_04_17_190000_add_tenant_id_indexes_wave2e', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (458, '2026_04_17_200000_add_hardening_to_client_portal_users', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (459, '2026_04_17_210000_add_updated_by_deleted_by_to_financial_tables', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (460, '2026_04_17_220000_normalize_monetary_precision', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (461, '2026_04_17_230000_add_unique_composite_for_documents', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (462, '2026_04_17_240000_normalize_standard_weight_shape_to_english', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (463, '2026_04_17_250000_normalize_calibration_result_to_english', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (464, '2026_04_17_260000_drop_pt_columns_from_customer_locations', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (465, '2026_04_17_270000_drop_user_id_from_expenses', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (466, '2026_04_17_280000_rename_user_id_to_created_by_in_travel_expense_reports', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (467, '2026_04_17_290000_normalize_central_enums_defaults_to_english', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (468, '2026_04_17_300000_rename_central_pt_columns_to_english', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (469, '2026_04_17_310000_rename_central_source_to_origin', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (470, '2026_04_17_320000_rename_central_rules_pt_columns', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (471, '2026_04_17_330000_normalize_visit_report_visit_type_to_english', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (472, '2026_04_17_400000_fix_encryption_regression_user_2fa_and_tenant_fiscal', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (473, '2026_04_17_410000_finish_central_pt_to_en_rename_attachments_subtasks_templates', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (474, '2026_04_17_420000_normalize_work_orders_priority_to_medium', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (475, '2026_04_18_500001_repair_encrypted_search_alter_on_mysql', 9);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (476, '2026_04_18_500002_restore_amount_paid_default', 10);

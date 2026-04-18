@@ -94,6 +94,14 @@ function convertMysqlToSqlite(string $sql): string
     // Remove CHARACTER SET on columns
     $sql = preg_replace('/\s+CHARACTER\s+SET\s+\w+/i', '', $sql);
 
+    // Remove inline "charset X" (MySQL-specific, appears inside CAST() of generated columns)
+    $sql = preg_replace('/\s+charset\s+\w+/i', '', $sql);
+
+    // Convert MySQL charset-prefixed string literals (_utf8mb4'...' -> '...').
+    // Escopo restrito aos charsets que o MySQL emite para nao comer
+    // sublinhados legitimos dentro de strings (ex: 'America/Sao_Paulo').
+    $sql = preg_replace("/_(utf8|utf8mb3|utf8mb4|utf8mb5|latin1|ascii|binary|cp1252|big5|ujis|sjis)'/i", "'", $sql);
+
     // Remove COMMENT '...'
     $sql = preg_replace("/\s+COMMENT\s+'[^']*'/i", '', $sql);
 
