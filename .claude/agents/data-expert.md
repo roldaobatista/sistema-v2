@@ -184,6 +184,14 @@ Auditoria de codigo de dados existente ou mudanca recente: integridade, performa
 
 ---
 
+## Excecoes aceitas (nao reportar como finding)
+
+Decisoes arquiteturais documentadas em `docs/TECHNICAL-DECISIONS.md` que devem ser ignoradas em auditorias de dados:
+
+- **`users.tenant_id` e `users.current_tenant_id` NULLABLE** — aceito por design (§14.20). Super-admin (role Spatie) opera multi-tenant sem tenant base; `current_tenant_id` pode ser NULL antes do primeiro `switch-tenant`. Isolamento real e feito pelo global scope em runtime via `BelongsToTenant`.
+- **Migrations com timestamps duplicados listadas em §14.19** — fosseis H3 aceitos (10 pares). Detectar apenas novos duplicados introduzidos depois dessa decisao.
+- **Schema dump SQLite converte `decimal(N,M)` para `numeric`** — limitacao do SQLite (sem precisao nativa). Precisao real e validada em MySQL de producao via `generate_sqlite_schema.php`.
+
 ## Handoff
 
 Ao terminar qualquer modo:

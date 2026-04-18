@@ -593,3 +593,21 @@ Timestamps com sufixo `_000000` ou menor que `_500000` são **reservados para mi
 
 ---
 
+### 14.20 `users.tenant_id` e `users.current_tenant_id` NULLABLE — aceito por design (data-02)
+
+**Decisão (2026-04-18):** as colunas `users.tenant_id` e `users.current_tenant_id` permanecem `NULLABLE`. **Não** devem ser migradas para `NOT NULL`.
+
+**Motivo:**
+
+1. **Super-admin de plataforma.** O role `super_admin` (Spatie, declarado em `PermissionsSeeder.php:661`) opera multi-tenant. Um user com esse role pode existir sem `tenant_id` de base — não pertence a nenhum tenant operacional, atua sobre todos.
+2. **Estado transiente de switch-tenant.** `current_tenant_id` representa o tenant ativo na sessão atual. Antes do primeiro `switch-tenant`, user legítimo pode estar em estado `current_tenant_id = NULL`. Forçar `NOT NULL` quebraria o fluxo de onboarding e o próprio factory base (`UserFactory::definition()` cria com ambos NULL).
+3. **Isolamento real é na aplicação.** `BelongsToTenant` aplica global scope via `current_tenant_id`. Para queries de domínio, usuário sem `current_tenant_id` gera escopo vazio — não vaza dado. O discriminador multi-tenant efetivo é o *scope em runtime*, não a coluna.
+
+**Trade-off aceito:** é possível persistir user em estado `NULL/NULL` (ambos). Mitigação na aplicação: `BelongsToTenant` global scope filtra por `current_tenant_id`; sem valor, queries retornam vazio. Se super-admin precisar operar, faz `switch-tenant` explicitamente.
+
+**Alternativa considerada e descartada:** CHECK constraint `(role = 'super_admin' OR tenant_id IS NOT NULL)`. MySQL 8 suporta CHECK, mas Laravel migration builder não expõe sintaxe nativa — complexidade de manutenção não compensa a proteção (authorization em nível de Model já cobre).
+
+**Implicação para auditoria:** `data-expert` agent file deve tratar `users.tenant_id` e `users.current_tenant_id` como NULLABLE-aceito-por-design. Auditoria futura de "tabelas com tenant_id NULLABLE" deve excluir explicitamente a tabela `users`.
+
+---
+
