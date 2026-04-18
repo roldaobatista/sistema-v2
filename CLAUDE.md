@@ -178,9 +178,33 @@ cd backend && php generate_sqlite_schema.php
 
 **Suite verde NÃO é fechamento.** Antes de declarar Camada/Wave/etapa "fechada", "pronta" ou "concluída":
 
-1. **Re-auditoria obrigatória** — invocar `orchestrator` OU especialistas relevantes em paralelo (`data-expert`, `security-expert`, `governance`, `qa-expert` conforme o escopo)
+1. **Re-auditoria obrigatória** — usar `/reaudit <camada>` (preferido) ou invocar `orchestrator`/especialistas relevantes em paralelo (`data-expert`, `security-expert`, `governance`, `qa-expert` conforme o escopo)
 2. **Confirmar (a)** findings originais estão resolvidos
 3. **Confirmar (b)** zero novos findings introduzidos pela correção
 4. **Evidenciar** o output da re-auditoria na resposta (não basta afirmar)
 
 Sem re-auditoria = etapa **em progresso**, não fechada. Suite verde valida implementação; auditoria valida fechamento.
+
+### Regra de prompt neutro para re-auditoria (anti-bias)
+
+Subagents iniciam com contexto isolado, MAS o prompt que eu escrevo pode carregar viés e anular a isolação. Ao invocar especialistas para re-auditoria:
+
+**PROIBIDO no prompt:**
+- Narrativa do que foi feito ("renomeamos colunas PT→EN", "Wave 6 resolveu X")
+- Conclusões antecipadas ("confirme que está OK", "valide o fechamento", "aprove se Y")
+- Resumo da correção ou decisões tomadas (§14.x)
+- Seleção de arquivos ou findings a revisar (entregue a lista crua, não sua curadoria)
+
+**OBRIGATÓRIO no prompt:**
+- Lista crua de findings originais com IDs (sem status "resolvido/não resolvido")
+- Range de commits a auditar (`git log <range>` sem interpretação)
+- Lista crua de arquivos tocados (`git diff --name-only`)
+- Checklist do domínio do especialista (do próprio `.claude/agents/<expert>.md`)
+- Instrução: "Proibido assumir que correções foram bem feitas. Sua função é ENCONTRAR, não aprovar."
+
+**Critério de fechamento após re-auditoria:**
+- **FECHADA:** 100% dos findings originais resolvidos + zero novos S1/S2
+- **REABERTA:** ≥ 1 original não resolvido OU ≥ 1 novo S1
+- **CONDICIONAL:** originais resolvidos + apenas novos S3/S4 documentados como dívida
+
+Desacordo entre especialistas → ambos findings permanecem, usuário decide. Nunca resolver conflito em favor do "mais leniente".
