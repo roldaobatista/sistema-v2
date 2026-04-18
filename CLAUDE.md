@@ -173,3 +173,14 @@ cd backend && php generate_sqlite_schema.php
 - [ ] Resposta no formato Harness (6+1)
 - [ ] Tenant safety verificado
 - [ ] Cadeia end-to-end completa (migration→...→frontend→teste)
+
+## 🔒 Fechamento de Camada/Wave/Etapa
+
+**Suite verde NÃO é fechamento.** Antes de declarar Camada/Wave/etapa "fechada", "pronta" ou "concluída":
+
+1. **Re-auditoria obrigatória** — invocar `orchestrator` OU especialistas relevantes em paralelo (`data-expert`, `security-expert`, `governance`, `qa-expert` conforme o escopo)
+2. **Confirmar (a)** findings originais estão resolvidos
+3. **Confirmar (b)** zero novos findings introduzidos pela correção
+4. **Evidenciar** o output da re-auditoria na resposta (não basta afirmar)
+
+Sem re-auditoria = etapa **em progresso**, não fechada. Suite verde valida implementação; auditoria valida fechamento.
