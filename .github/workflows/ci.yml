@@ -112,7 +112,7 @@ jobs:
         with:
           php-version: "8.4"
           extensions: mbstring, xml, mysql, bcmath, sqlite3, pdo_sqlite
-          coverage: xdebug
+          coverage: none
 
       - name: Install Composer Dependencies
         working-directory: backend
@@ -138,7 +138,7 @@ jobs:
 
       - name: Run Backend Tests
         working-directory: backend
-        run: vendor/bin/pest --parallel --processes=16 --no-coverage
+        run: php artisan test --parallel --processes=4 --no-coverage
 
   tenant-isolation:
     name: Tenant Isolation (S1)
