@@ -72,6 +72,14 @@ class PaymentWebhookController extends Controller
         $newStatus = $this->mapEventToStatus($event);
         $isConfirmed = in_array($newStatus, ['confirmed', 'received']);
 
+        // Webhooks confirmados podem ser reenviados pelo gateway sem metadata.
+        // Se o pagamento ja foi processado, responder de forma idempotente sem tocar dados.
+        if ($paymentExistedBeforeWebhook && $payment->status === 'confirmed' && $isConfirmed) {
+            Log::info('PaymentWebhook: already processed (idempotent)', ['external_id' => $externalId]);
+
+            return ApiResponse::data(['status' => 'already_processed']);
+        }
+
         if ($expectedTenantId !== null && $referenceTenantId !== null && $expectedTenantId !== $referenceTenantId) {
             Log::warning('PaymentWebhook: payload tenant does not match external reference tenant', [
                 'external_id' => $externalId,
@@ -145,13 +153,6 @@ class PaymentWebhookController extends Controller
             Log::warning('PaymentWebhook: payment record not found and could not be created', ['external_id' => $externalId]);
 
             return ApiResponse::message('Pagamento não processado (registro não encontrado).', 404);
-        }
-
-        // 6. Idempotency: skip if already processed
-        if ($paymentExistedBeforeWebhook && $payment->status === 'confirmed' && $isConfirmed) {
-            Log::info('PaymentWebhook: already processed (idempotent)', ['external_id' => $externalId]);
-
-            return ApiResponse::data(['status' => 'already_processed']);
         }
 
         // 7. Update existing payment status
