@@ -28,11 +28,18 @@ class AuthController extends Controller
             $validated = $request->validated();
             $normalizedEmail = $validated['email'];
 
+            // SEC-04: contador de tentativas ATÔMICO — evita TOCTOU em
+            // cenários de credential stuffing concorrente (OWASP ASVS
+            // V2.2.1). Cache::add seta o valor 0 + TTL idempotentemente
+            // apenas na 1ª tentativa da janela; Cache::increment é
+            // atômico no driver (Redis/Memcached/Array).
             $throttleKey = 'login_attempts:'.$request->ip().':'.$normalizedEmail;
+            $windowExpiration = now()->addMinutes(15);
+
             $attempts = (int) Cache::get($throttleKey, 0);
 
             if ($attempts >= 5) {
-                $ttl = Cache::get($throttleKey.':ttl', 0);
+                $ttl = (int) Cache::get($throttleKey.':ttl', 0);
                 $remainingMinutes = ($ttl > 0 && $ttl > now()->timestamp)
                     ? (int) ceil(($ttl - now()->timestamp) / 60)
                     : 15;
@@ -46,8 +53,14 @@ class AuthController extends Controller
             $user = User::whereRaw('LOWER(email) = ?', [$normalizedEmail])->first();
 
             if (! $user || ! Hash::check($validated['password'], $user->password)) {
-                Cache::put($throttleKey, $attempts + 1, now()->addMinutes(15));
-                Cache::put($throttleKey.':ttl', now()->addMinutes(15)->timestamp, now()->addMinutes(15));
+                // Seeds idempotentes: só gravam se ainda não existe no
+                // cache. TTL da janela é fixado na primeira falha e
+                // preservado em incrementos subsequentes.
+                Cache::add($throttleKey, 0, $windowExpiration);
+                Cache::add($throttleKey.':ttl', $windowExpiration->timestamp, $windowExpiration);
+                // Incremento atômico — duas requisições concorrentes
+                // nunca produzem o mesmo valor final.
+                Cache::increment($throttleKey);
 
                 throw ValidationException::withMessages([
                     'email' => ['Credenciais inválidas.'],
