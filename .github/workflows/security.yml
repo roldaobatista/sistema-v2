@@ -18,11 +18,11 @@ jobs:
     name: Secret Scanning
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           fetch-depth: 0
 
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -33,14 +33,14 @@ jobs:
     container:
       image: semgrep/semgrep
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Run Semgrep (PHP + JS/TS)
         run: semgrep scan --config auto --error --json --output semgrep-results.json .
         continue-on-error: true
 
       - name: Upload Results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: semgrep-report
@@ -53,14 +53,14 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'schedule'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Build Backend Image
         run: docker build -t kalibrium-backend:scan ./backend
         continue-on-error: true
 
       - name: Trivy - Backend Image
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@876cf04c63f65e9799bcf1043b584e72469c7143
         with:
           image-ref: 'kalibrium-backend:scan'
           format: 'table'
@@ -68,7 +68,7 @@ jobs:
           exit-code: '0'
 
       - name: Trivy - Filesystem (composer.lock + package-lock.json)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@876cf04c63f65e9799bcf1043b584e72469c7143
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -82,11 +82,11 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Dependency Review
         id: dependency-review
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48
         continue-on-error: true
         with:
           fail-on-severity: critical

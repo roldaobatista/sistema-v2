@@ -28,10 +28,10 @@ jobs:
                 options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
             - name: Setup PHP
-              uses: shivammathur/setup-php@v2
+              uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f
               with:
                   php-version: "8.4"
                   extensions: mbstring, xml, mysql, bcmath, redis, sqlite3, pdo_sqlite
@@ -69,7 +69,7 @@ jobs:
               run: php -d memory_limit=2048M vendor/bin/phpunit --configuration phpunit.xml --log-junit results/phpunit-report.xml
 
             - name: Upload Test Results
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
               if: always()
               with:
                   name: phpunit-results
@@ -81,10 +81,10 @@ jobs:
         name: Playwright Full Suite
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
               with:
                   node-version: "20"
                   cache: "npm"
@@ -109,7 +109,7 @@ jobs:
                   PLAYWRIGHT_JSON_OUTPUT_NAME: results/playwright-report.json
 
             - name: Upload E2E Report
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
               if: always()
               with:
                   name: playwright-full-report
@@ -123,10 +123,10 @@ jobs:
         name: PHPStan Level 7 (Full)
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
             - name: Setup PHP
-              uses: shivammathur/setup-php@v2
+              uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f
               with:
                   php-version: "8.4"
                   extensions: mbstring, xml, mysql, bcmath
@@ -143,7 +143,7 @@ jobs:
                   vendor/bin/phpstan analyse --memory-limit=2G --error-format=json > ../results/phpstan-report.json
 
             - name: Upload PHPStan Report
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
               if: always()
               with:
                   name: phpstan-report
@@ -155,10 +155,10 @@ jobs:
         name: Accessibility Full Scan (axe-core)
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
               with:
                   node-version: "20"
                   cache: "npm"
@@ -189,9 +189,9 @@ jobs:
                       echo "Server ready (attempt $i/30)"
                       break
                     fi
-                    if [ $i -eq 30 ]; then
+                    if [ "$i" -eq 30 ]; then
                       echo "Server failed to start on port 5173"
-                      kill $SERVER_PID 2>/dev/null || true
+                      kill "$SERVER_PID" 2>/dev/null || true
                       exit 1
                     fi
                     sleep 1
@@ -202,10 +202,10 @@ jobs:
                     --save axe-full-results.json \
                     2>&1 | tee axe-full-output.txt
 
-                  kill $SERVER_PID 2>/dev/null || true
+                  kill "$SERVER_PID" 2>/dev/null || true
 
             - name: Upload axe-core Full Results
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
               if: always()
               with:
                   name: axe-core-full-report
@@ -223,11 +223,13 @@ jobs:
         steps:
             - name: Summary
               run: |
-                  echo "## 🌙 Nightly Regression Report" >> $GITHUB_STEP_SUMMARY
-                  echo "" >> $GITHUB_STEP_SUMMARY
-                  echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
-                  echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
-                  echo "| PHPUnit (MySQL) | ${{ needs.backend-full.result }} |" >> $GITHUB_STEP_SUMMARY
-                  echo "| Playwright (21 specs) | ${{ needs.e2e-full.result }} |" >> $GITHUB_STEP_SUMMARY
-                  echo "| PHPStan (Level 7) | ${{ needs.phpstan-deep.result }} |" >> $GITHUB_STEP_SUMMARY
-                  echo "| Accessibility (axe-core) | ${{ needs.accessibility-full.result }} |" >> $GITHUB_STEP_SUMMARY
+                  {
+                    echo "## 🌙 Nightly Regression Report"
+                    echo ""
+                    echo "| Job | Status |"
+                    echo "|-----|--------|"
+                    echo "| PHPUnit (MySQL) | ${{ needs.backend-full.result }} |"
+                    echo "| Playwright (21 specs) | ${{ needs.e2e-full.result }} |"
+                    echo "| PHPStan (Level 7) | ${{ needs.phpstan-deep.result }} |"
+                    echo "| Accessibility (axe-core) | ${{ needs.accessibility-full.result }} |"
+                  } >> "$GITHUB_STEP_SUMMARY"
