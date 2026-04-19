@@ -194,7 +194,7 @@ class EmailController extends Controller
             $item = AgendaItem::criarDeOrigem(
                 model: $email,
                 tipo: $type,
-                titulo: $request->validated('title') ?? $email->subject,
+                title: $request->validated('title') ?? $email->subject,
                 responsavelId: $request->validated('responsible_id'),
                 extras: [
                     'description' => $email->ai_summary ?? mb_substr($email->body_text ?? '', 0, 500),
@@ -210,7 +210,7 @@ class EmailController extends Controller
 
             DB::commit();
 
-            return ApiResponse::data($item->load('responsavel'), 201, ['message' => 'Item criado a partir do email']);
+            return ApiResponse::data($item->load('assignee'), 201, ['message' => 'Item criado a partir do email']);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Create task from email failed', ['error' => $e->getMessage()]);

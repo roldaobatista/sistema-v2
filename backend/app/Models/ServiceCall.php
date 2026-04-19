@@ -320,7 +320,7 @@ class ServiceCall extends Model
 
         return [
             'status' => $statusMap[$statusValue] ?? AgendaItemStatus::ABERTO,
-            'titulo' => "Chamado #{$this->call_number} — {$this->customer?->name}",
+            'title' => "Chamado #{$this->call_number} — {$this->customer?->name}",
         ];
     }
 }

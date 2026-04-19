@@ -13,23 +13,23 @@ class StoreAgendaSubtaskRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if ($this->has('ordem') && $this->input('ordem') === '') {
-            $this->merge(['ordem' => null]);
+        if ($this->has('sort_order') && $this->input('sort_order') === '') {
+            $this->merge(['sort_order' => null]);
         }
     }
 
     public function rules(): array
     {
         return [
-            'titulo' => 'required|string|max:255',
-            'ordem' => 'nullable|integer|min:0',
+            'title' => 'required|string|max:255',
+            'sort_order' => 'nullable|integer|min:0',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'titulo.required' => 'O título da subtarefa é obrigatório.',
+            'title.required' => 'O título da subtarefa é obrigatório.',
         ];
     }
 }

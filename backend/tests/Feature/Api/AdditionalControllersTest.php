@@ -80,7 +80,7 @@ class AdditionalControllersTest extends TestCase
     {
         $exp = Expense::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'user_id' => $this->user->id,
+            'created_by' => $this->user->id,
         ]);
         $response = $this->actingAs($this->user)->getJson("/api/v1/expenses/{$exp->id}");
         $response->assertOk();
@@ -90,7 +90,7 @@ class AdditionalControllersTest extends TestCase
     {
         $exp = Expense::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'user_id' => $this->user->id,
+            'created_by' => $this->user->id,
         ]);
         $response = $this->actingAs($this->user)->putJson("/api/v1/expenses/{$exp->id}", [
             'description' => 'Atualizado',
@@ -102,7 +102,7 @@ class AdditionalControllersTest extends TestCase
     {
         $exp = Expense::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'user_id' => $this->user->id,
+            'created_by' => $this->user->id,
         ]);
         $response = $this->actingAs($this->user)->deleteJson("/api/v1/expenses/{$exp->id}");
         $response->assertNoContent();

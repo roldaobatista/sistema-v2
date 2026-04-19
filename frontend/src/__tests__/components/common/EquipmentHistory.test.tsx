@@ -41,7 +41,7 @@ const mockHistory = [
         type: 'calibration',
         date: '2026-03-10',
         title: 'Calibracao semestral',
-        result: 'aprovado',
+        result: 'approved',
         performer: 'Carlos Silva',
         work_order: null,
         description: null,

@@ -122,7 +122,7 @@ class ChamadosOsDeepAuditTest extends TestCase
         Sanctum::actingAs($this->adminA, ['*']);
         $response = $this->postJson('/api/v1/service-calls', [
             'customer_id' => $this->customerA->id,
-            'priority' => 'normal',
+            'priority' => 'medium',
             'observations' => 'Verificação de balança analógica',
         ]);
 
@@ -321,7 +321,7 @@ class ChamadosOsDeepAuditTest extends TestCase
         $response = $this->postJson('/api/v1/work-orders', [
             'customer_id' => $this->customerA->id,
             'description' => 'Manutenção preventiva balança rodoviária',
-            'priority' => 'normal',
+            'priority' => 'medium',
         ]);
 
         $response->assertCreated();

@@ -270,20 +270,24 @@ class CrmAdvancedController extends Controller
                 ];
             });
 
+        // `document` é encrypted — agrupar/comparar via `document_hash` determinístico.
         $duplicatesByDoc = Customer::where('tenant_id', $tenantId)
-            ->whereNotNull('document')
-            ->where('document', '!=', '')
-            ->selectRaw('document, COUNT(*) as duplicate_count')
-            ->groupBy('document')
+            ->whereNotNull('document_hash')
+            ->where('document_hash', '!=', '')
+            ->selectRaw('document_hash, COUNT(*) as duplicate_count')
+            ->groupBy('document_hash')
             ->havingRaw('COUNT(*) > 1')
             ->limit(50)
             ->get()
             ->map(function (Customer $row) use ($tenantId): array {
-                $document = (string) $row->getAttribute('document');
-                $ids = Customer::where('tenant_id', $tenantId)
-                    ->where('document', $document)
-                    ->pluck('id')
-                    ->all();
+                $hash = (string) $row->getAttribute('document_hash');
+                // Carrega um cliente representativo para exibir o documento decryptado e
+                // resolver os IDs do grupo (todos com o mesmo hash).
+                $rows = Customer::where('tenant_id', $tenantId)
+                    ->where('document_hash', $hash)
+                    ->get(['id', 'document']);
+                $document = $rows->isNotEmpty() ? (string) $rows->first()->document : '';
+                $ids = $rows->pluck('id')->all();
 
                 return [
                     'field' => 'document',

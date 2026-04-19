@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
- * @property bool|null $concluido
- * @property int|null $ordem
+ * @property bool|null $is_completed
+ * @property int|null $sort_order
  * @property Carbon|null $completed_at
  */
 class AgendaSubtask extends Model
@@ -21,9 +21,9 @@ class AgendaSubtask extends Model
     protected $fillable = [
         'tenant_id',
         'agenda_item_id',
-        'titulo',
-        'concluido',
-        'ordem',
+        'title',
+        'is_completed',
+        'sort_order',
         'completed_by',
         'completed_at',
     ];
@@ -31,8 +31,8 @@ class AgendaSubtask extends Model
     protected function casts(): array
     {
         return [
-            'concluido' => 'boolean',
-            'ordem' => 'integer',
+            'is_completed' => 'boolean',
+            'sort_order' => 'integer',
             'completed_at' => 'datetime',
         ];
 

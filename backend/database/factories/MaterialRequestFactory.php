@@ -18,7 +18,7 @@ class MaterialRequestFactory extends Factory
             'reference' => 'MR-'.$this->faker->unique()->randomNumber(5),
             'requester_id' => User::factory(),
             'status' => MaterialRequest::STATUS_PENDING,
-            'priority' => MaterialRequest::PRIORITY_NORMAL,
+            'priority' => MaterialRequest::PRIORITY_MEDIUM,
         ];
     }
 }

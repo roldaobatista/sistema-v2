@@ -63,7 +63,7 @@ class WarrantyTrackingTest extends TestCase
             'equipment_id' => $this->equipment->id,
             'number' => WorkOrder::nextNumber($this->tenant->id),
             'status' => WorkOrder::STATUS_OPEN,
-            'priority' => WorkOrder::PRIORITY_NORMAL,
+            'priority' => WorkOrder::PRIORITY_MEDIUM,
             'description' => 'Warranty tracking test',
             'origin_type' => WorkOrder::ORIGIN_MANUAL,
             'created_by' => $this->user->id,

@@ -97,8 +97,8 @@ class GoogleCalendarService
         }
 
         $event = [
-            'summary' => $item->titulo,
-            'description' => $item->descricao ?? '',
+            'summary' => $item->title,
+            'description' => $item->description ?? '',
             'start' => [
                 'dateTime' => Carbon::parse($item->data_inicio)->toRfc3339String(),
                 'timeZone' => config('app.timezone', 'America/Sao_Paulo'),

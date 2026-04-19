@@ -41,10 +41,6 @@ class StoreWorkOrderRequest extends FormRequest
             $cleaned['description'] = $this->input('title');
         }
 
-        if ($this->input('priority') === 'medium') {
-            $cleaned['priority'] = WorkOrder::PRIORITY_NORMAL;
-        }
-
         foreach ($nullable as $field) {
             if ($this->has($field) && $this->input($field) === '') {
                 $cleaned[$field] = null;
@@ -76,7 +72,7 @@ class StoreWorkOrderRequest extends FormRequest
             'customer_id' => ['required', Rule::exists('customers', 'id')->where(fn ($q) => $q->where('tenant_id', $tenantId))],
             'equipment_id' => ['nullable', Rule::exists('equipments', 'id')->where(fn ($q) => $q->where('tenant_id', $tenantId))],
             'assigned_to' => ['nullable', Rule::exists('users', 'id')->where(fn ($q) => $q->where('tenant_id', $tenantId))],
-            'priority' => 'sometimes|in:low,normal,high,urgent',
+            'priority' => 'sometimes|in:low,medium,high,urgent',
             'description' => 'required|string',
             'internal_notes' => 'nullable|string',
             'scheduled_date' => 'nullable|date|after_or_equal:today',

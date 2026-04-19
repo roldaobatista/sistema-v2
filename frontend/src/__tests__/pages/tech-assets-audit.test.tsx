@@ -136,7 +136,7 @@ describe('Auditoria das telas tecnicas de ativos e equipamentos', () => {
                             {
                                 id: 21,
                                 calibration_date: '2026-03-20',
-                                result: 'aprovado',
+                                result: 'approved',
                             },
                         ],
                     },

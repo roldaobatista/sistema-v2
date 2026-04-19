@@ -262,7 +262,7 @@ class RecurringFlowTest extends TestCase
         $this->assertDatabaseHas('central_items', [
             'tenant_id' => $this->tenant->id,
             'ref_id' => $contract->id,
-            'responsavel_user_id' => $assignee->id,
+            'assignee_user_id' => $assignee->id,
         ]);
     }
 }

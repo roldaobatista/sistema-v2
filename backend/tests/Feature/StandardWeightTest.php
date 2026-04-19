@@ -69,7 +69,7 @@ class StandardWeightTest extends TestCase
             'manufacturer' => 'Mettler Toledo',
             'precision_class' => 'M1',
             'material' => 'Aço Inox',
-            'shape' => 'cilindrico',
+            'shape' => 'cylindrical',
             'certificate_number' => 'CERT-2026-001',
             'certificate_date' => '2026-01-01',
             'certificate_expiry' => '2027-01-01',
@@ -172,7 +172,7 @@ class StandardWeightTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'calibration_date' => now(),
             'calibration_type' => 'externa',
-            'result' => 'aprovado',
+            'result' => 'approved',
             'performed_by' => $this->user->id,
         ]);
 
@@ -310,7 +310,7 @@ class StandardWeightTest extends TestCase
         $response = $this->postJson("/api/v1/equipments/{$equipment->id}/calibrations", [
             'calibration_date' => now()->toDateString(),
             'calibration_type' => 'externa',
-            'result' => 'aprovado',
+            'result' => 'approved',
             'standard_weight_ids' => [$weight1->id, $weight2->id],
         ]);
 
@@ -343,7 +343,7 @@ class StandardWeightTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'calibration_date' => now(),
             'calibration_type' => 'interna',
-            'result' => 'aprovado',
+            'result' => 'approved',
             'performed_by' => $this->user->id,
         ]);
 

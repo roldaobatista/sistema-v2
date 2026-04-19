@@ -43,7 +43,7 @@ trait SyncsWithAgenda
      * Retorna os dados que devem ser sincronizados no AgendaItem.
      * Override este método nos models que usam a trait.
      *
-     * @return array Ex: ['status' => AgendaItemStatus::COMPLETED, 'titulo' => 'OS #123 - Concluída']
+     * @return array Ex: ['status' => AgendaItemStatus::COMPLETED, 'title' => 'OS #123 - Concluída']
      */
     public function centralSyncData(): array
     {

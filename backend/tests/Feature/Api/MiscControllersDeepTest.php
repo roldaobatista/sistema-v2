@@ -54,8 +54,8 @@ class MiscControllersDeepTest extends TestCase
     public function test_agenda_store(): void
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/agenda', [
-            'titulo' => 'Reunião com cliente',
-            'tipo' => 'reuniao',
+            'title' => 'Reunião com cliente',
+            'type' => 'reuniao',
             'data_hora' => now()->addDays(1)->format('Y-m-d H:i:s'),
         ]);
         $response->assertCreated();
@@ -68,7 +68,7 @@ class MiscControllersDeepTest extends TestCase
             'user_id' => $this->user->id,
         ]);
         $response = $this->actingAs($this->user)->putJson("/api/v1/agenda/{$ai->id}", [
-            'titulo' => 'Atualizado',
+            'title' => 'Atualizado',
         ]);
         $response->assertOk();
     }

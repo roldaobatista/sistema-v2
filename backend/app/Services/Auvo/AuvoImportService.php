@@ -262,10 +262,10 @@ class AuvoImportService
 
             return $data;
         }, function (array $data, int $tenantId) {
-            // Duplicate detection by document
+            // Duplicate detection by document (encrypted — usar coluna hash)
             if (! empty($data['document'])) {
                 return Customer::where('tenant_id', $tenantId)
-                    ->where('document', $data['document'])
+                    ->where('document_hash', Customer::hashSearchable($data['document'], digitsOnly: true))
                     ->first();
             }
             // Fallback: by name

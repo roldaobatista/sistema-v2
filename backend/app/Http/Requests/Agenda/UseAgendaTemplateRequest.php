@@ -14,7 +14,7 @@ class UseAgendaTemplateRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $nullable = ['responsavel_user_id', 'titulo', 'descricao_curta', 'due_at'];
+        $nullable = ['assignee_user_id', 'title', 'short_description', 'due_at'];
         $cleaned = [];
         foreach ($nullable as $field) {
             if ($this->has($field) && $this->input($field) === '') {
@@ -31,9 +31,9 @@ class UseAgendaTemplateRequest extends FormRequest
         $tenantId = (int) ($this->user()->current_tenant_id ?? $this->user()->tenant_id);
 
         return [
-            'responsavel_user_id' => ['nullable', Rule::exists('users', 'id')->where('tenant_id', $tenantId)],
-            'titulo' => 'nullable|string|max:255',
-            'descricao_curta' => 'nullable|string|max:500',
+            'assignee_user_id' => ['nullable', Rule::exists('users', 'id')->where('tenant_id', $tenantId)],
+            'title' => 'nullable|string|max:255',
+            'short_description' => 'nullable|string|max:500',
             'due_at' => 'nullable|date',
         ];
     }

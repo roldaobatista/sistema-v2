@@ -1,0 +1,214 @@
+{
+  "auditor": "product-expert",
+  "camada": 1,
+  "rodada": 2,
+  "data": "2026-04-17",
+  "total_findings": 16,
+  "findings_corrigidos_da_r1": [
+    "PROD-014 (decidido em TECHNICAL-DECISIONS.md \u00a714.3 \u2014 PRD vs schema evolui em paralelo, n\u00e3o bloqueia camada; rebaixado de S0 para gap reverso S3 documentado)"
+  ],
+  "findings_remanescentes_da_r1": [
+    "PROD-001",
+    "PROD-002",
+    "PROD-003",
+    "PROD-004",
+    "PROD-005",
+    "PROD-006",
+    "PROD-007",
+    "PROD-008",
+    "PROD-009",
+    "PROD-010",
+    "PROD-011",
+    "PROD-012",
+    "PROD-013"
+  ],
+  "findings_novos_introduzidos": [
+    "PROD-015",
+    "PROD-016"
+  ],
+  "verificacoes_wave1": {
+    "alterou_colunas_pt_para_en": false,
+    "alterou_enums_status": false,
+    "evidencia": "git log do commit 86564cc (Wave 1) tocou apenas Models/Controllers/Requests de PII (Customer, Supplier, User, EmployeeDependent) + 2 models novos (PaymentGatewayConfig, MarketingIntegration) + migration 2026_04_17_120000_add_document_hash_for_encrypted_search.php. Nenhum arquivo da fam\u00edlia central_*, customer_locations ou equipment_calibrations.result foi tocado. Confirmado: schema/sqlite-schema.sql linha 2608 ainda tem result DEFAULT 'aprovado'; central_items ainda em PT; expenses ainda tem ambos created_by e user_id (schema dump confirma colunas 'created_by' integer e 'user_id' integer no CREATE TABLE expenses). Todos os 13 findings funcionais/conven\u00e7\u00e3o de R1 (exceto PROD-014 decidido) permanecem v\u00e1lidos."
+  },
+  "findings": [
+    {
+      "id": "PROD-001",
+      "severity": "S2",
+      "status": "remanescente_r1",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": 2608,
+      "title": "equipment_calibrations.result usa valor em PORTUGUES ('aprovado') como DEFAULT \u2014 viola conven\u00e7\u00e3o de status em ingl\u00eas lowercase",
+      "motivo": "CLAUDE.md (Regras Cr\u00edticas) e Iron Protocol exigem 'Status sempre em ingl\u00eas lowercase'. Linha 2608 confirmada na rodada 2: result varchar(30) NOT NULL DEFAULT 'aprovado'. Coexiste no mesmo schema outra coluna result com DEFAULT 'approved' (linha 3703) \u2014 incoer\u00eancia interna. PRD RF-02 (Calibra\u00e7\u00e3o) AC-02.5 trata aprova\u00e7\u00e3o de certificado como passo de dom\u00ednio.",
+      "sugestao": "Migration nova: (1) UPDATE equipment_calibrations SET result = CASE result WHEN 'aprovado' THEN 'approved' WHEN 'reprovado' THEN 'rejected' WHEN 'aprovado_com_restricao' THEN 'conditional' END; (2) ALTER coluna para DEFAULT 'approved'; (3) atualizar Model casts/Enum + FormRequests + frontend i18n.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-002",
+      "severity": "S2",
+      "status": "remanescente_r1",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": 856,
+      "title": "central_items.status / prioridade / visibilidade usam valores PT-MAI\u00daSCULO ('ABERTO', 'MEDIA', 'EQUIPE') como DEFAULT",
+      "motivo": "CLAUDE.md determina 'Status sempre em ingl\u00eas lowercase'. Tr\u00eas campos enum em PT-mai\u00fasculo na mesma tabela. Wave 1 n\u00e3o tocou neste arquivo \u2014 finding integralmente v\u00e1lido.",
+      "sugestao": "Normaliza\u00e7\u00e3o multi-step: status -> ('open','in_progress','done','cancelled'); prioridade -> 'priority' ('low','medium','high','urgent'); visibilidade -> 'visibility' ('private','team','public'). Atualizar Models, FormRequests, Policies e UI.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-003",
+      "severity": "S2",
+      "status": "remanescente_r1",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": 853,
+      "title": "Fam\u00edlia central_* (central_items, central_rules, central_templates, central_subtasks, central_time_entries) usa nomes de coluna PORTUGUES",
+      "motivo": "CLAUDE.md: 'Campos de tabelas sempre em ingl\u00eas'. Colunas: titulo, descricao, descricao_curta, criado_por_user_id, responsavel_user_id, prioridade, visibilidade, ativo, evento_trigger, tipo_item, status_trigger, prioridade_minima, acao_tipo, acao_config, role_alvo, ordem, concluido. Tamb\u00e9m viola conven\u00e7\u00e3o 'created_by' (n\u00e3o 'criado_por_user_id'). PRD n\u00e3o documenta dom\u00ednio 'central' explicitamente (gap reverso \u00a714.3).",
+      "sugestao": "Renomear via migration multi-step (add EN col -> backfill -> drop PT col): titulo->title, descricao->description, criado_por_user_id->created_by, responsavel_user_id->assigned_to, prioridade->priority, visibilidade->visibility, ativo->is_active, ordem->sort_order, concluido->is_completed.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-004",
+      "severity": "S2",
+      "status": "remanescente_r1",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": 2045,
+      "title": "customer_locations mistura colunas EN e PT (nome_propriedade, endereco, bairro, cidade ao lado de contact_name/contact_phone)",
+      "motivo": "Inconsist\u00eancia no mesmo arquivo. CLAUDE.md exige campos em ingl\u00eas. Termos brasileiros sem tradu\u00e7\u00e3o (cep/uf/inscricao_estadual) s\u00e3o exce\u00e7\u00f5es aceit\u00e1veis se documentadas, mas 'nome_propriedade', 'endereco', 'bairro', 'cidade' t\u00eam equivalentes EN \u00f3bvios.",
+      "sugestao": "Migration: nome_propriedade->property_name, endereco->street, bairro->district, cidade->city. Documentar 'cep', 'uf', 'inscricao_estadual' como exce\u00e7\u00f5es brasileiras em TECHNICAL-DECISIONS.md (\u00a715 \u2014 conven\u00e7\u00f5es de naming).",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-005",
+      "severity": "S2",
+      "status": "remanescente_r1",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "expenses tem AMBOS created_by E user_id \u2014 duplicidade sem\u00e2ntica viola conven\u00e7\u00e3o Kalibrium (CONFIRMADO R2)",
+      "motivo": "CLAUDE.md (Regras Cr\u00edticas): 'expenses.created_by (n\u00e3o user_id)'. Schema dump regenerado confirma na rodada 2: CREATE TABLE expenses cont\u00e9m 'created_by integer DEFAULT NULL' E 'user_id integer DEFAULT NULL' (\u00faltima coluna do CREATE). Coluna user_id veio da migration 2026_03_17_070000_add_missing_columns_for_tests.php:156 ('add missing columns for tests' \u2014 nome alarmante: schema modelado para passar testes). Wave 1 N\u00c3O alterou. Risco: c\u00f3digo pode usar um ou outro inconsistentemente, quebrar auditoria/aprova\u00e7\u00e3o de despesa. PRD AC-03.8 exige rastreabilidade clara.",
+      "sugestao": "(a) Auditar grep 'expenses.user_id' e 'Expense::where..user_id' no c\u00f3digo. (b) Se duplicar created_by sem uso real: migration drop column user_id. (c) Se for 'titular real da despesa' (ex: viagem com despesa em nome de outro): renomear para owner_id e documentar no PRD. (d) Investigar a migration 2026_03_17_070000 inteira \u2014 nome sugere d\u00edvida t\u00e9cnica grande ('add missing columns for tests').",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-006",
+      "severity": "S3",
+      "status": "remanescente_r1",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "schedules.technician_id correto, MAS work_schedules e work_order_technicians usam user_id \u2014 quebra a conven\u00e7\u00e3o em entidades irm\u00e3s",
+      "motivo": "CLAUDE.md: 'schedules.technician_id (n\u00e3o user_id)'. work_schedules (linha 8074) e work_order_technicians (linha 7916) usam 'user_id'. Para o dom\u00ednio do PRD (Jornada 2 - T\u00e9cnico Joao), o conceito \u00e9 'tecnico' \u2014 n\u00e3o 'usu\u00e1rio gen\u00e9rico'.",
+      "sugestao": "Renomear user_id->technician_id em work_order_technicians e work_schedules. Alternativa: documentar exce\u00e7\u00e3o em TECHNICAL-DECISIONS.md.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-007",
+      "severity": "S3",
+      "status": "remanescente_r1",
+      "file": "backend/database/migrations/2026_02_07_400000_create_work_order_tables.php",
+      "line": null,
+      "title": "work_order_status_history.user_id deveria ser changed_by ou actor_id (sem\u00e2ntica de auditoria)",
+      "motivo": "Tabela de hist\u00f3rico de status (PRD AC-01.1) usa 'user_id' gen\u00e9rico. Padr\u00e3o de auditoria do projeto usa 'created_by'/'approved_by'/'reviewed_by' (ver expenses).",
+      "sugestao": "Renomear para changed_by ou actor_id em migration nova. Atualizar Model WorkOrderStatusHistory.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-008",
+      "severity": "S3",
+      "status": "remanescente_r1",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": 4433,
+      "title": "non_conformances.number e non_conformities.nc_number t\u00eam UNIQUE GLOBAL (sem tenant_id) \u2014 risco cross-tenant",
+      "motivo": "Em sistema multi-tenant, regra de unicidade deve ser por tenant. Tenant A n\u00e3o consegue criar 'NC-001' se tenant B j\u00e1 criou \u2014 quebra isolamento. PRD compliance ISO 17025 exige numera\u00e7\u00e3o independente por laborat\u00f3rio.",
+      "sugestao": "Migration: drop unique global, criar unique composto (tenant_id, number) e (tenant_id, nc_number). Validar com testes cross-tenant.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-009",
+      "severity": "S3",
+      "status": "remanescente_r1",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "Duas tabelas para o mesmo conceito: non_conformances e non_conformities \u2014 duplicidade de dom\u00ednio",
+      "motivo": "PRD ISO 17025 trata n\u00e3o-conformidade como conceito \u00fanico. Schema tem duas tabelas com prop\u00f3sito sobreposto. Risco de duplica\u00e7\u00e3o de dados, confus\u00e3o no c\u00f3digo, relat\u00f3rios divergentes.",
+      "sugestao": "Decis\u00e3o de produto: (a) consolidar com discriminator, ou (b) renomear para escopo claro (work_order_non_conformances vs quality_non_conformities) e documentar no PRD.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-010",
+      "severity": "S3",
+      "status": "remanescente_r1",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "Quatro tabelas com dom\u00ednio fiscal sobreposto: invoices, fiscal_invoices, nfse_emissions, fiscal_notes",
+      "motivo": "PRD RF-03.4 fala em 'NFS-e' mas n\u00e3o deixa claro o ciclo de vida: Fatura interna -> NFS-e emitida -> Comprovante. Risco de inconsist\u00eancia, faturas duplicadas, problemas de auditoria fiscal.",
+      "sugestao": "Documentar no TECHNICAL-DECISIONS.md o ciclo: invoices=fatura comercial interna; fiscal_invoices=nota fiscal eletr\u00f4nica emitida (vinculada a invoice); nfse_emissions=log de tentativas de emiss\u00e3o para webservices; fiscal_notes=capa para outros tipos.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-011",
+      "severity": "S3",
+      "status": "remanescente_r1",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "Duas tabelas de agendamento: schedules e scheduled_appointments \u2014 sem\u00e2ntica n\u00e3o documentada",
+      "motivo": "schedules tem technician_id, work_order_id, scheduled_start/end. scheduled_appointments \u2014 prop\u00f3sito n\u00e3o claro. PRD n\u00e3o documenta a diferen\u00e7a.",
+      "sugestao": "Investigar uso real no c\u00f3digo. Decidir: consolidar ou separar com nomes claros (technician_schedules vs customer_appointments) e documentar.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-012",
+      "severity": "S3",
+      "status": "remanescente_r1_decidido_parcial",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "Schema tem ~450 tabelas; PRD documenta ~24 RFs \u2014 gap reverso massivo (decis\u00e3o \u00a714.3 mant\u00e9m como S3)",
+      "motivo": "TECHNICAL-DECISIONS.md \u00a714.3 decidiu: gap reverso \u00e9 S3 (n\u00e3o bloqueia camada). Atualiza\u00e7\u00e3o do PRD para cobrir m\u00f3dulos n\u00e3o-documentados (gamification, telescope, on_call, jornadas, sensor_readings, scale_readings, capa, rr_studies, surveys, tv_dashboard) \u00e9 trabalho separado. Mantido como finding aberto S3 para futuro \u2014 n\u00e3o escalar.",
+      "sugestao": "Trabalho separado: domain-discovery por dom\u00ednio para popular RFs faltantes no PRD. N\u00e3o-bloqueante para Camada 1.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-013",
+      "severity": "S3",
+      "status": "remanescente_r1",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "Auditar child tables de calibration (calibration_standard_weight, certificate_signatures, certificate_templates) para garantir tenant_id + BelongsToTenant",
+      "motivo": "calibration_readings linha 2618 tem tenant_id (OK), mas e pr\u00e1tica de risco confiar em scope de FK pai. PRD trata calibra\u00e7\u00e3o como dado sens\u00edvel (ISO 17025).",
+      "sugestao": "Auditar todas as child tables de calibra\u00e7\u00e3o. Adicionar testes cross-tenant espec\u00edficos.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-015",
+      "severity": "S3",
+      "status": "novo_introduzido_r2",
+      "file": "backend/app/Models/PaymentGatewayConfig.php",
+      "line": 32,
+      "title": "PaymentGatewayConfig.fillable expoe 'tenant_id' \u2014 viola conven\u00e7\u00e3o Kalibrium (controller deve setar tenant_id, n\u00e3o cliente via mass-assignment)",
+      "motivo": "CLAUDE.md (Padr\u00e3o de Controllers e FormRequests OBRIGAT\u00d3RIO): 'tenant_id e created_by DEVEM ser atribu\u00eddos no controller \u2014 PROIBIDO expor como campos do FormRequest'. Modelo novo introduzido pela Wave 1 (commit 86564cc) coloca 'tenant_id' como primeira posi\u00e7\u00e3o do array $fillable. Mesmo com BelongsToTenant trait observer auto-injetando, a presen\u00e7a no fillable abre janela para mass-assignment cross-tenant se controller passar request->all() sem filtro. MarketingIntegration.php tem o mesmo problema (linha 32, $fillable[0] = 'tenant_id'). EmployeeDependent.php (alterado pela Wave 1 com cpf_hash) tamb\u00e9m precisa ser auditado pelo padr\u00e3o.",
+      "sugestao": "Remover 'tenant_id' do $fillable em PaymentGatewayConfig e MarketingIntegration. O trait BelongsToTenant injeta automaticamente via observer creating(). Padr\u00e3o de Customer/Supplier (Wave 1 manteve igual) deve ser revisado tamb\u00e9m \u2014 ver controllers Master/CustomerController e Master/SupplierController para garantir que n\u00e3o passam tenant_id do request.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-016",
+      "severity": "S3",
+      "status": "novo_introduzido_r2",
+      "file": "docs/PRD-KALIBRIUM.md",
+      "line": null,
+      "title": "PRD n\u00e3o documenta a entidade 'MarketingIntegration' nem o conceito de 'hash determin\u00edstico para busca' (document_hash/cpf_hash) \u2014 nova superf\u00edcie de dom\u00ednio sem aderencia ao PRD",
+      "motivo": "Wave 1 introduziu (a) tabela `marketing_integrations` com providers Mailchimp/RD Station/ActiveCampaign \u2014 PRD n\u00e3o documenta este dom\u00ednio (grep 'mailchimp/rd station/marketing.integration' no PRD = 0 resultados); (b) padr\u00e3o de hash determin\u00edstico de PII (document_hash, cpf_hash) com migration 2026_04_17_120000_add_document_hash_for_encrypted_search.php \u2014 PRD n\u00e3o cita estrat\u00e9gia (grep 'document_hash/cpf_hash/hash determin' no PRD = 0 resultados). PaymentGatewayConfig esta documentado parcialmente (PRD cita Asaas em linhas 105/166/527/667 como gateway de cobran\u00e7a, mas n\u00e3o detalha o modelo de configura\u00e7\u00e3o multi-gateway: Pagar.me, Mercado Pago citados em PHPDoc do Model). Naming dos novos artefatos est\u00e1 OK (EN, snake_case, alinhado ao restante do schema). N\u00e3o-bloqueante (\u00a714.3) mas cria gap reverso adicional.",
+      "sugestao": "Adicionar ao PRD/TECHNICAL-DECISIONS: (a) RF de Marketing Integrations (sub-RF de RF-21 Pipeline Comercial); (b) se\u00e7\u00e3o em TECHNICAL-DECISIONS.md descrevendo padr\u00e3o de hash determin\u00edstico SHA-256(tenant_id || valor || pepper) para campos encrypted-pesquisaveis (j\u00e1 implementado em HasEncryptedSearchableField trait). Trabalho separado conforme \u00a714.3.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-014",
+      "severity": "S3",
+      "status": "decidido_r1",
+      "file": "docs/TECHNICAL-DECISIONS.md",
+      "line": 203,
+      "title": "PRD vs schema \u2014 decidido em \u00a714.3 (rebaixado de S0 para S3, n\u00e3o-bloqueante)",
+      "motivo": "Resolu\u00e7\u00e3o oficial: TECHNICAL-DECISIONS.md \u00a714.3 declarou que PRD evolui em paralelo, n\u00e3o bloqueia camada t\u00e9cnica. Mantido na lista apenas para rastreabilidade.",
+      "sugestao": "Nenhuma a\u00e7\u00e3o nesta camada. Domain-discovery em separado quando priorizado.",
+      "false_positive": false
+    }
+  ],
+  "false_positives_marcados": [],
+  "resumo_executivo": "Wave 1 focou exclusivamente em encryption-at-rest (PII e secrets) e n\u00e3o tocou em nenhum dos achados funcionais/conven\u00e7\u00e3o de produto da R1: 13 dos 14 findings R1 permanecem v\u00e1lidos (PROD-014 foi resolvido por decis\u00e3o em TECHNICAL-DECISIONS \u00a714.3, rebaixado de S0 para S3 documentado). PROD-005 (expenses.user_id duplicado com created_by) foi RECONFIRMADO via dump de schema regenerado: o CREATE TABLE expenses tem ambas as colunas, e a coluna user_id veio de uma migration suspeita ('add_missing_columns_for_tests') que merece investiga\u00e7\u00e3o pr\u00f3pria. Dois findings novos foram introduzidos pela Wave 1: PROD-015 (PaymentGatewayConfig e MarketingIntegration colocam tenant_id no fillable, viola padr\u00e3o CLAUDE.md de mass-assignment) e PROD-016 (MarketingIntegration e estrat\u00e9gia de hash determin\u00edstico n\u00e3o documentados no PRD \u2014 gap reverso n\u00e3o-bloqueante por \u00a714.3). Naming dos novos artefatos (document_hash, cpf_hash) est\u00e1 correto (EN, snake_case). Recomenda\u00e7\u00e3o: priorizar PROD-001/PROD-002 (status PT) e PROD-005 (expenses.user_id) na pr\u00f3xima wave; PROD-015 \u00e9 corre\u00e7\u00e3o trivial nos models novos."
+}

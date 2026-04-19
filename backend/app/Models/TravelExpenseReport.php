@@ -22,7 +22,7 @@ class TravelExpenseReport extends Model
     use HasFactory;
 
     protected $fillable = [
-        'tenant_id', 'travel_request_id', 'user_id',
+        'tenant_id', 'travel_request_id', 'created_by',
         'total_expenses', 'total_advances', 'balance',
         'status', 'approved_by',
     ];
@@ -47,9 +47,9 @@ class TravelExpenseReport extends Model
     /**
      * @return BelongsTo<User, $this>
      */
-    public function user(): BelongsTo
+    public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**

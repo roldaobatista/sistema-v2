@@ -1,0 +1,151 @@
+{
+  "auditor": "product-expert",
+  "camada": 1,
+  "rodada": 1,
+  "data": "2026-04-17",
+  "total_findings": 14,
+  "findings": [
+    {
+      "id": "PROD-001",
+      "severity": "S2",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": 2608,
+      "title": "equipment_calibrations.result usa valor em PORTUGUES ('aprovado') como default — viola convencao de status em ingles lowercase",
+      "motivo": "CLAUDE.md (Regras Criticas) e o Iron Protocol exigem 'Status sempre em ingles lowercase'. A coluna result da tabela equipment_calibrations tem DEFAULT 'aprovado' (PT). PRD RF-02 (Calibracao) AC-02.5 trata aprovacao de certificado como passo do dominio — o valor enumerado deveria ser 'approved'/'rejected'/'conditional'.",
+      "sugestao": "Criar nova migration que: (1) atualize linhas existentes de 'aprovado'->'approved', 'reprovado'->'rejected', 'aprovado_com_restricao'->'conditional'; (2) altere DEFAULT para 'approved'; (3) atualize Model casts e Form Requests; (4) atualize frontend i18n. NUNCA editar a migration original.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-002",
+      "severity": "S2",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": 856,
+      "title": "central_items.status usa valor em PORTUGUES MAIUSCULO ('ABERTO') como default — viola convencao",
+      "motivo": "CLAUDE.md determina 'Status sempre em ingles lowercase' (ex: 'paid','pending','partial'). Encontrado DEFAULT 'ABERTO' em central_items.status, alem de prioridade DEFAULT 'MEDIA' e visibilidade DEFAULT 'EQUIPE'. Tres campos enum em PT-MAIUSCULO em uma unica tabela.",
+      "sugestao": "Migration de normalizacao: status -> ('open','in_progress','done','cancelled'); prioridade -> 'priority' ('low','medium','high','urgent'); visibilidade -> 'visibility' ('private','team','public'). Atualizar Models, FormRequests, Policies e UI.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-003",
+      "severity": "S2",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": 853,
+      "title": "Familia 'central_*' inteira usa nomes de coluna em PORTUGUES (titulo, descricao, descricao_curta, criado_por_user_id, responsavel_user_id, prioridade, visibilidade, ativo, evento_trigger, tipo_item, status_trigger, prioridade_minima, acao_tipo, acao_config, role_alvo, ordem, concluido)",
+      "motivo": "CLAUDE.md: 'Campos de tabelas sempre em ingles'. As tabelas central_items, central_rules, central_templates, central_subtasks e central_time_entries violam essa regra de forma sistematica. Tambem viola convencao Kalibrium de 'created_by' (nao 'criado_por_user_id') e o padrao snake_case-ingles do restante do schema. PRD nao documenta dominio 'central' explicitamente — pode ser modulo nao-documentado (RF section 'Modulos Implementados Nao-Documentados').",
+      "sugestao": "Decidir produto: (1) renomear colunas para EN (titulo->title, descricao->description, criado_por_user_id->created_by, responsavel_user_id->assigned_to, prioridade->priority, visibilidade->visibility, ativo->is_active, ordem->sort_order, concluido->is_completed, etc) ou (2) documentar excecao no PRD justificando dominio em PT. Recomendado: renomear via migration multi-step (add EN col -> backfill -> drop PT col) para nao quebrar APIs em uso.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-004",
+      "severity": "S2",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": 2045,
+      "title": "customer_locations mistura colunas EN e PT (nome_propriedade, tipo, endereco, bairro, cidade, uf, cep, inscricao_estadual)",
+      "motivo": "Tabela tem colunas tipo 'contact_name', 'contact_phone' (EN) ao lado de 'nome_propriedade', 'endereco', 'bairro', 'cidade' (PT). Inconsistencia no mesmo arquivo. CLAUDE.md exige campos em ingles. Nota: 'cep'/'uf'/'inscricao_estadual' sao termos brasileiros sem traducao direta — esses sao aceitaveis como excecao documentada (LGPD/fiscal BR), mas 'nome_propriedade', 'endereco', 'bairro', 'cidade' tem equivalentes EN obvios.",
+      "sugestao": "Migration: nome_propriedade->property_name, endereco->street, bairro->district, cidade->city. Manter 'cep', 'uf', 'inscricao_estadual' como excecoes brasileiras documentadas em TECHNICAL-DECISIONS.md.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-005",
+      "severity": "S2",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "expenses tem AMBOS created_by (line 6515 area) E user_id (line 6699 area) — duplicidade semantica viola convencao Kalibrium",
+      "motivo": "CLAUDE.md (Regras Criticas): 'expenses.created_by (nao user_id)'. A tabela expenses tem 'created_by integer DEFAULT NULL' (correto) MAS tambem foi adicionada 'user_id integer DEFAULT NULL' posteriormente. Resultado: dois FKs para users sem semantica clara. Risco: codigo pode usar um ou outro de forma inconsistente, gerar bugs de auditoria, quebrar reembolso/aprovacao. PRD AC-03.8 (Gestao de despesas com aprovacao) exige rastreabilidade clara de quem criou x quem aprovou x titular da despesa.",
+      "sugestao": "Auditar uso de user_id no codigo. Se duplicar created_by: criar migration de drop. Se for 'titular real da despesa' (ex: tecnico em viagem com despesa em nome de outro): renomear para owner_id ou expense_owner_id e documentar no PRD.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-006",
+      "severity": "S3",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "schedules.technician_id correto, MAS work_schedules e work_order_technicians usam user_id — quebra a convencao em entidades irmas",
+      "motivo": "CLAUDE.md: 'schedules.technician_id (nao user_id)'. schedules cumpre. Porem: work_schedules (linha 8074) e work_order_technicians (linha 7916) usam 'user_id'. Para o dominio do PRD (Jornada 2 - Tecnico Joao), o conceito e claramente 'tecnico' — nao 'usuario generico'. A inconsistencia gera ambiguidade na modelagem.",
+      "sugestao": "Avaliar renomear user_id->technician_id em work_order_technicians e work_schedules para alinhar a convencao. Alternativa: documentar excecao no TECHNICAL-DECISIONS.md explicando que essas tabelas referenciam User generico (nao apenas tecnico).",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-007",
+      "severity": "S3",
+      "file": "backend/database/migrations/2026_02_07_400000_create_work_order_tables.php",
+      "line": null,
+      "title": "work_order_status_history.user_id deveria ser changed_by ou actor_id para alinhar com semantica de auditoria",
+      "motivo": "Tabela de historico de status (PRD AC-01.1 - alterar status de OS) usa 'user_id' generico. Padrao de auditoria do projeto usa 'created_by'/'approved_by'/'reviewed_by' (ver expenses). Convencao mais clara seria 'changed_by'.",
+      "sugestao": "Renomear para changed_by ou actor_id em migration nova. Atualizar Model WorkOrderStatusHistory.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-008",
+      "severity": "S3",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": 4433,
+      "title": "non_conformances.number e non_conformities.nc_number tem UNIQUE GLOBAL (sem tenant_id) — risco de cross-tenant leak via geracao de numero",
+      "motivo": "CREATE UNIQUE INDEX non_conformances_number_unique ON non_conformances(number) — sem tenant_id. Idem non_conformities. Em sistema multi-tenant, regra de unicidade deve ser por tenant (ex: work_orders_tenant_id_number_unique segue o padrao correto). Risco: tenant A nao consegue criar 'NC-001' se tenant B ja criou — quebra isolamento de dominio. PRD compliance ISO 17025 exige numeracao independente por laboratorio.",
+      "sugestao": "Migration: drop unique global, criar unique composto (tenant_id, number) e (tenant_id, nc_number). Validar com testes cross-tenant antes/depois.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-009",
+      "severity": "S3",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "Existem DUAS tabelas para o mesmo conceito: non_conformances e non_conformities — duplicidade de dominio sem PRD documentando",
+      "motivo": "PRD ISO 17025 (linha 376) trata nao-conformidade como conceito unico. Schema tem duas tabelas com proposito sobreposto: non_conformances (com number, work_order_id, severity) e non_conformities (com nc_number, source, capa_record_id, quality_audit_id). PRD nao distingue as duas. Risco de duplicacao de dados, confusao no codigo, relatorios divergentes.",
+      "sugestao": "Decisao de produto: (a) consolidar em uma unica tabela com discriminator, ou (b) renomear para escopo claro (ex: work_order_non_conformances vs quality_non_conformities) e documentar no PRD a diferenca semantica.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-010",
+      "severity": "S3",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "Existem DUAS tabelas para fatura: invoices e fiscal_invoices — semantica nao documentada no PRD",
+      "motivo": "PRD RF-03.4 fala em 'NFS-e'. Schema tem 'invoices' (invoice_number unique por tenant), 'fiscal_invoices' (number unique por tenant), 'nfse_emissions', 'fiscal_notes'. Quatro tabelas com dominio fiscal sobreposto. PRD nao deixa claro o ciclo de vida: Fatura interna -> NFS-e emitida -> Comprovante. Risco de inconsistencia, faturas duplicadas, problemas de auditoria fiscal.",
+      "sugestao": "Documentar no PRD/TECHNICAL-DECISIONS.md o ciclo: invoices = fatura comercial interna, fiscal_invoices = nota fiscal eletronica emitida (vinculada a invoice), nfse_emissions = log de tentativas de emissao para webservices fiscais, fiscal_notes = capa para outros tipos (NFe, NFC-e). Validar que codigo respeita essa separacao.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-011",
+      "severity": "S3",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "Existem DUAS tabelas de agendamento: schedules e scheduled_appointments — semantica nao documentada",
+      "motivo": "schedules (linha 6178 area) tem technician_id, work_order_id, scheduled_start/end. scheduled_appointments (linha 6046) — proposito nao claro. PRD nao documenta a diferenca. Risco de duplicacao de fluxo de agendamento.",
+      "sugestao": "Investigar uso real no codigo. Decidir: consolidar ou separar com nomes claros (ex: technician_schedules vs customer_appointments) e documentar.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-012",
+      "severity": "S3",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "Schema tem ~450 tabelas; PRD documenta ~24 RFs. Volume sugere muitas tabelas implementadas alem do PRD (gap reverso massivo)",
+      "motivo": "Migrations-Count: 450+ migrations. Schema tem tabelas como: telescope_*, gamification_*, tv_camera_types, watermark_configs, weight_assignments, on_call_schedules, journey_entries, capa_records, rr_studies, scale_readings, sensor_readings, etc. PRD secao 'Modulos Implementados Nao-Documentados' (linha 186) RECONHECE existencia mas nao detalha. Risco: codigo cresceu alem da spec funcional => dificil manter alinhamento, governar evolucao.",
+      "sugestao": "Decisao de produto: (a) PRD precisa receber RFs novos para gamification, telescope (debug), TV dashboards, IoT/sensores, jornadas operacionais (motor), CAPA, R&R, etc. (b) marcar explicitamente quais sao 'experimentais', 'desativados' ou 'futuros'. Ver project_motor_jornada_operacional na memoria — ha plano em andamento para parte disso.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-013",
+      "severity": "S3",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "calibration_readings nao tem coluna tenant_id — depende de tenant_id via FK equipment_calibration_id (sem garantia de isolamento)",
+      "motivo": "CREATE TABLE calibration_readings tem tenant_id (verificado), mas analises mostram que outras child tables historicamente nao tinham (ver migration 2026_02_09_100006_add_tenant_id_to_child_tables.php). Confirmar: calibration_readings line 2618 area, possui tenant_id integer NOT NULL — OK. Porem, e pratica de risco confiar em scope de FK pai. PRD trata calibracao como dado sensitivo (ISO 17025).",
+      "sugestao": "Auditar todas as child tables de calibracao (calibration_standard_weight, certificate_signatures, certificate_templates) para garantir tenant_id presente e BelongsToTenant aplicado. Adicionar testes cross-tenant especificos para calibration_readings.",
+      "false_positive": false
+    },
+    {
+      "id": "PROD-014",
+      "severity": "S0",
+      "file": "docs/PRD-KALIBRIUM.md",
+      "line": 186,
+      "title": "PRD secao 'Modulos Implementados Nao-Documentados' existe mas nao lista — decisao de produto urgente",
+      "motivo": "PRD reconhece (linha 186) que ha modulos implementados sem documentacao formal. Schema confirma volume (450+ tabelas). Sem listagem explicita: impossivel validar gap, impossivel auditar, impossivel decidir o que entra em MVP. CLAUDE.md hierarquia: codigo vence, mas PRD precisa ser atualizado para nao gerar falsos negativos (foi exatamente o motivo de deletar raio-x-sistema.md em 2026-04-10).",
+      "sugestao": "Sessao de domain-discovery (Modo 3 do product-expert) para mapear modulos: gamification, telescope, on_call, jornadas, sensor_readings, scale_readings, capa, rr_studies, surveys, tv_dashboard. Adicionar RFs ao PRD (mesmo que como 'experimental' ou 'tecnico') para cobrir.",
+      "false_positive": false
+    }
+  ],
+  "false_positives_marcados": [],
+  "resumo_executivo": "Camada 1 (Schema + Migrations) tem aderencia FUNCIONAL alta ao PRD nos dominios principais (OS, Calibracao, Financeiro, Estoque, Schedules) — entidades existem, FKs corretas, unique por tenant em work_orders/invoices/quotes. Porem, 3 problemas estruturais aparecem: (1) violacoes de convencao de IDIOMA na familia central_*, customer_locations e equipment_calibrations.result (status 'aprovado' em PT, colunas em PT) — viola CLAUDE.md de forma sistematica; (2) DUPLICACAO DE DOMINIO em pelo menos 4 areas (invoices vs fiscal_invoices, schedules vs scheduled_appointments, non_conformances vs non_conformities, expenses.user_id vs created_by) sem PRD documentando a separacao; (3) GAP REVERSO MASSIVO: schema tem ~450 tabelas, PRD documenta ~24 RFs — o reconhecimento na linha 186 ('Modulos Implementados Nao-Documentados') e correto mas precisa virar listagem efetiva. Recomendacao: priorizar normalizacao de status (PROD-001, PROD-002) e auditoria expenses.user_id (PROD-005) como P0; iniciar domain-discovery para resolver duplicacoes e atualizar PRD."
+}

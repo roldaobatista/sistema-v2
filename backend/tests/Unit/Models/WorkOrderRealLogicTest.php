@@ -644,7 +644,7 @@ class WorkOrderRealLogicTest extends TestCase
     public function test_all_priorities_defined(): void
     {
         $this->assertArrayHasKey(WorkOrder::PRIORITY_LOW, WorkOrder::PRIORITIES);
-        $this->assertArrayHasKey(WorkOrder::PRIORITY_NORMAL, WorkOrder::PRIORITIES);
+        $this->assertArrayHasKey(WorkOrder::PRIORITY_MEDIUM, WorkOrder::PRIORITIES);
         $this->assertArrayHasKey(WorkOrder::PRIORITY_HIGH, WorkOrder::PRIORITIES);
         $this->assertArrayHasKey(WorkOrder::PRIORITY_URGENT, WorkOrder::PRIORITIES);
     }

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\SystemAlert;
+use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class SystemAlertFactory extends Factory
@@ -14,7 +15,7 @@ class SystemAlertFactory extends Factory
         $types = array_keys(SystemAlert::TYPES);
 
         return [
-            'tenant_id' => 1,
+            'tenant_id' => Tenant::factory(),
             'alert_type' => fake()->randomElement($types),
             'severity' => fake()->randomElement(['low', 'medium', 'high', 'critical']),
             'title' => fake()->sentence(4),

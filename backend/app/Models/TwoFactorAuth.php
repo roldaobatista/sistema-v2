@@ -29,11 +29,13 @@ class TwoFactorAuth extends Model
         return [
             'is_enabled' => 'boolean',
             'verified_at' => 'datetime',
+            'secret' => 'encrypted',
+            'backup_codes' => 'array',
         ];
 
     }
 
-    protected $hidden = ['secret'];
+    protected $hidden = ['secret', 'backup_codes'];
 
     public function user(): BelongsTo
     {

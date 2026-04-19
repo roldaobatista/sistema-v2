@@ -62,7 +62,7 @@ class AgendaAndExpenseApiTest extends TestCase
             'status' => AgendaItemStatus::ABERTO,
         ]);
         $response = $this->actingAs($this->admin)->putJson("/api/v1/agenda-items/{$item->id}", [
-            'titulo' => 'Atualizado',
+            'title' => 'Atualizado',
         ]);
         $response->assertOk();
     }

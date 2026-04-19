@@ -124,7 +124,7 @@ class EquipmentExtendedTest extends TestCase
             'calibration_date' => now()->format('Y-m-d'),
             'calibration_type' => 'externa',
             'certificate_number' => 'CERT-001',
-            'result' => 'aprovado',
+            'result' => 'approved',
         ]);
 
         $response->assertCreated();

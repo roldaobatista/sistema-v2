@@ -134,19 +134,19 @@ class TechnicianCentralProfessionalTest extends TestCase
     public function test_create_agenda_task_persists(): void
     {
         $response = $this->postJson('/api/v1/agenda/items', [
-            'tipo' => 'task',
-            'titulo' => 'Verificar estoque de peças',
-            'prioridade' => 'high',
+            'type' => 'task',
+            'title' => 'Verificar estoque de peças',
+            'priority' => 'high',
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonPath('data.titulo', 'Verificar estoque de peças');
+            ->assertJsonPath('data.title', 'Verificar estoque de peças');
 
         $this->assertDatabaseHas('central_items', [
             'tenant_id' => $this->tenant->id,
-            'titulo' => 'Verificar estoque de peças',
-            'tipo' => 'task',
-            'prioridade' => 'high',
+            'title' => 'Verificar estoque de peças',
+            'type' => 'task',
+            'priority' => 'high',
         ]);
     }
 

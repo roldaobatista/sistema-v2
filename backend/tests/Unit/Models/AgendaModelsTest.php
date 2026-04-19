@@ -38,8 +38,8 @@ class AgendaModelsTest extends TestCase
     {
         $item = AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'responsavel_user_id' => $this->user->id,
-            'criado_por_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
+            'created_by_user_id' => $this->user->id,
         ]);
 
         $this->assertInstanceOf(User::class, $item->responsavel);
@@ -49,8 +49,8 @@ class AgendaModelsTest extends TestCase
     {
         $item = AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'responsavel_user_id' => $this->user->id,
-            'criado_por_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
+            'created_by_user_id' => $this->user->id,
         ]);
 
         $this->assertEquals($this->tenant->id, $item->tenant_id);
@@ -60,8 +60,8 @@ class AgendaModelsTest extends TestCase
     {
         $item = AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'responsavel_user_id' => $this->user->id,
-            'criado_por_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
+            'created_by_user_id' => $this->user->id,
         ]);
 
         $this->assertInstanceOf(HasMany::class, $item->comments());
@@ -71,8 +71,8 @@ class AgendaModelsTest extends TestCase
     {
         $item = AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'responsavel_user_id' => $this->user->id,
-            'criado_por_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
+            'created_by_user_id' => $this->user->id,
         ]);
 
         $this->assertInstanceOf(HasMany::class, $item->subtasks());
@@ -82,8 +82,8 @@ class AgendaModelsTest extends TestCase
     {
         $item = AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'responsavel_user_id' => $this->user->id,
-            'criado_por_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
+            'created_by_user_id' => $this->user->id,
         ]);
 
         $this->assertInstanceOf(HasMany::class, $item->timeEntries());
@@ -102,8 +102,8 @@ class AgendaModelsTest extends TestCase
     {
         $item = AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'responsavel_user_id' => $this->user->id,
-            'criado_por_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
+            'created_by_user_id' => $this->user->id,
         ]);
 
         $item->delete();
@@ -116,8 +116,8 @@ class AgendaModelsTest extends TestCase
     {
         $item = AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'responsavel_user_id' => $this->user->id,
-            'criado_por_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
+            'created_by_user_id' => $this->user->id,
             'due_at' => '2026-06-15 10:00:00',
         ]);
 
@@ -131,10 +131,10 @@ class AgendaModelsTest extends TestCase
     {
         $template = AgendaTemplate::create([
             'tenant_id' => $this->tenant->id,
-            'nome' => 'Template teste',
-            'tipo' => 'task',
-            'prioridade' => 'medium',
-            'visibilidade' => 'team',
+            'name' => 'Template teste',
+            'type' => 'task',
+            'priority' => 'medium',
+            'visibility' => 'team',
         ]);
 
         $this->assertEquals($this->tenant->id, $template->tenant_id);

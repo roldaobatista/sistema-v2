@@ -26,11 +26,11 @@ class CreateAgendaItemOnPayment implements ShouldQueue
             AgendaItem::criarDeOrigem(
                 model: $payment,
                 tipo: AgendaItemType::FINANCEIRO,
-                titulo: 'Pagamento recebido — R$ '.number_format((float) ($payment->amount ?? 0), 2, ',', '.'),
+                title: 'Pagamento recebido — R$ '.number_format((float) ($payment->amount ?? 0), 2, ',', '.'),
                 responsavelId: $responsavel,
                 extras: [
-                    'descricao_curta' => $payment->notes ?? 'Pagamento registrado',
-                    'contexto' => [
+                    'short_description' => $payment->notes ?? 'Pagamento registrado',
+                    'context' => [
                         'valor' => $payment->amount,
                         'metodo' => $payment->payment_method ?? null,
                         'link' => '/financeiro/recebimentos',

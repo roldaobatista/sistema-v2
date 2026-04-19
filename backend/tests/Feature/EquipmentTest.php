@@ -84,7 +84,7 @@ class EquipmentTest extends TestCase
         $data = [
             'calibration_date' => now()->toDateString(),
             'calibration_type' => 'externa',
-            'result' => 'aprovado',
+            'result' => 'approved',
             'laboratory' => 'Lab Teste',
             'certificate_number' => 'CERT-123',
             'cost' => 150.50,
@@ -111,7 +111,7 @@ class EquipmentTest extends TestCase
         $response = $this->postJson("/api/v1/equipments/{$equipment->id}/calibrations", [
             'calibration_date' => $calibrationDate,
             'calibration_type' => 'interna',
-            'result' => 'aprovado',
+            'result' => 'approved',
         ]);
 
         $response->assertStatus(201);

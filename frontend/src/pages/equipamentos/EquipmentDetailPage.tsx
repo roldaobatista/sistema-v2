@@ -155,7 +155,7 @@ interface CalibrationForm {
 const emptyCalForm: CalibrationForm = {
     calibration_date: new Date().toISOString().split('T')[0],
     calibration_type: 'interna',
-    result: 'aprovado',
+    result: 'approved',
     laboratory: '',
     certificate_number: '',
     standard_used: '',
@@ -645,9 +645,9 @@ function CalibrationModal({ equipmentId, onClose, onSuccess }: { equipmentId: nu
                         </FormField>
                         <FormField label="Resultado *" error={fieldErrors.result}>
                             <select value={form.result} onChange={e => set('result', e.target.value)} className="form-input">
-                                <option value="aprovado">Aprovado</option>
-                                <option value="aprovado_com_ressalva">Aprovado c/ Ressalva</option>
-                                <option value="reprovado">Reprovado</option>
+                                <option value="approved">Aprovado</option>
+                                <option value="approved_with_restriction">Aprovado c/ Ressalva</option>
+                                <option value="rejected">Reprovado</option>
                             </select>
                         </FormField>
                     </div>

@@ -102,10 +102,10 @@ class EmailRuleEngine
             "[Email] {$email->subject}",
             $responsavelId,
             [
-                'origem' => AgendaItemOrigin::AUTO,
-                'prioridade' => $priority,
-                'descricao_curta' => $email->ai_summary ?? $email->snippet,
-                'contexto' => [
+                'origin' => AgendaItemOrigin::AUTO,
+                'priority' => $priority,
+                'short_description' => $email->ai_summary ?? $email->snippet,
+                'context' => [
                     'email_id' => $email->id,
                     'from' => $email->from_address,
                     'date' => $email->date->toISOString(),

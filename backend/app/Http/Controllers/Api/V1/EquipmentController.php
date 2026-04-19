@@ -373,7 +373,7 @@ class EquipmentController extends Controller
                     $calibration->standardWeights()->attach($standardWeightIds);
                 }
 
-                $newStatus = $data['result'] === 'reprovado'
+                $newStatus = $data['result'] === 'rejected'
                     ? Equipment::STATUS_OUT_OF_SERVICE
                     : Equipment::STATUS_ACTIVE;
 
@@ -520,9 +520,9 @@ class EquipmentController extends Controller
                 ->distinct()->orderBy('model')->pluck('model')->values(),
             'calibration_types' => $calibrationTypes,
             'calibration_results' => [
-                'aprovado' => 'Aprovado',
-                'aprovado_com_ressalva' => 'Aprovado com Ressalva',
-                'reprovado' => 'Reprovado',
+                'approved' => 'Aprovado',
+                'approved_with_restriction' => 'Aprovado com Ressalva',
+                'rejected' => 'Reprovado',
             ],
             'maintenance_types' => $maintenanceTypes,
             'document_types' => $documentTypes,

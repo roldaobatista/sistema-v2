@@ -30,9 +30,12 @@ class Webhook extends Model
             'is_active' => 'boolean',
             'failure_count' => 'integer',
             'last_triggered_at' => 'datetime',
+            'secret' => 'encrypted',
         ];
 
     }
+
+    protected $hidden = ['secret'];
 
     public function logs(): HasMany
     {

@@ -50,7 +50,7 @@ class SecurityHardeningTest extends TestCase
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/customers', [
             'name' => '<script>alert("XSS")</script>',
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
 
         if ($response->status() === 201) {
@@ -64,7 +64,7 @@ class SecurityHardeningTest extends TestCase
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/customers', [
             'name' => 'Legit Customer',
-            'type' => 'company',
+            'type' => 'PJ',
             'tenant_id' => 99999,
             'id' => 99999,
         ]);
@@ -143,7 +143,7 @@ class SecurityHardeningTest extends TestCase
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/customers', [
             'name' => str_repeat('A', 10000),
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
 
         $this->assertTrue(

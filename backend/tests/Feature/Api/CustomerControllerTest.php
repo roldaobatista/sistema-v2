@@ -53,7 +53,7 @@ class CustomerControllerTest extends TestCase
                 'name' => 'Empresa Teste Ltda',
                 'email' => 'contato@empresateste.com',
                 'phone' => '11999887766',
-                'type' => 'company',
+                'type' => 'PJ',
             ]);
 
         $response->assertCreated();

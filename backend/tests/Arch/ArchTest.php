@@ -239,7 +239,10 @@ test('deploy.yml tem health check e rollback', function (): void {
 
     expect($content)->toContain('Health Check');
     expect($content)->toContain('Rollback');
-    expect($content)->toContain('workflow_run');
+    // Trigger atual: deploy manual via workflow_dispatch (commit b8c991e — 2026-04-17).
+    // Histórico: anteriormente era workflow_run após CI verde; mudou para manual
+    // intencionalmente para evitar deploy automático em todo push para main.
+    expect($content)->toContain('workflow_dispatch');
     expect($content)->not->toContain('pull_request');
 });
 
@@ -263,6 +266,21 @@ test('performance.yml usa budget de bundle configuravel e realista', function ()
     expect($content)->toContain('MAX_BUNDLE_SIZE_KB');
     expect($content)->toMatch("/MAX_BUNDLE_SIZE_KB:\\s*['\"]2500['\"]/");
     expect($content)->not->toContain('400 * 1024');
+});
+
+test('dast.yml sobe alvo local saudavel antes dos scans zap', function (): void {
+    $backendRoot = realpath(dirname(__DIR__, 2));
+    $projectRoot = dirname($backendRoot);
+    $dastPath = $projectRoot.DIRECTORY_SEPARATOR.'.github'.DIRECTORY_SEPARATOR.'workflows'.DIRECTORY_SEPARATOR.'dast.yml';
+    $content = file_get_contents($dastPath);
+
+    expect($content)->toContain('DAST_TARGET_URL');
+    expect($content)->toContain('http://127.0.0.1:8000');
+    expect($content)->toContain('Start local Laravel DAST target');
+    expect($content)->toContain('curl -fsS "$DAST_TARGET_URL/up"');
+    expect($content)->toContain('scramble:export --path=public/docs/api.json');
+    expect($content)->toContain('Validate DAST OpenAPI target');
+    expect($content)->not->toContain("'http://localhost'");
 });
 
 test('enums sao backed por string', function (): void {

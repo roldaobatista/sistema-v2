@@ -122,7 +122,7 @@ test('user WITH os.work_order.create can store work order', function () {
     $this->postJson('/api/v1/work-orders', [
         'customer_id' => $this->customer->id,
         'description' => 'Calibracao de balanca',
-        'priority' => 'normal',
+        'priority' => 'medium',
     ])->assertStatus(201);
 });
 

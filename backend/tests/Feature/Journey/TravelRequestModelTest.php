@@ -114,7 +114,7 @@ it('expense report recalculates balance', function () {
     $report = TravelExpenseReport::factory()->create([
         'tenant_id' => $this->tenant->id,
         'travel_request_id' => $request->id,
-        'user_id' => $this->user->id,
+        'created_by' => $this->user->id,
     ]);
 
     TravelExpenseItem::factory()->create([

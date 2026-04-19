@@ -48,7 +48,7 @@ class CheckinCrmFieldManagementAction extends BaseCrmFieldManagementAction
             'user_id' => $user->id,
             'title' => 'Check-in: '.$customer->name,
             'scheduled_at' => now(),
-            'channel' => 'presencial',
+            'channel' => 'in_person',
         ]);
 
         $checkin->update(['activity_id' => $activity->id]);

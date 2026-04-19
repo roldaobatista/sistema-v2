@@ -23,8 +23,8 @@ class AgendaAutomationService
             ->where(function ($q) use ($item) {
                 $itemType = $item->typeEnum()?->value;
 
-                $q->whereNull('tipo_item')
-                    ->orWhere('tipo_item', $itemType);
+                $q->whereNull('item_type')
+                    ->orWhere('item_type', $itemType);
             })
             ->get();
 
@@ -44,10 +44,10 @@ class AgendaAutomationService
      */
     protected function executarRegra(AgendaRule $rule, AgendaItem $item): void
     {
-        // Verificar filtro de prioridade mínima
-        if ($rule->prioridade_minima) {
+        // Verificar filtro de priority mínima
+        if ($rule->min_priority) {
             $ordemPrioridade = ['low' => 1, 'medium' => 2, 'high' => 3, 'urgent' => 4];
-            $minimo = $ordemPrioridade[strtolower((string) $rule->prioridade_minima)] ?? 0;
+            $minimo = $ordemPrioridade[strtolower((string) $rule->min_priority)] ?? 0;
             $currentPriority = $item->priorityEnum();
             $atual = $ordemPrioridade[strtolower($currentPriority instanceof AgendaItemPriority ? $currentPriority->value : 'medium')] ?? 0;
 
@@ -56,7 +56,7 @@ class AgendaAutomationService
             }
         }
 
-        match ($rule->acao_tipo) {
+        match ($rule->action_type) {
             'auto_assign' => $this->acaoAutoAssign($rule, $item),
             'set_priority' => $this->acaoSetPriority($rule, $item),
             'set_due' => $this->acaoSetDue($rule, $item),
@@ -70,43 +70,43 @@ class AgendaAutomationService
      */
     protected function acaoAutoAssign(AgendaRule $rule, AgendaItem $item): void
     {
-        if ($item->responsavel_user_id) {
+        if ($item->assignee_user_id) {
             return; // Já tem responsável
         }
 
-        if ($rule->responsavel_user_id) {
-            $item->update(['responsavel_user_id' => $rule->responsavel_user_id]);
-            $item->registrarHistorico('auto_assign', null, $rule->responsavel_user_id);
+        if ($rule->assignee_user_id) {
+            $item->update(['assignee_user_id' => $rule->assignee_user_id]);
+            $item->registrarHistorico('auto_assign', null, $rule->assignee_user_id);
 
             return;
         }
 
         // Se tem role_alvo, pega o user com menos itens abertos
-        if ($rule->role_alvo) {
+        if ($rule->target_role) {
             $userId = $this->encontrarUserMenosOcupado(
                 $item->tenant_id,
-                $rule->role_alvo
+                $rule->target_role
             );
 
             if ($userId) {
-                $item->update(['responsavel_user_id' => $userId]);
+                $item->update(['assignee_user_id' => $userId]);
                 $item->registrarHistorico('auto_assign', null, $userId);
             }
         }
     }
 
     /**
-     * Definir prioridade automaticamente.
+     * Definir priority automaticamente.
      */
     protected function acaoSetPriority(AgendaRule $rule, AgendaItem $item): void
     {
-        $config = $rule->acao_config ?? [];
-        $prioridade = isset($config['prioridade']) ? strtolower((string) $config['prioridade']) : null;
+        $config = $rule->action_config ?? [];
+        $priority = isset($config['priority']) ? strtolower((string) $config['priority']) : null;
 
-        if ($prioridade && AgendaItemPriority::tryFrom($prioridade)) {
+        if ($priority && AgendaItemPriority::tryFrom($priority)) {
             $oldPriority = $item->priorityEnum()?->value;
-            $item->update(['prioridade' => $prioridade]);
-            $item->registrarHistorico('set_priority', $oldPriority, $prioridade);
+            $item->update(['priority' => $priority]);
+            $item->registrarHistorico('set_priority', $oldPriority, $priority);
         }
     }
 
@@ -119,7 +119,7 @@ class AgendaAutomationService
             return;
         }
 
-        $config = $rule->acao_config ?? [];
+        $config = $rule->action_config ?? [];
         $horas = $config['horas'] ?? null;
 
         if ($horas) {
@@ -152,7 +152,7 @@ class AgendaAutomationService
             ->select('users.id')
             ->selectRaw('(
                 SELECT COUNT(*) FROM central_items
-                WHERE central_items.responsavel_user_id = users.id
+                WHERE central_items.assignee_user_id = users.id
                 AND central_items.status IN (?, ?)
                 AND central_items.tenant_id = ?
             ) as open_count', [
@@ -216,16 +216,16 @@ class AgendaAutomationService
 
         return AgendaItem::where('tenant_id', $tenantId)
             ->whereNotIn('status', [AgendaItemStatus::CONCLUIDO, AgendaItemStatus::CANCELADO])
-            ->whereNotNull('responsavel_user_id')
-            ->selectRaw('responsavel_user_id, COUNT(*) as total')
+            ->whereNotNull('assignee_user_id')
+            ->selectRaw('assignee_user_id, COUNT(*) as total')
             ->selectRaw("SUM(CASE WHEN due_at < {$nowExpr} THEN 1 ELSE 0 END) as atrasadas")
-            ->selectRaw('SUM(CASE WHEN prioridade = ? THEN 1 ELSE 0 END) as urgentes', [AgendaItemPriority::URGENTE->value])
-            ->groupBy('responsavel_user_id')
+            ->selectRaw('SUM(CASE WHEN priority = ? THEN 1 ELSE 0 END) as urgentes', [AgendaItemPriority::URGENTE->value])
+            ->groupBy('assignee_user_id')
             ->orderByDesc('total')
             ->get()
             ->map(fn ($row) => [
-                'user_id' => $row->responsavel_user_id,
-                'nome' => User::find($row->responsavel_user_id)?->name ?? 'N/A',
+                'user_id' => $row->assignee_user_id,
+                'name' => User::find($row->assignee_user_id)?->name ?? 'N/A',
                 'total' => $row->total,
                 'atrasadas' => $row->atrasadas ?? 0,
                 'urgentes' => $row->urgentes ?? 0,
@@ -243,18 +243,18 @@ class AgendaAutomationService
             ->whereNotNull('due_at')
             ->where('due_at', '<', now())
             ->whereNotIn('status', [AgendaItemStatus::CONCLUIDO, AgendaItemStatus::CANCELADO])
-            ->selectRaw('tipo, COUNT(*) as total')
+            ->selectRaw('type, COUNT(*) as total')
             ->selectRaw(DB::getDriverName() === 'sqlite'
                 ? "AVG(ROUND((julianday('now') - julianday(due_at)) * 24)) as avg_atraso_horas"
                 : 'AVG(TIMESTAMPDIFF(HOUR, due_at, NOW())) as avg_atraso_horas'
             )
-            ->groupBy('tipo')
+            ->groupBy('type')
             ->orderByDesc('total')
             ->get();
 
         return $rows
             ->map(static fn (object $row) => [
-                'tipo' => $row->tipo,
+                'type' => $row->type,
                 'total' => (int) $row->total,
                 'atraso_medio_horas' => round($row->avg_atraso_horas ?? 0, 1),
             ])

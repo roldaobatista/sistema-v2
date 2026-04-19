@@ -46,7 +46,7 @@ class VisitReport extends Model
     ];
 
     const VISIT_TYPES = [
-        'presencial' => 'Presencial',
+        'in_person' => 'Presencial',
         'virtual' => 'Virtual',
     ];
 

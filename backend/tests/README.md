@@ -12,6 +12,43 @@
 composer test-fast
 ```
 
+## Pirâmide de Escalada (CLAUDE.md §Pirâmide de testes)
+
+Durante desenvolvimento, **nunca** rodar a suite completa no meio de uma task. Escalar progressivamente e corrigir ali se falhar — não escalar para cima:
+
+```bash
+# 1. Teste específico (file, fastest, use primeiro)
+./vendor/bin/pest tests/Feature/Customers/CustomerControllerTest.php
+
+# 2. Filtro por nome (group of tests)
+./vendor/bin/pest --filter="creates a customer"
+
+# 3. Testsuite dedicada — escolher a relevante:
+./vendor/bin/pest --testsuite=Unit       # ~rápido, lógica pura, sem DB
+./vendor/bin/pest --testsuite=Feature    # HTTP + DB, cobertura de controllers
+./vendor/bin/pest --testsuite=Smoke      # sanity checks end-to-end
+./vendor/bin/pest --testsuite=Arch       # regras arquiteturais (Pest Arch)
+./vendor/bin/pest --testsuite=Critical   # fluxos críticos (financeiro, tenant)
+./vendor/bin/pest --testsuite=E2E        # end-to-end browser (quando habilitado)
+
+# 4. Suite completa — SÓ no final, como gate antes do commit
+./vendor/bin/pest --parallel --processes=16 --no-coverage
+```
+
+### Comandos compostos (via composer)
+
+| Comando | O que roda |
+|---|---|
+| `composer test` | Pest paralelo (Default: Unit+Feature+Smoke+Arch) |
+| `composer test:ci` | Igual CI: paralelo 16 processos sem cobertura |
+| `composer test:coverage` | Paralelo + cobertura min 80% |
+| `composer test:dirty` | Só testes afetados por mudanças git (rápido) |
+| `composer test:profile` | Paralelo com profiling |
+| `composer test:critical` | Só `tests/Critical` |
+| `composer test:arch` | Só `tests/Arch` |
+
+**Regra:** o comando padrão (`vendor/bin/pest` sem `--testsuite`) usa o testsuite `Default` que agrupa Unit+Feature+Smoke+Arch. Esse é o comando usado em CI (`.github/workflows/ci.yml`). Não alterar `defaultTestSuite` em `phpunit.xml` sem atualizar CI e composer scripts em cascata.
+
 ## Arquitetura
 
 - **DB**: SQLite in-memory (schema dump em `database/schema/sqlite-schema.sql`)

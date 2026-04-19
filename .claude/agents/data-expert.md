@@ -184,6 +184,24 @@ Auditoria de codigo de dados existente ou mudanca recente: integridade, performa
 
 ---
 
+## Excecoes aceitas (nao reportar como finding)
+
+Decisoes arquiteturais documentadas em `docs/TECHNICAL-DECISIONS.md` que devem ser ignoradas em auditorias de dados:
+
+- **`users.tenant_id` e `users.current_tenant_id` NULLABLE** — aceito por design (§14.20). Super-admin (role Spatie) opera multi-tenant sem tenant base; `current_tenant_id` pode ser NULL antes do primeiro `switch-tenant`. Isolamento real e feito pelo global scope em runtime via `BelongsToTenant`.
+- **Migrations com timestamps duplicados listadas em §14.19** — fosseis H3 aceitos (10 pares). Detectar apenas novos duplicados introduzidos depois dessa decisao.
+- **Schema dump SQLite converte `decimal(N,M)` para `numeric`** — limitacao do SQLite (sem precisao nativa). Precisao real e validada em MySQL de producao via `generate_sqlite_schema.php`.
+- **`personal_access_tokens` (Sanctum) e `email_attachments` sem `tenant_id`** — §14.21.a. Isolamento via `tokenable`/pacote Laravel e via parent `email_id` respectivamente.
+- **`suppliers.document` NULLABLE sem UNIQUE e `users.email` UNIQUE global** — §14.21.d. Trade-off documentado (fornecedor em cadastro preliminar; Laravel Auth default).
+- **`payment_gateway_configs` UNIQUE(tenant_id)** — §14.21.e. MVP um-gateway-por-tenant; multi-gateway e feature futura.
+- **`expenses` com 3 FKs sobrepostas sem CHECK** — §14.21.r. Multiplas origens validas (OS, reembolso, folha, avulso); mutual exclusion aplicada na aplicacao.
+- **Ausencia de TTL/arquivamento em `audit_logs`, `webhook_logs`, `whatsapp_message_logs`** — §14.21.s. Divida rastreada; sprint futura de observabilidade.
+- **Naming heterogeneo de indices legados (`_del_idx`, `_deleted_at_idx`, etc.)** — §14.21.t. Cosmetico aceito. Novos indices seguem `{table}_{cols}_index`.
+- **Conversao `numeric` no dump SQLite** — §14.21.c (reforco).
+- **FKs `tenant_id -> tenants` com `ON DELETE CASCADE`** — §14.22. Aceito (SoftDeletes no tenant + padrao multi-tenant). Excecao: `audit_logs` usa RESTRICT.
+- **`user_2fa.user_id` UNIQUE global** — §14.25. 2FA e identidade de usuario, nao de tenant.
+- **`customers` / `suppliers` UNIQUE via document_hash (nao plaintext)** — §14.26. Campo encrypted-at-rest; unicidade efetiva via hash + soft-delete-aware unique.
+
 ## Handoff
 
 Ao terminar qualquer modo:

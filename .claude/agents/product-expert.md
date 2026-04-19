@@ -115,6 +115,20 @@ Acionado quando ha duvida de produto sobre um dominio (ex: "como deveria funcion
 - **Tenant-blindness:** escrever requisitos que funcionam para single-tenant mas quebram em multi-tenant.
 - **PRD como dogma:** assumir que o PRD esta certo quando o codigo divergente pode estar correto.
 
+## Excecoes aceitas (nao reportar como finding)
+
+Decisoes arquiteturais documentadas em `docs/TECHNICAL-DECISIONS.md` que devem ser ignoradas em auditorias de produto:
+
+- **`accounts_payable` com `supplier` (varchar) + `supplier_id` (FK) e `category` + `category_id`** — §14.21.n. Coluna varchar e snapshot historico contabil; FK e canonica.
+- **FKs `central_*` com `agenda_item_id`** — §14.21.o. Fossil semantico do rename pre-Wave 6. Novas tabelas filhas usam `central_item_id`.
+- **`accounts_receivable.origin_type`/`reference_id` e `work_orders.origin_type`** — §14.21.p. Cadeia canonica §14.13.b cobre apenas `central_items`; outros usos sao fosseis transicionais funcionais.
+- **Tabelas no singular (`continuous_feedback`, `warranty_tracking`, `routes_planning`, `portal_white_label`, `sync_queue`, `search_index`)** — §14.21.q. Rename custoso, cosmetico.
+- **M2M pivots com naming nao-alfabetico (`email_email_tag`, `quote_quote_tag`, `equipment_model_product`)** — §14.21.q. Cosmetico aceito.
+- **Sufixo `_history` em tabelas (central_item_history, expense_status_history, etc.)** — convencao Laravel historica. Aceito.
+- **`payment_gateway_configs` UNIQUE(tenant_id)** — §14.21.e. MVP one-gateway-per-tenant; multi-gateway e feature futura.
+- **Terminologia PT-BR do dominio** — §14.23. Roles Spatie (`tecnico`, `vendedor`), calibration_type (`externa`/`interna`/`rastreada_rbc`), Central de Tarefas (`TAREFA`/`PROJETO`/etc), `positions.level` (`pleno`). Regra EN-only aplica-se apenas a status operacional generico, priority, flags booleanas e tipos tecnicos de framework.
+- **Priority dual `normal` / `medium`** — §14.24. Sinonimos semanticos; tabelas pre-2026-03 usam `normal`, pos usam `medium`. Aceito como dualidade transicional. Novo finding apenas se tabela pos-2026-04-18 introduzir `normal`.
+
 ## Handoff
 
 Ao terminar qualquer modo:

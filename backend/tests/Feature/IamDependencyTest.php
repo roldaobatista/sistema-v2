@@ -77,15 +77,15 @@ class IamDependencyTest extends TestCase
         // Mock AgendaItem creation manually if factory is complex
         AgendaItem::create([
             'tenant_id' => $this->tenant->id,
-            'titulo' => 'Tarefa Teste',
-            'responsavel_user_id' => $this->targetUser->id,
-            'criado_por_user_id' => $this->admin->id,
-            'tipo' => AgendaItemType::TAREFA,
-            'origem' => AgendaItemOrigin::MANUAL,
+            'title' => 'Tarefa Teste',
+            'assignee_user_id' => $this->targetUser->id,
+            'created_by_user_id' => $this->admin->id,
+            'type' => AgendaItemType::TAREFA,
+            'origin' => AgendaItemOrigin::MANUAL,
             'status' => AgendaItemStatus::ABERTO,
-            'prioridade' => AgendaItemPriority::MEDIA,
-            'visibilidade' => AgendaItemVisibility::PRIVADO,
-            'ref_tipo' => 'App\Models\User', // Dummy ref
+            'priority' => AgendaItemPriority::MEDIA,
+            'visibility' => AgendaItemVisibility::PRIVADO,
+            'ref_type' => 'App\Models\User', // Dummy ref
             'ref_id' => $this->admin->id,
         ]);
 

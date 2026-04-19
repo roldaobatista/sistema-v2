@@ -157,9 +157,12 @@ class AuvoImportServiceTest extends TestCase
         $this->assertEquals(0, $result['total_imported']);
         $this->assertEquals(1, $result['total_skipped']);
 
+        // Wave 1B: `document` é encrypted (cast `encrypted`) — comparação direta
+        // por valor raw não funciona no DB. Verifica via `document_hash`
+        // (HMAC-SHA256 determinístico) e nome.
         $this->assertDatabaseHas('customers', [
             'tenant_id' => $this->tenant->id,
-            'document' => '12345678000190',
+            'document_hash' => Customer::hashSearchable('12345678000190', digitsOnly: true),
             'name' => 'Existing Customer',
         ]);
     }

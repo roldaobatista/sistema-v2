@@ -20,7 +20,7 @@ class WorkOrderFactory extends Factory
             'created_by' => fn (array $attributes) => User::factory()->state(['tenant_id' => $attributes['tenant_id']]),
             'number' => 'OS-'.str_pad(fake()->unique()->numberBetween(1, 99999), 6, '0', STR_PAD_LEFT),
             'status' => WorkOrder::STATUS_OPEN,
-            'priority' => WorkOrder::PRIORITY_NORMAL,
+            'priority' => WorkOrder::PRIORITY_MEDIUM,
             'description' => fake()->sentence(6),
             'total' => 0,
             'origin_type' => WorkOrder::ORIGIN_MANUAL,

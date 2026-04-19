@@ -93,8 +93,12 @@ class CustomerDeepTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'document' => '12345678000199',
         ]);
-        $results = Customer::where('document', '12345678000199')->get();
+        // `document` é encrypted (cast `encrypted`) — busca por igualdade direta
+        // não funciona (ciphertext difere a cada gravação por causa do IV).
+        // Wave 1B: usar `document_hash` (HMAC-SHA256 determinístico).
+        $results = Customer::where('document_hash', Customer::hashSearchable('12345678000199', digitsOnly: true))->get();
         $this->assertGreaterThanOrEqual(1, $results->count());
+        $this->assertSame('12345678000199', $results->first()->document);
     }
 
     public function test_scope_active_customers(): void
@@ -115,9 +119,9 @@ class CustomerDeepTest extends TestCase
     {
         $company = Customer::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
-        $results = Customer::where('type', 'company')->get();
+        $results = Customer::where('type', 'PJ')->get();
         $this->assertTrue($results->contains('id', $company->id));
     }
 
@@ -125,9 +129,9 @@ class CustomerDeepTest extends TestCase
     {
         $individual = Customer::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'type' => 'individual',
+            'type' => 'PF',
         ]);
-        $results = Customer::where('type', 'individual')->get();
+        $results = Customer::where('type', 'PF')->get();
         $this->assertTrue($results->contains('id', $individual->id));
     }
 
@@ -207,7 +211,7 @@ class CustomerDeepTest extends TestCase
             'email' => 'teste@t.com',
             'phone' => '11999887766',
             'document' => '12345678901',
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
         $this->assertEquals('Teste', $c->name);
         $this->assertEquals('teste@t.com', $c->email);

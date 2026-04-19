@@ -174,11 +174,11 @@ export default function TechEquipmentSearchPage() {
                                             </div>
                                             <span className={cn(
                                                 'px-2 py-0.5 rounded-full text-[10px] font-medium',
-                                                cal.result === 'aprovado' || cal.result === 'aprovado_com_ressalva'
+                                                cal.result === 'approved' || cal.result === 'approved_with_restriction'
                                                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30'
                                                     : 'bg-red-100 text-red-700'
                                             )}>
-                                                {cal.result === 'aprovado' ? 'Aprovado' : cal.result === 'aprovado_com_ressalva' ? 'C/ Ressalva' : 'Reprovado'}
+                                                {cal.result === 'approved' ? 'Aprovado' : cal.result === 'approved_with_restriction' ? 'C/ Ressalva' : 'Reprovado'}
                                             </span>
                                         </div>
                                     ))}

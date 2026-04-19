@@ -646,7 +646,7 @@ class RoutePermissionHardeningTest extends TestCase
             'created_by' => $otherUser->id,
             'number' => WorkOrder::nextNumber($otherTenant->id),
             'status' => WorkOrder::STATUS_OPEN,
-            'priority' => WorkOrder::PRIORITY_NORMAL,
+            'priority' => WorkOrder::PRIORITY_MEDIUM,
             'description' => 'OS outro tenant',
             'total' => 0,
             'origin_type' => WorkOrder::ORIGIN_MANUAL,
@@ -675,8 +675,8 @@ class RoutePermissionHardeningTest extends TestCase
             ->assertOk();
 
         $payload = [
-            'tipo' => 'task',
-            'titulo' => 'Tarefa sem permissão de criação',
+            'type' => 'task',
+            'title' => 'Tarefa sem permissão de criação',
         ];
 
         $this->postJson('/api/v1/agenda/items', $payload)

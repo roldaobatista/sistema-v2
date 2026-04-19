@@ -124,7 +124,7 @@ test('WorkOrderObserver logs critical field changes via audit', function () {
         'tenant_id' => $this->tenant->id,
         'created_by' => $this->user->id,
         'status' => WorkOrder::STATUS_OPEN,
-        'priority' => WorkOrder::PRIORITY_NORMAL,
+        'priority' => WorkOrder::PRIORITY_MEDIUM,
     ]);
 
     Log::shouldReceive('channel')
@@ -190,11 +190,12 @@ test('CustomerObserver does not recalculate on irrelevant field changes', functi
         'tenant_id' => $this->tenant->id,
     ]);
 
-    // Changing name should not trigger health score recalculation
-    $customer->update(['name' => 'New Name']);
+    $originalScore = $customer->health_score;
 
-    // No exception = no infinite recursion
-    expect(true)->toBeTrue();
+    $customer->update(['name' => 'New Name']);
+    $customer->refresh();
+
+    expect($customer->health_score)->toBe($originalScore);
 });
 
 // ---------------------------------------------------------------------------
@@ -553,7 +554,7 @@ test('CrmDealAgendaObserver creates agenda item when deal is created', function 
 
     $this->assertDatabaseHas('central_items', [
         'tenant_id' => $this->tenant->id,
-        'responsavel_user_id' => $this->user->id,
+        'assignee_user_id' => $this->user->id,
     ]);
 });
 
@@ -576,7 +577,7 @@ test('CrmDealAgendaObserver maps high-value deals to urgent priority', function 
     ]);
 
     $agenda = AgendaItem::withoutGlobalScopes()
-        ->where('ref_tipo', (new CrmDeal)->getMorphClass())
+        ->where('ref_type', (new CrmDeal)->getMorphClass())
         ->where('ref_id', $deal->id)
         ->first();
 
@@ -604,7 +605,7 @@ test('CrmDealAgendaObserver closes agenda when deal is won', function () {
     $deal->update(['status' => 'won']);
 
     $agenda = AgendaItem::withoutGlobalScopes()
-        ->where('ref_tipo', (new CrmDeal)->getMorphClass())
+        ->where('ref_type', (new CrmDeal)->getMorphClass())
         ->where('ref_id', $deal->id)
         ->first();
 

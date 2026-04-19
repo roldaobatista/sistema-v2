@@ -85,7 +85,7 @@ class CriticalPathFlowTest extends TestCase
         $response = $this->postJson('/api/v1/work-orders', [
             'customer_id' => $customer->id,
             'description' => 'Test Lifecycle',
-            'priority' => 'normal',
+            'priority' => 'medium',
             'status' => 'draft',
             'type' => 'installation',
         ]);

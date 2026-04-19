@@ -132,7 +132,7 @@ export function CrmQuickNotesPage() {
                         <div className="grid grid-cols-2 gap-4">
                             <Controller control={control} name="channel" render={({ field }) => (
                                 <FormField label="Canal" error={errors.channel?.message}>
-                                    <Select value={field.value} onValueChange={field.onChange}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="telefone">Telefone</SelectItem><SelectItem value="presencial">Presencial</SelectItem><SelectItem value="whatsapp">WhatsApp</SelectItem><SelectItem value="email">E-mail</SelectItem></SelectContent></Select>
+                                    <Select value={field.value} onValueChange={field.onChange}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="phone">Telefone</SelectItem><SelectItem value="in_person">Presencial</SelectItem><SelectItem value="whatsapp">WhatsApp</SelectItem><SelectItem value="email">E-mail</SelectItem></SelectContent></Select>
                                 </FormField>
                             )} />
                             <Controller control={control} name="sentiment" render={({ field }) => (

@@ -48,7 +48,7 @@ class AgendaItemHistoryAndCommentRelationTest extends TestCase
 
         $this->item = AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'titulo' => 'Item raiz para regressao de relacao',
+            'title' => 'Item raiz para regressao de relacao',
         ]);
     }
 
@@ -83,7 +83,7 @@ class AgendaItemHistoryAndCommentRelationTest extends TestCase
 
         $this->assertInstanceOf(AgendaItem::class, $related);
         $this->assertSame($this->item->id, $related->id);
-        $this->assertSame('Item raiz para regressao de relacao', $related->titulo);
+        $this->assertSame('Item raiz para regressao de relacao', $related->title);
     }
 
     public function test_history_item_relation_usa_fk_agenda_item_id_no_sql(): void
@@ -117,14 +117,14 @@ class AgendaItemHistoryAndCommentRelationTest extends TestCase
         ]);
         $outroItem = AgendaItem::withoutGlobalScopes()->create([
             'tenant_id' => $outroTenant->id,
-            'tipo' => 'TASK',
-            'titulo' => 'Item de outro tenant',
-            'responsavel_user_id' => $outroUser->id,
-            'criado_por_user_id' => $outroUser->id,
+            'type' => 'TASK',
+            'title' => 'Item de outro tenant',
+            'assignee_user_id' => $outroUser->id,
+            'created_by_user_id' => $outroUser->id,
             'status' => 'ABERTO',
-            'prioridade' => 'MEDIA',
-            'origem' => 'MANUAL',
-            'visibilidade' => 'EQUIPE',
+            'priority' => 'MEDIA',
+            'origin' => 'MANUAL',
+            'visibility' => 'EQUIPE',
         ]);
 
         AgendaItemHistory::withoutGlobalScopes()->create([
@@ -205,14 +205,14 @@ class AgendaItemHistoryAndCommentRelationTest extends TestCase
         ]);
         $outroItem = AgendaItem::withoutGlobalScopes()->create([
             'tenant_id' => $outroTenant->id,
-            'tipo' => 'TASK',
-            'titulo' => 'Item de outro tenant',
-            'responsavel_user_id' => $outroUser->id,
-            'criado_por_user_id' => $outroUser->id,
+            'type' => 'TASK',
+            'title' => 'Item de outro tenant',
+            'assignee_user_id' => $outroUser->id,
+            'created_by_user_id' => $outroUser->id,
             'status' => 'ABERTO',
-            'prioridade' => 'MEDIA',
-            'origem' => 'MANUAL',
-            'visibilidade' => 'EQUIPE',
+            'priority' => 'MEDIA',
+            'origin' => 'MANUAL',
+            'visibility' => 'EQUIPE',
         ]);
 
         AgendaItemComment::withoutGlobalScopes()->create([

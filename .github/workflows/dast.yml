@@ -7,13 +7,17 @@ on:
         inputs:
             target_url:
                 description: "URL de staging para scan"
-                required: true
+                required: false
                 default: ""
 
 permissions:
     contents: read
     security-events: write
     issues: write
+
+env:
+    DAST_TARGET_URL: ${{ github.event.inputs.target_url || vars.DAST_TARGET_URL || 'http://127.0.0.1:8000' }}
+    DAST_LOCAL_TARGET: ${{ (github.event.inputs.target_url == '' || github.event.inputs.target_url == null) && (vars.DAST_TARGET_URL == '' || vars.DAST_TARGET_URL == null) }}
 
 jobs:
     zap-baseline:
@@ -22,10 +26,94 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
+            - name: Setup PHP for local DAST target
+              if: env.DAST_LOCAL_TARGET == 'true'
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: "8.4"
+                  extensions: mbstring, pdo_sqlite, sqlite3
+                  coverage: none
+
+            - name: Install backend dependencies for local DAST target
+              if: env.DAST_LOCAL_TARGET == 'true'
+              working-directory: backend
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y sqlite3
+                  composer install --no-interaction --prefer-dist
+
+            - name: Prepare local Laravel DAST target
+              if: env.DAST_LOCAL_TARGET == 'true'
+              working-directory: backend
+              run: |
+                  set -euo pipefail
+
+                  cp .env.example .env
+                  mkdir -p database public/docs storage/logs
+                  rm -f database/dast.sqlite
+                  touch database/dast.sqlite
+
+                  cat >> .env <<'ENV'
+                  APP_ENV=testing
+                  APP_DEBUG=false
+                  APP_URL=http://127.0.0.1:8000
+                  FRONTEND_URL=http://127.0.0.1:8000
+                  CACHE_STORE=array
+                  SESSION_DRIVER=array
+                  QUEUE_CONNECTION=sync
+                  REDIS_HOST=127.0.0.1
+                  REDIS_PASSWORD=null
+                  MAIL_MAILER=array
+                  LOG_CHANNEL=single
+                  TELESCOPE_ENABLED=false
+                  BOOST_ENABLED=false
+                  OTEL_SDK_DISABLED=true
+                  ENV
+                  {
+                      echo "DB_CONNECTION=sqlite"
+                      echo "DB_DATABASE=$GITHUB_WORKSPACE/backend/database/dast.sqlite"
+                  } >> .env
+
+                  php artisan key:generate --force
+                  php artisan migrate --force --no-interaction
+                  php artisan scramble:export --path=public/docs/api.json
+                  test -s public/docs/api.json
+
+            - name: Start local Laravel DAST target
+              if: env.DAST_LOCAL_TARGET == 'true'
+              working-directory: backend
+              run: |
+                  set -euo pipefail
+
+                  php artisan serve --host=127.0.0.1 --port=8000 > storage/logs/dast-server.log 2>&1 &
+                  echo "$!" > /tmp/kalibrium-dast-server.pid
+
+                  for attempt in $(seq 1 60); do
+                      if curl -fsS "$DAST_TARGET_URL/up" > /dev/null; then
+                          echo "Local DAST target ready at $DAST_TARGET_URL (attempt $attempt/60)"
+                          exit 0
+                      fi
+
+                      if ! kill -0 "$(cat /tmp/kalibrium-dast-server.pid)" 2>/dev/null; then
+                          echo "::error::Local DAST target exited before becoming healthy"
+                          cat storage/logs/dast-server.log || true
+                          exit 1
+                      fi
+
+                      sleep 2
+                  done
+
+                  echo "::error::Local DAST target did not become healthy"
+                  cat storage/logs/dast-server.log || true
+                  exit 1
+
+            - name: Validate DAST target
+              run: curl -fsS "$DAST_TARGET_URL/up" > /dev/null
+
             - name: ZAP Baseline Scan
               uses: zaproxy/action-baseline@v0.14.0
               with:
-                  target: ${{ github.event.inputs.target_url || vars.DAST_TARGET_URL || 'http://localhost' }}
+                  target: ${{ env.DAST_TARGET_URL }}
                   rules_file_name: ".zap/rules.tsv"
                   cmd_options: >
                       -j
@@ -42,16 +130,115 @@ jobs:
                   path: report_html.html
                   retention-days: 30
 
+            - name: Upload local DAST target logs
+              uses: actions/upload-artifact@v4
+              if: always() && env.DAST_LOCAL_TARGET == 'true'
+              with:
+                  name: zap-baseline-local-target-logs
+                  path: backend/storage/logs/*.log
+                  retention-days: 30
+
+            - name: Stop local Laravel DAST target
+              if: always() && env.DAST_LOCAL_TARGET == 'true'
+              run: |
+                  if [ -f /tmp/kalibrium-dast-server.pid ]; then
+                      kill "$(cat /tmp/kalibrium-dast-server.pid)" 2>/dev/null || true
+                  fi
+
     zap-api:
         name: ZAP API Scan
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
 
+            - name: Setup PHP for local DAST target
+              if: env.DAST_LOCAL_TARGET == 'true'
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: "8.4"
+                  extensions: mbstring, pdo_sqlite, sqlite3
+                  coverage: none
+
+            - name: Install backend dependencies for local DAST target
+              if: env.DAST_LOCAL_TARGET == 'true'
+              working-directory: backend
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y sqlite3
+                  composer install --no-interaction --prefer-dist
+
+            - name: Prepare local Laravel DAST target
+              if: env.DAST_LOCAL_TARGET == 'true'
+              working-directory: backend
+              run: |
+                  set -euo pipefail
+
+                  cp .env.example .env
+                  mkdir -p database public/docs storage/logs
+                  rm -f database/dast.sqlite
+                  touch database/dast.sqlite
+
+                  cat >> .env <<'ENV'
+                  APP_ENV=testing
+                  APP_DEBUG=false
+                  APP_URL=http://127.0.0.1:8000
+                  FRONTEND_URL=http://127.0.0.1:8000
+                  CACHE_STORE=array
+                  SESSION_DRIVER=array
+                  QUEUE_CONNECTION=sync
+                  REDIS_HOST=127.0.0.1
+                  REDIS_PASSWORD=null
+                  MAIL_MAILER=array
+                  LOG_CHANNEL=single
+                  TELESCOPE_ENABLED=false
+                  BOOST_ENABLED=false
+                  OTEL_SDK_DISABLED=true
+                  ENV
+                  {
+                      echo "DB_CONNECTION=sqlite"
+                      echo "DB_DATABASE=$GITHUB_WORKSPACE/backend/database/dast.sqlite"
+                  } >> .env
+
+                  php artisan key:generate --force
+                  php artisan migrate --force --no-interaction
+                  php artisan scramble:export --path=public/docs/api.json
+                  test -s public/docs/api.json
+
+            - name: Start local Laravel DAST target
+              if: env.DAST_LOCAL_TARGET == 'true'
+              working-directory: backend
+              run: |
+                  set -euo pipefail
+
+                  php artisan serve --host=127.0.0.1 --port=8000 > storage/logs/dast-server.log 2>&1 &
+                  echo "$!" > /tmp/kalibrium-dast-server.pid
+
+                  for attempt in $(seq 1 60); do
+                      if curl -fsS "$DAST_TARGET_URL/up" > /dev/null; then
+                          echo "Local DAST target ready at $DAST_TARGET_URL (attempt $attempt/60)"
+                          exit 0
+                      fi
+
+                      if ! kill -0 "$(cat /tmp/kalibrium-dast-server.pid)" 2>/dev/null; then
+                          echo "::error::Local DAST target exited before becoming healthy"
+                          cat storage/logs/dast-server.log || true
+                          exit 1
+                      fi
+
+                      sleep 2
+                  done
+
+                  echo "::error::Local DAST target did not become healthy"
+                  cat storage/logs/dast-server.log || true
+                  exit 1
+
+            - name: Validate DAST OpenAPI target
+              run: curl -fsS "$DAST_TARGET_URL/docs/api.json" > /dev/null
+
             - name: ZAP API Scan (OpenAPI/Scramble)
               uses: zaproxy/action-api-scan@v0.9.0
               with:
-                  target: "${{ github.event.inputs.target_url || vars.DAST_TARGET_URL || 'http://localhost' }}/docs/api.json"
+                  target: "${{ env.DAST_TARGET_URL }}/docs/api.json"
                   format: openapi
                   cmd_options: >
                       -j
@@ -65,3 +252,18 @@ jobs:
                   name: zap-api-report
                   path: report_html.html
                   retention-days: 30
+
+            - name: Upload local DAST target logs
+              uses: actions/upload-artifact@v4
+              if: always() && env.DAST_LOCAL_TARGET == 'true'
+              with:
+                  name: zap-api-local-target-logs
+                  path: backend/storage/logs/*.log
+                  retention-days: 30
+
+            - name: Stop local Laravel DAST target
+              if: always() && env.DAST_LOCAL_TARGET == 'true'
+              run: |
+                  if [ -f /tmp/kalibrium-dast-server.pid ]; then
+                      kill "$(cat /tmp/kalibrium-dast-server.pid)" 2>/dev/null || true
+                  fi

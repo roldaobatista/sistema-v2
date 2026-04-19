@@ -206,9 +206,9 @@ class MiscModulesDeepTest extends TestCase
         $ai = AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
             'user_id' => $this->user->id,
-            'tipo' => 'tarefa',
+            'type' => 'tarefa',
         ]);
-        $this->assertSame(AgendaItemType::TAREFA, $ai->tipo);
+        $this->assertSame(AgendaItemType::TAREFA, $ai->type);
     }
 
     public function test_agenda_item_completion(): void
@@ -228,9 +228,9 @@ class MiscModulesDeepTest extends TestCase
             $ai = AgendaItem::factory()->create([
                 'tenant_id' => $this->tenant->id,
                 'user_id' => $this->user->id,
-                'prioridade' => $priority,
+                'priority' => $priority,
             ]);
-            $this->assertSame($priority, $ai->prioridade->value);
+            $this->assertSame($priority, $ai->priority->value);
         }
     }
 

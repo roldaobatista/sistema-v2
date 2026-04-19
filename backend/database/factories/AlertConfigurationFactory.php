@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\AlertConfiguration;
 use App\Models\SystemAlert;
+use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class AlertConfigurationFactory extends Factory
@@ -15,7 +16,7 @@ class AlertConfigurationFactory extends Factory
         $types = array_keys(SystemAlert::TYPES);
 
         return [
-            'tenant_id' => 1,
+            'tenant_id' => Tenant::factory(),
             'alert_type' => fake()->unique()->randomElement($types),
             'is_enabled' => true,
             'channels' => ['database', 'email'],

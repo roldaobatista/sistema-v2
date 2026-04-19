@@ -50,8 +50,8 @@ class MiscControllersTest extends TestCase
     public function test_agenda_store(): void
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/agenda', [
-            'titulo' => 'Calibrar balança',
-            'tipo' => 'tarefa',
+            'title' => 'Calibrar balança',
+            'type' => 'tarefa',
         ]);
 
         $response->assertCreated();

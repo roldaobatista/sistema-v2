@@ -280,11 +280,11 @@ class WorkOrder extends Model
                 $workOrder->os_number = $workOrder->number;
             }
 
-            // Auto-atribuir SLA policy baseado na prioridade
+            // Auto-atribuir SLA policy baseado na priority
             if (! $workOrder->sla_policy_id && $workOrder->tenant_id) {
                 $slaPolicy = SlaPolicy::where('tenant_id', $workOrder->tenant_id)
                     ->where('is_active', true)
-                    ->where('priority', $workOrder->priority ?? 'normal')
+                    ->where('priority', $workOrder->priority ?? 'medium')
                     ->first();
 
                 if ($slaPolicy) {
@@ -448,7 +448,7 @@ class WorkOrder extends Model
     // ── Priority Constants ──
     public const PRIORITY_LOW = 'low';
 
-    public const PRIORITY_NORMAL = 'normal';
+    public const PRIORITY_MEDIUM = 'medium';
 
     public const PRIORITY_HIGH = 'high';
 
@@ -485,7 +485,7 @@ class WorkOrder extends Model
 
     public const PRIORITIES = [
         self::PRIORITY_LOW => ['label' => 'Baixa', 'color' => 'default'],
-        self::PRIORITY_NORMAL => ['label' => 'Normal', 'color' => 'info'],
+        self::PRIORITY_MEDIUM => ['label' => 'Média', 'color' => 'info'],
         self::PRIORITY_HIGH => ['label' => 'Alta', 'color' => 'warning'],
         self::PRIORITY_URGENT => ['label' => 'Urgente', 'color' => 'danger'],
     ];
@@ -1019,14 +1019,14 @@ class WorkOrder extends Model
             self::STATUS_CANCELLED => AgendaItemStatus::CANCELADO,
         ];
 
-        $titulo = "OS #{$this->business_number}";
+        $title = "OS #{$this->business_number}";
         if ($this->relationLoaded('customer') && $this->customer) {
-            $titulo .= " - {$this->customer->name}";
+            $title .= " - {$this->customer->name}";
         }
 
         return [
             'status' => $statusMap[$this->status] ?? AgendaItemStatus::ABERTO,
-            'titulo' => $titulo,
+            'title' => $title,
         ];
     }
 

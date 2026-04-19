@@ -18,8 +18,8 @@ class SendAgendaReminders extends Command
     {
         $sent = 0;
 
-        // Scheduler não tem contexto de tenant → BelongsToTenant scope bloquearia a query.
-        // Iterar por tenant e setar contexto antes de consultar.
+        // Scheduler não tem context de tenant → BelongsToTenant scope bloquearia a query.
+        // Iterar por tenant e setar context antes de consultar.
         Tenant::where('status', Tenant::STATUS_ACTIVE)
             ->pluck('id')
             ->each(function (int $tenantId) use (&$sent) {
@@ -27,7 +27,7 @@ class SendAgendaReminders extends Command
                     app()->instance('current_tenant_id', $tenantId);
 
                     $items = AgendaItem::query()
-                        ->with(['responsavel:id,name'])
+                        ->with(['assignee:id,name'])
                         ->whereNotNull('remind_at')
                         ->whereNull('remind_notified_at')
                         ->where('remind_at', '<=', now())
@@ -36,13 +36,13 @@ class SendAgendaReminders extends Command
 
                     foreach ($items as $item) {
                         try {
-                            if (! $item->responsavel_user_id) {
+                            if (! $item->assignee_user_id) {
                                 continue;
                             }
                             $item->gerarNotificacao(
                                 'central_reminder',
-                                'Lembrete: '.$item->titulo,
-                                $item->descricao_curta ?: 'Horário do lembrete chegou.',
+                                'Lembrete: '.$item->title,
+                                $item->short_description ?: 'Horário do lembrete chegou.',
                                 ['remind_at' => $item->remind_at?->toIso8601String()],
                                 ['icon' => 'clock', 'color' => 'amber']
                             );
