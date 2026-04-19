@@ -1,7 +1,9 @@
 # =====================================================================
 # DOCKER COMPOSE — SOMENTE DESENVOLVIMENTO LOCAL
 # NAO usar em producao, staging ou ambientes compartilhados.
-# Servicos expostos em localhost: MySQL (3307), Redis (6379), phpMyAdmin (8081).
+# Servicos publicados em portas dinamicas por padrao para permitir multiplos
+# worktrees locais. Defina MYSQL_HOST_PORT, REDIS_HOST_PORT e PMA_HOST_PORT
+# quando precisar de portas fixas.
 # Para producao, usar deploy/docker-compose.prod.yml ou configuracao do servidor.
 # =====================================================================
 # Uso: docker compose up -d
@@ -11,10 +13,12 @@
 services:
   mysql:
     image: mysql:8.0.40
-    container_name: sistema_mysql
     restart: unless-stopped
     ports:
-      - "3307:3306"
+      - target: 3306
+        published: ${MYSQL_HOST_PORT:-0}
+        protocol: tcp
+        mode: host
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
       MYSQL_DATABASE: ${DB_DATABASE:-sistema_local}
@@ -43,10 +47,12 @@ services:
 
   redis:
     image: redis:7.4-alpine
-    container_name: sistema_redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - target: 6379
+        published: ${REDIS_HOST_PORT:-0}
+        protocol: tcp
+        mode: host
     volumes:
       - redis_data:/data
     healthcheck:
@@ -64,10 +70,12 @@ services:
 
   phpmyadmin:
     image: phpmyadmin:5.2
-    container_name: sistema_pma
     restart: unless-stopped
     ports:
-      - "8081:80"
+      - target: 80
+        published: ${PMA_HOST_PORT:-0}
+        protocol: tcp
+        mode: host
     environment:
       PMA_HOST: mysql
       PMA_PORT: 3306
