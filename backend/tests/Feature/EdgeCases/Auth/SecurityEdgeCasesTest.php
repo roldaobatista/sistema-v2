@@ -159,7 +159,7 @@ test('successful login clears rate limiting counter', function () {
 });
 
 test('deactivated user cannot login', function () {
-    $this->user->update(['is_active' => false]);
+    $this->user->forceFill(['is_active' => false])->save();
 
     $response = $this->postJson('/api/v1/login', [
         'email' => 'testuser@example.com',

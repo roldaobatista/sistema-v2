@@ -253,7 +253,8 @@ class AuthController extends Controller
         try {
             $previousTenantId = $user->current_tenant_id;
 
-            $user->update(['current_tenant_id' => $tenantId]);
+            // SEC-08: `current_tenant_id` saiu de $fillable — usar forceFill().
+            $user->forceFill(['current_tenant_id' => $tenantId])->save();
 
             // SEC-RA-13: revogar TODOS os tokens do usuário ao trocar de tenant.
             // Garante que nenhum token antigo (de outro tenant) permanece valido

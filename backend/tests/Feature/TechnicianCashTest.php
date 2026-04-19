@@ -132,7 +132,7 @@ class TechnicianCashTest extends TestCase
     {
         $secondTenant = Tenant::factory()->create();
         $this->user->tenants()->attach($secondTenant->id, ['is_default' => false]);
-        $this->user->update(['current_tenant_id' => $secondTenant->id]);
+        $this->user->forceFill(['current_tenant_id' => $secondTenant->id])->save();
         app()->instance('current_tenant_id', $secondTenant->id);
 
         $technician = User::factory()->create([

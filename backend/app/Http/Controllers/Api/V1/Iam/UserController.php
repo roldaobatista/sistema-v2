@@ -85,16 +85,23 @@ class UserController extends Controller
 
         try {
             $user = DB::transaction(function () use ($validated, $tenantId) {
+                // SEC-08: `is_active` e `current_tenant_id` saíram de $fillable.
+                // O constructor mass-assignable preenche apenas os fillable;
+                // os campos sensíveis são atribuídos via forceFill() a partir
+                // de valores derivados do contexto (tenantId do user logado),
+                // não do body do request.
                 $user = new User([
                     'name' => $validated['name'],
                     'email' => $validated['email'],
                     'phone' => $validated['phone'] ?? null,
                     'password' => $validated['password'],
-                    'is_active' => $validated['is_active'] ?? true,
-                    'current_tenant_id' => $tenantId,
                     'branch_id' => $validated['branch_id'] ?? null,
                 ]);
-                $user->tenant_id = max(0, $tenantId);
+                $user->forceFill([
+                    'is_active' => $validated['is_active'] ?? true,
+                    'current_tenant_id' => $tenantId,
+                    'tenant_id' => max(0, $tenantId),
+                ]);
                 $user->save();
 
                 $user->tenants()->attach($tenantId, ['is_default' => true]);
@@ -137,13 +144,20 @@ class UserController extends Controller
 
         try {
             DB::transaction(function () use ($user, $validated) {
-                $data = collect($validated)->except(['roles', 'password'])->toArray();
+                // SEC-08: `is_active` saiu de $fillable. Extraímos separadamente
+                // e aplicamos via forceFill() — o FormRequest autoriza
+                // (Policy update), então mudança administrativa continua válida.
+                $data = collect($validated)->except(['roles', 'password', 'is_active'])->toArray();
 
                 if (! empty($validated['password']) && trim($validated['password']) !== '') {
                     $data['password'] = $validated['password'];
                 }
 
                 $user->update($data);
+
+                if (array_key_exists('is_active', $validated)) {
+                    $user->forceFill(['is_active' => (bool) $validated['is_active']])->save();
+                }
 
                 if (isset($validated['roles'])) {
                     $user->syncRoles($validated['roles']);
@@ -234,7 +248,8 @@ class UserController extends Controller
 
         try {
             DB::transaction(function () use ($user) {
-                $user->update(['is_active' => ! $user->is_active]);
+                // SEC-08: `is_active` saiu de $fillable — forceFill em path legítimo.
+                $user->forceFill(['is_active' => ! $user->is_active])->save();
 
                 if (! $user->is_active) {
                     $user->tokens()->delete();
@@ -695,7 +710,8 @@ class UserController extends Controller
         $validated = $request->validated();
 
         try {
-            $user->update(['denied_permissions' => $validated['denied_permissions']]);
+            // SEC-08: `denied_permissions` saiu de $fillable — forceFill em path legítimo.
+            $user->forceFill(['denied_permissions' => $validated['denied_permissions']])->save();
 
             AuditLog::log(
                 'updated',

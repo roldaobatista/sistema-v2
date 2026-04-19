@@ -119,7 +119,7 @@ class AuthSecurityTest extends TestCase
 
     public function test_login_sets_default_tenant_if_no_current(): void
     {
-        $this->activeUser->update(['current_tenant_id' => null]);
+        $this->activeUser->forceFill(['current_tenant_id' => null])->save();
 
         $response = $this->postJson('/api/v1/login', [
             'email' => 'active@test.com',
@@ -208,7 +208,7 @@ class AuthSecurityTest extends TestCase
     public function test_login_with_inactive_current_tenant_falls_back_to_active(): void
     {
         // Attach user to inactive tenant as current, and active tenant as alternative
-        $this->activeUser->update(['current_tenant_id' => $this->inactiveTenant->id]);
+        $this->activeUser->forceFill(['current_tenant_id' => $this->inactiveTenant->id])->save();
         $this->activeUser->tenants()->attach($this->inactiveTenant->id, ['is_default' => false]);
 
         $response = $this->postJson('/api/v1/login', [

@@ -90,7 +90,7 @@ test('deactivated user token is rejected for protected routes', function () {
     $token = $this->user->createToken('api', ['*'])->plainTextToken;
 
     // Deactivate user after token creation
-    $this->user->update(['is_active' => false]);
+    $this->user->forceFill(['is_active' => false])->save();
 
     // Try to access with the old token
     $response = $this->getJson('/api/v1/me', [

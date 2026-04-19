@@ -205,9 +205,10 @@ class TenantService
 
             if ($user->current_tenant_id === $tenant->id) {
                 $nextTenant = $user->tenants()->first();
-                $user->update([
+                // SEC-08: `current_tenant_id` saiu de $fillable — forceFill em path legítimo.
+                $user->forceFill([
                     'current_tenant_id' => $nextTenant?->id ?? $user->tenant_id,
-                ]);
+                ])->save();
             }
 
             AuditLog::log('deleted', "Usuário {$user->name} removido de {$tenant->name}", $user);

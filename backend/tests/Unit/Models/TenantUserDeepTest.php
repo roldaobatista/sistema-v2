@@ -129,7 +129,7 @@ class TenantUserDeepTest extends TestCase
     {
         $t2 = Tenant::factory()->create();
         $this->user->tenants()->attach($t2->id, ['is_default' => false]);
-        $this->user->update(['current_tenant_id' => $t2->id]);
+        $this->user->forceFill(['current_tenant_id' => $t2->id])->save();
         $this->assertEquals($t2->id, $this->user->fresh()->current_tenant_id);
     }
 

@@ -58,21 +58,29 @@ class User extends Authenticatable
         'cpf' => 'cpf_hash',
     ];
 
+    /**
+     * Campos mass-assignable.
+     *
+     * SEC-08 (Re-auditoria Camada 1, 2026-04-19): `is_active`,
+     * `current_tenant_id` e `denied_permissions` estão deliberadamente FORA
+     * do $fillable — expô-los permitiria escalonamento de privilégio,
+     * sequestro de tenant e bypass de denylist via body de qualquer endpoint
+     * que faça `User::create($request->validated())` ou `$user->update($v)`.
+     * Paths administrativos legítimos (login/switchTenant/toggleActive/
+     * syncDeniedPermissions) atribuem esses campos via `forceFill()->save()`.
+     */
     protected $fillable = [
         'name',
         'email',
         'email_verified_at',
         'phone',
         'password',
-        'is_active',
         'branch_id',
-        'current_tenant_id',
         'last_login_at',
         'location_lat',
         'location_lng',
         'location_updated_at',
         'status',
-        'denied_permissions',
         'google_calendar_token',
         'google_calendar_refresh_token',
         'google_calendar_email',
