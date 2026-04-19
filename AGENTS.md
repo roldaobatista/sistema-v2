@@ -13,6 +13,8 @@
 3. `docs/HIRING_SPEC.md` — agentes a contratar
 4. `docs/runbooks/ENVIRONMENT.md` — ambiente do VPS (o que já existe)
 5. `docs/runbooks/AUTONOMY.md` — regras de autonomia
+6. `.agent/rules/harness-engineering.md` — Harness Engineering: fluxo 7 passos e formato final 6+1
+7. `.agent/rules/iron-protocol.md` — Iron Protocol: leis invioláveis e sequência de boot
 
 ## Time (21 agentes — com 2 novos críticos)
 - 1 CEO (Opus 4.6)
