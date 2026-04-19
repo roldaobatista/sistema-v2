@@ -14,7 +14,7 @@ class UpdateAgendaRuleRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $nullable = ['descricao', 'evento_trigger', 'tipo_item', 'status_trigger', 'prioridade_minima', 'acao_config', 'responsavel_user_id', 'role_alvo'];
+        $nullable = ['description', 'event_trigger', 'item_type', 'status_trigger', 'min_priority', 'action_config', 'assignee_user_id', 'target_role'];
         $cleaned = [];
         foreach ($nullable as $field) {
             if ($this->has($field) && $this->input($field) === '') {
@@ -35,20 +35,20 @@ class UpdateAgendaRuleRequest extends FormRequest
         $prioridadeIn = ['low', 'medium', 'high', 'urgent'];
 
         return [
-            'nome' => ['sometimes', 'string', 'max:100'],
-            'descricao' => ['nullable', 'string', 'max:500'],
-            'ativo' => ['sometimes', 'boolean'],
-            'evento_trigger' => ['nullable', 'string', 'max:120'],
-            'tipo_item' => ['nullable', 'string', Rule::in($tipoItemIn)],
+            'name' => ['sometimes', 'string', 'max:100'],
+            'description' => ['nullable', 'string', 'max:500'],
+            'active' => ['sometimes', 'boolean'],
+            'event_trigger' => ['nullable', 'string', 'max:120'],
+            'item_type' => ['nullable', 'string', Rule::in($tipoItemIn)],
             'status_trigger' => ['nullable', 'string', 'max:50'],
-            'prioridade_minima' => ['nullable', 'string', Rule::in($prioridadeIn)],
-            'acao_tipo' => ['sometimes', 'string', Rule::in(['auto_assign', 'set_priority', 'set_due', 'notify'])],
-            'acao_config' => ['nullable', 'array'],
-            'responsavel_user_id' => [
+            'min_priority' => ['nullable', 'string', Rule::in($prioridadeIn)],
+            'action_type' => ['sometimes', 'string', Rule::in(['auto_assign', 'set_priority', 'set_due', 'notify'])],
+            'action_config' => ['nullable', 'array'],
+            'assignee_user_id' => [
                 'nullable',
                 Rule::exists('users', 'id')->where(fn ($q) => $q->where('tenant_id', $tenantId)),
             ],
-            'role_alvo' => ['nullable', 'string', 'max:100'],
+            'target_role' => ['nullable', 'string', 'max:100'],
         ];
     }
 

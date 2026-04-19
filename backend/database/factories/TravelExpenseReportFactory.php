@@ -20,7 +20,7 @@ class TravelExpenseReportFactory extends Factory
         return [
             'tenant_id' => Tenant::factory(),
             'travel_request_id' => TravelRequest::factory(),
-            'user_id' => User::factory(),
+            'created_by' => User::factory(),
             'total_expenses' => 0,
             'total_advances' => 0,
             'balance' => 0,

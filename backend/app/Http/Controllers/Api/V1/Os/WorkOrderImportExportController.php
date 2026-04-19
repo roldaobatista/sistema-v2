@@ -211,7 +211,7 @@ class WorkOrderImportExportController extends Controller
                         'assigned_to' => $techId,
                         'description' => trim($line['descricao'] ?? 'Serviço'),
                         'os_number' => trim($line['numero_os'] ?? $line['os_number'] ?? '') ?: null,
-                        'priority' => trim($line['prioridade'] ?? WorkOrder::PRIORITY_NORMAL),
+                        'priority' => trim($line['prioridade'] ?? WorkOrder::PRIORITY_MEDIUM),
                         'number' => WorkOrder::nextNumber($tenantId),
                         'created_by' => $userId,
                         'status' => $status,

@@ -71,6 +71,8 @@ Acionado por `/test-audit`. Audita cobertura de ACs e qualidade dos testes do di
 - [ ] Sem `sleep()` para esperar async — usar polling/retry/Bus::fake()?
 - [ ] Density de assertion >= 2 por teste?
 
+**Nota sobre `phpunit.xml defaultTestSuite`:** o default `"Default"` agrupa Unit+Feature+Smoke+Arch propositalmente — e o comando rodado em CI (`ci.yml`) e em `composer test:ci`. A piramide de escalada (especifico -> grupo -> testsuite -> full) esta documentada em `backend/tests/README.md` secao "Piramide de Escalada" com comandos explicitos (`--testsuite=Unit`, `--testsuite=Feature`, etc.). Nao reportar o agrupamento "Default" como finding se a escalada estiver documentada no README.
+
 **Saida:** lista de findings (severidade blocker/major/minor) com `arquivo:linha` + recomendacao concreta. Builder corrige -> /test-audit re-roda no mesmo escopo ate verde.
 
 ### Modo 3: regression-design
@@ -148,6 +150,15 @@ Templates completos em `backend/tests/README.md`.
 - **Flaky tolerance:** aceitar teste que falha "as vezes" — flaky e bug, nao azar.
 - **Mock hell:** mockar 15 dependencias — sinal que o design esta errado.
 - **Teste teologico:** `assertTrue($service->isValid())` sem definir o que "valid" significa.
+
+## Excecoes aceitas (nao reportar como finding)
+
+Decisoes documentadas em `docs/TECHNICAL-DECISIONS.md` que devem ser ignoradas em auditorias de QA:
+
+- **Testsuite `Arch` com apenas 1 arquivo** — §14.21.m (qa-11). Divida rastreada.
+- **`UnitTestCase` sem assertions arquiteturais de uso** — §14.21.m (qa-10). Baixo impacto.
+- **Cosmeticos S4 qa-08/09** — §14.21.m.
+- **`Factory::tenant_id => 1` em factories ja corrigidas pelo Bloco 6** — verificar codigo real antes de reportar.
 
 ## Handoff
 

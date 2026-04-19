@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-/** @global Intentionally global */
 class UserFavorite extends Model
 {
-    protected $fillable = ['user_id', 'favoritable_type', 'favoritable_id'];
+    use BelongsToTenant;
+
+    protected $fillable = ['tenant_id', 'user_id', 'favoritable_type', 'favoritable_id'];
 
     public function user(): BelongsTo
     {

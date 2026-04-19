@@ -1,0 +1,220 @@
+{
+  "auditor": "data-expert",
+  "camada": 1,
+  "rodada": 2,
+  "data": "2026-04-17",
+  "total_findings": 18,
+  "findings_corrigidos_da_r1": [
+    "DATA-009 (parcial — casts encrypted aplicados em InmetroBaseConfig.psie_password, InmetroWebhook.secret, FiscalWebhook.secret, PaymentGatewayConfig.api_key/api_secret, SsoConfig.client_secret, TwoFactorAuth.secret, MarketingIntegration.api_key, EmailAccount.imap_password, User.google_calendar_token, Customer.document, Supplier.document, EmployeeDependent.cpf — schema continua varchar pois cast é app-side)",
+    "DATA-015 (decidido em TECHNICAL-DECISIONS.md §14.1 — não re-escalar)"
+  ],
+  "findings_remanescentes_da_r1": [
+    "DATA-001",
+    "DATA-002",
+    "DATA-003",
+    "DATA-004",
+    "DATA-005",
+    "DATA-006",
+    "DATA-007",
+    "DATA-008",
+    "DATA-010",
+    "DATA-011",
+    "DATA-013",
+    "DATA-014",
+    "DATA-016"
+  ],
+  "findings_novos_introduzidos": [
+    "DATA-NEW-001",
+    "DATA-NEW-002",
+    "DATA-NEW-003",
+    "DATA-NEW-004",
+    "DATA-NEW-005"
+  ],
+  "findings": [
+    {
+      "id": "DATA-NEW-001",
+      "severity": "S0",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "Schema dump SQLite STALE — não contém migrations de abril (incluindo a nova add_document_hash)",
+      "motivo": "Apesar do mtime ter sido atualizado para 2026-04-17 12:54 (após a migration nova), o conteúdo do dump termina na migration id=409 ('2026_03_28_020000_align_legacy_webhooks_table_with_runtime_contract'). Faltam ~42 migrations de abril (verificadas via ls 2026_04_*.php = 42 arquivos). Isto significa que: (a) a regeneração via generate_sqlite_schema.php FALHOU silenciosamente (provavelmente porque o script depende de MySQL local — `sistema_mysql` host docker — que pode estar offline); (b) toda a suíte Pest com SQLite in-memory NÃO terá colunas `document_hash`, `cpf_hash`, nem nenhuma outra adição de abril; (c) o trait HasEncryptedSearchableField vai tentar escrever em `document_hash` em Customer/Supplier/User/EmployeeDependent e quebrar com 'no such column' OU será silenciosamente skipped pela trait — ambos os casos invalidam a Wave 1B. Esta é uma regressão CRÍTICA introduzida pelo workflow de Wave 1B.",
+      "sugestao": "1) Subir MySQL local (docker compose up sistema_mysql); 2) rodar `php artisan migrate:fresh` em MySQL; 3) rodar `php generate_sqlite_schema.php`; 4) verificar `grep -c document_hash backend/database/schema/sqlite-schema.sql` retorna >= 4; 5) commitar dump regenerado.",
+      "false_positive": false
+    },
+    {
+      "id": "DATA-NEW-002",
+      "severity": "S1",
+      "file": "backend/database/migrations/2026_04_17_120000_add_document_hash_for_encrypted_search.php",
+      "line": 95,
+      "title": "Migration usa ALTER TABLE ... MODIFY raw via DB::statement em MySQL — não-reversível em down() e quebra rollback",
+      "motivo": "Linha 95 executa `ALTER TABLE \\`customers\\` MODIFY \\`document\\` TEXT NULL` (e equivalente para suppliers/users/employee_dependents) sem registrar tipo original em down(). down() apenas dropa coluna *_hash mas NÃO reverte o `document` de TEXT para varchar(20). Em rollback: dados ficam em TEXT (irreversível para varchar(20) sem perda potencial). Falta aplicar `ALTER TABLE ... MODIFY ... varchar(20) NULL` no down().",
+      "sugestao": "Adicionar no down(): `if (in_array($driver, ['mysql','mariadb'])) { DB::statement(\"ALTER TABLE `$table` MODIFY `{$cfg['source']}` VARCHAR(20) NULL\"); }`. Atenção: se já houver payload encrypted (>20 chars) na coluna em prod no momento do rollback, o ALTER falha — documentar como rollback destrutivo.",
+      "false_positive": false
+    },
+    {
+      "id": "DATA-NEW-003",
+      "severity": "S1",
+      "file": "backend/database/migrations/2026_04_17_120000_add_document_hash_for_encrypted_search.php",
+      "line": 88,
+      "title": "Backfill heurística do hash pode produzir hashes inconsistentes em prod (dados parcialmente já encrypted)",
+      "motivo": "A heurística `strlen($raw) > 100 && preg_match('/^[A-Za-z0-9+\\/=]+$/', $raw)` para detectar payload encrypted é frágil: (a) CPF/CNPJ raw tem 11-14 chars, sempre passa; (b) mas se a tabela já tem alguns documentos parcialmente encriptados (ex: deploy intermitente, model com cast antes desta migration), o regex pode dar falso negativo (encrypted contém '=' e '/' mas Laravel Crypt encryptString retorna JSON base64 que começa com 'ey' e tem brackets). Documentos com tamanho 11-100 com caracteres especiais (ex: ponto/traço de CPF mascarado) NÃO serão hashados — backfill incompleto. Resultado: linhas órfãs sem document_hash, busca via trait falha.",
+      "sugestao": "Substituir heurística por flag de migration: rodar backfill APENAS em ambientes onde casts encrypted ainda não estão ativos (controlar via env var DOCUMENT_HASH_BACKFILL=raw|encrypted). Em modo encrypted, decryptar via `Crypt::decryptString()` em try/catch. Documentar em docs/operacional/ que esta migration deve rodar ANTES do deploy do cast encrypted nos models.",
+      "false_positive": false
+    },
+    {
+      "id": "DATA-NEW-004",
+      "severity": "S2",
+      "file": "backend/app/Models/Concerns/HasEncryptedSearchableField.php",
+      "line": null,
+      "title": "Trait HasEncryptedSearchableField não cobre cenário de update parcial — atualização de document sem novo hash deixa hash stale",
+      "motivo": "Trait sobrescreve `setAttribute()`, então funciona quando `document` é atualizado via `$model->document = $val`. Mas em mass update (`Model::where(...)->update(['document' => $val])`) o setAttribute NÃO é chamado — Laravel emite UPDATE direto. Resultado: document é atualizado mas document_hash fica com valor antigo, busca por hash retorna 0 ou registro errado. Isto é silencioso (sem erro) e induz vazamento entre tenants se o hash velho colidir com o de outro tenant.",
+      "sugestao": "Adicionar boot static method no trait que registra observer `updating` que sincroniza hash. Documentar no header: 'Mass update via QueryBuilder bypassa esta trait — sempre use $model->save()'. Alternativamente: adicionar generated column no MySQL (se MySQL 8.0.13+ suportar HMAC via UDF — não suporta nativamente, então apenas avisar via docblock).",
+      "false_positive": false
+    },
+    {
+      "id": "DATA-NEW-005",
+      "severity": "S2",
+      "file": "backend/database/migrations/2026_04_17_120000_add_document_hash_for_encrypted_search.php",
+      "line": 67,
+      "title": "Índice composto criado sem prefixo length em coluna varchar(64) — pode estourar limite do índice MySQL",
+      "motivo": "Index `customers_tenant_document_hash_idx` em (tenant_id, document_hash) onde document_hash é varchar(64). Tamanho total = 4 (int) + 64 chars * 4 bytes (utf8mb4) = 260 bytes. Limite InnoDB DYNAMIC row format = 3072 bytes — OK. Porém: se o engine está em COMPACT/REDUNDANT (legado), limite = 767 bytes — também OK. Mas o nome do índice tem 38 chars (`customers_tenant_document_hash_idx`) — abaixo do limite de 64 do MySQL — OK. Risco real: nome do índice `employee_dependents_tenant_cpf_hash_idx` = 41 chars — OK. False alarm leve, mas vale documentar precision do hash (HMAC-SHA256 = 64 hex chars) em migration para evitar futuras alterações que aumentem o tamanho.",
+      "sugestao": "Adicionar comentário no Blueprint: `string($cfg['hash'], 64)->comment('HMAC-SHA256 hex (sempre 64 chars)')`. Avaliar trocar por `char(64)` (fixo, mais eficiente que varchar quando tamanho é constante).",
+      "false_positive": false
+    },
+    {
+      "id": "DATA-001",
+      "severity": "S1",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "434 tabelas com coluna tenant_id mas ZERO índices em tenant_id (dump SQLite)",
+      "motivo": "grep `tenant_id integer` retorna 434 ocorrências; grep `create index .*_tenant_id_index` retorna 0. Embora SQLite reflita parcialmente (índices podem estar em formato `_tenant_id_unique` ou compostos), o número total de CREATE INDEX no dump é apenas 140 para 494 tabelas — descobertura grosseira de queries multi-tenant. Em MySQL prod, mesmo com BelongsToTenant global scope, sem índice toda query degrada para full scan filtrado por tenant_id em cada SELECT.",
+      "sugestao": "Auditar via MySQL prod (information_schema.STATISTICS) e criar migration `add_tenant_id_indexes_batch_*.php` cobrindo as 80% de tabelas mais acessadas (work_orders, customers, suppliers, equipment_calibrations, accounts_*, schedules, time_entries, etc.). Não criar índice em tabelas pivot — ajustar índice composto (tenant_id, FK).",
+      "false_positive": false
+    },
+    {
+      "id": "DATA-002",
+      "severity": "S2",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "150 tabelas com coluna deleted_at mas ZERO índices parciais (deleted_at IS NULL)",
+      "motivo": "grep `deleted_at` = 150 colunas; grep `create index.*deleted_at` = 0. Toda query padrão Eloquent com SoftDeletes faz `WHERE deleted_at IS NULL` — sem índice, full scan. SQLite não suporta índice parcial via dump, mas MySQL 8 suporta via `ALTER TABLE ... ADD INDEX (deleted_at)` ou índice composto (tenant_id, deleted_at).",
+      "sugestao": "Criar índice composto (tenant_id, deleted_at) nas 30 tabelas mais consultadas. Em MySQL 8.0+, considerar índice funcional `((CASE WHEN deleted_at IS NULL THEN 1 END))`.",
+      "false_positive": false
+    },
+    {
+      "id": "DATA-003",
+      "severity": "S1",
+      "file": "backend/database/migrations/",
+      "line": null,
+      "title": "33 child tables sem coluna tenant_id (busca por grep -L 'tenant_id' migrations)",
+      "motivo": "Grep retornou >40 migrations sem 'tenant_id'. Algumas são esperadas (users, cache, jobs, permission tables, personal_access_tokens), mas tabelas como email_attachments, central_subtasks, work_order_attachments são child de tabelas com tenant — vulnerabilidade H2: query direta na child sem JOIN com pai bypassa BelongsToTenant. Atacante com permissão de leitura na tabela child pode ver dados de outros tenants.",
+      "sugestao": "Para cada tabela child sem tenant_id: criar migration que adiciona tenant_id NOT NULL com backfill via JOIN do parent, FK composta (tenant_id, parent_id), e adiciona trait BelongsToTenant no model.",
+      "false_positive": false
+    },
+    {
+      "id": "DATA-004",
+      "severity": "S2",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": 1,
+      "title": "audit_logs.tenant_id NULLABLE — eventos de auditoria sem tenant escapam ao escopo H2",
+      "motivo": "Schema mostra `\"tenant_id\" integer DEFAULT NULL` em audit_logs. Audit log é o registro forense — registros NULL não aparecem em queries com global scope BelongsToTenant. Atacante pode forjar/disfarçar evento setando tenant_id=NULL para sumir dos relatórios LGPD.",
+      "sugestao": "Migration: backfill tenant_id NULL via JOIN com auditable_id (quando auditable_type tem trait BelongsToTenant); então `ALTER TABLE audit_logs MODIFY tenant_id BIGINT UNSIGNED NOT NULL`. Para eventos sem contexto tenant (ex: login global), usar tenant_id=0 ou tenant_id=auditável.",
+      "false_positive": false
+    },
+    {
+      "id": "DATA-005",
+      "severity": "S2",
+      "file": "backend/database/migrations/",
+      "line": null,
+      "title": "635 cascadeOnDelete vs 19 restrictOnDelete — proporção arriscada para tabelas críticas",
+      "motivo": "Contagem: cascade=635, restrict=19, set null=331. Cascata em massa em ERP financeiro/calibração é perigoso: drop de Tenant cascateia milhões de registros (calibrações, faturas, OS) sem soft delete intermediário. Auditoria normativa ISO 17025 exige preservação imutável de certificados — cascade em equipment_calibrations é violação direta.",
+      "sugestao": "Auditar caso a caso: (a) tabelas de negócio críticas (equipment_calibrations, fiscal_invoices, certificates, audit_logs) devem ser RESTRICT; (b) child tables de detalhe (work_order_items, calibration_readings) podem ser CASCADE; (c) FKs para users devem ser SET NULL (preservar histórico após desativação).",
+      "false_positive": false
+    },
+    {
+      "id": "DATA-006",
+      "severity": "S2",
+      "file": "backend/database/migrations/2026_04_*.php",
+      "line": null,
+      "title": "Pelo menos 17 migrations de abril SEM guards H3 (hasTable/hasColumn)",
+      "motivo": "Migrations listadas: add_ema_fields_to_calibration_readings, create_lgpd_tables, create_saas_billing_tables, create_crm_funnel_automations_table, add_asaas_id_to_customers_table, add_critical_analysis_fields_to_work_orders, add_traceability_fields_to_standard_weights, create_maintenance_reports_table, create_certificate_emission_checklists_table, add_normative_fields_to_equipment_calibrations, add_normative_fields_to_work_orders, add_environmental_to_calibration_readings, create_linearity_tests_table, add_decision_rule_parameters_to_equipment_calibrations, add_decision_result_to_equipment_calibrations, create_calibration_decision_logs_table, create_accreditation_scopes_table. Re-execução em ambiente parcialmente migrado falha com 'column already exists' / 'table already exists'. Wave 1B introduziu uma migration NOVA (add_document_hash) corretamente com guards — mas não consertou as 17 antigas.",
+      "sugestao": "Criar migration consolidada `2026_04_17_999999_repair_h3_guards_april.php` que NÃO altera schema mas serve como sentinel; OU re-fatorar cada uma das 17 para idempotência. Lei H3 diz 'migration mergeada é fóssil' — então a estratégia correta é criar nova migration que registra os fixes NEEDED via guards futuros.",
+      "false_positive": false
+    },
+    {
+      "id": "DATA-007",
+      "severity": "S2",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "customers/suppliers SEM UNIQUE composto (tenant_id, document) ou (tenant_id, document_hash) no schema",
+      "motivo": "grep no schema dump retorna VAZIO para 'unique' em customers e suppliers. Wave 1B adicionou validação `unique:customers,document_hash,...` em FormRequest mas (a) o schema dump nem tem document_hash (DATA-NEW-001); (b) FormRequest não substitui constraint de banco; (c) duas requests concorrentes podem criar mesmo CPF para mesmo tenant em race condition.",
+      "sugestao": "Após corrigir DATA-NEW-001 (regenerar dump), criar migration `add_unique_tenant_document_hash` com UNIQUE composto (tenant_id, document_hash) em customers e suppliers, e (tenant_id, cpf_hash) em users e employee_dependents.",
+      "false_positive": false
+    },
+    {
+      "id": "DATA-008",
+      "severity": "S2",
+      "file": "backend/database/migrations/",
+      "line": null,
+      "title": "12+ usos de morphs()/nullableMorphs() sem FK no banco — integridade só via Eloquent",
+      "motivo": "Locais: emails (linked), personal_access_tokens (tokenable), notifications (notifiable), price_histories (priceable), stock_integration tags (taggable), 200_features sourceable/followable/priceable, hr_advance, etc. morphs() do Laravel cria apenas `*_type varchar` + `*_id bigint` sem CHECK ou FK. Atacante pode setar `notifiable_type='App\\Models\\Customer', notifiable_id=999` apontando para customer de outro tenant — sem constraint. Soft-delete do parent não cascateia.",
+      "sugestao": "Migration: criar tabela polymorphic_owners(id, type, type_id, tenant_id) e referenciar via FK; OU manter morphs mas adicionar CHECK constraint listando types válidos (MySQL 8.0.16+) e índice composto (tenant_id, *_type, *_id).",
+      "false_positive": false
+    },
+    {
+      "id": "DATA-010",
+      "severity": "S3",
+      "file": "backend/database/migrations/",
+      "line": null,
+      "title": "Decimal precision inconsistente em campos financeiros — mistura decimal(12,2), decimal(15,2), decimal(10,2)",
+      "motivo": "Grep mostrou múltiplas precisions em campos similares: cost_price/sell_price decimal(12,2), discount/total/quantity/unit_price decimal(12,2). decimal(12,2) limita a R$ 9.999.999.999,99 (~10 bilhões). Para Kalibrium ERP de balanças industriais provavelmente OK, mas saas_billing/contract_value pode crescer — recomendado decimal(15,2) padrão para todos campos monetários.",
+      "sugestao": "Convencionar: monetário=decimal(15,2), quantidade=decimal(12,4), percentual=decimal(5,2). Documentar em docs/TECHNICAL-DECISIONS.md. Migration unificadora opcional (baixa prioridade).",
+      "false_positive": false
+    },
+    {
+      "id": "DATA-011",
+      "severity": "S3",
+      "file": "backend/database/schema/sqlite-schema.sql",
+      "line": null,
+      "title": "Timestamps datetime sem timezone (DATETIME vs TIMESTAMP/TIMESTAMPTZ)",
+      "motivo": "Todos created_at/updated_at usam datetime (SQLite mapeia para Laravel DATETIME, não TIMESTAMP). Em MySQL, DATETIME armazena valor literal (não converte fuso). Sistema multi-tenant pode ter usuários em fusos diferentes (BR -3, AC -5) — relatórios de 'pedidos do dia' podem dar resultado errado se timezone do tenant não for normalizado.",
+      "sugestao": "Avaliar mudar para TIMESTAMP no MySQL (auto-converte para UTC) ou padronizar no app: sempre gravar em UTC e renderizar no fuso do tenant. Decisão arquitetural — adicionar a TECHNICAL-DECISIONS.md.",
+      "false_positive": false
+    },
+    {
+      "id": "DATA-013",
+      "severity": "S3",
+      "file": "backend/app/Models/",
+      "line": null,
+      "title": "Mismatch SoftDeletes (rodada R2 mostrou 11 models com trait, 150 tabelas com deleted_at) — divergência entre R1 e R2",
+      "motivo": "R1 reportou 44 models com trait sem coluna; R2 (verificação automática via grep) retornou apenas 11 models com `use SoftDeletes` e nenhum mismatch detectado pelo script. Discrepância pode ser por: (a) trait importada mas usada via 'use SoftDeletes' em outra forma (ex: trait composta); (b) inferência de tabela errada no script. Vale re-rodar manualmente. Schema tem 150 colunas deleted_at — pode haver 100+ tabelas com coluna sem trait correspondente (R1 reportou Fleet como exemplo).",
+      "sugestao": "Re-auditar com script mais robusto que use grep recursivo em traits intermediárias. Se confirmado o número R1 de 44 mismatches, criar migration que dropa coluna ou models que adicionam trait.",
+      "false_positive": false
+    },
+    {
+      "id": "DATA-014",
+      "severity": "S3",
+      "file": "backend/database/migrations/2026_04_10_500000_fix_production_schema_drifts.php",
+      "line": null,
+      "title": "Migração fix_production_schema_drifts existe mas continua a evidenciar dívida de drift schema MySQL vs SQLite",
+      "motivo": "Confirmado existência do arquivo. Indica que houve drifts conhecidos entre prod MySQL e desenvolvimento. Sem schema dump consolidado MySQL (DATA-016) e com sqlite-schema.sql desatualizado (DATA-NEW-001), drifts continuarão reaparecendo. Cada drift é uma janela de regressão.",
+      "sugestao": "Estabelecer pipeline CI que compara schema MySQL prod vs sqlite-schema.sql vs migrations applied — bloquear merge se divergência. Ferramenta: `mysqldump --no-data --routines` + diff vs script gerado.",
+      "false_positive": false
+    },
+    {
+      "id": "DATA-016",
+      "severity": "S3",
+      "file": "backend/database/schema/",
+      "line": null,
+      "title": "Diretório schema/ contém apenas sqlite-schema.sql — sem dump MySQL consolidado para referência prod",
+      "motivo": "ls do diretório mostra somente `sqlite-schema.sql`. Não há `mysql-schema.sql` para referência ao schema de produção. Em projeto com 451 migrations e drifts conhecidos, a falta deste artefato dificulta auditoria estática (sem subir banco) e gera dependência de ambiente live para qualquer revisão de DBA externo.",
+      "sugestao": "Adicionar workflow: após cada deploy bem-sucedido, executar `mysqldump --no-data --routines --triggers $DB > backend/database/schema/mysql-schema.sql` e commitar. Documentar em deploy/DEPLOY.md.",
+      "false_positive": false
+    }
+  ],
+  "false_positives_marcados": [
+    "DATA-012 (charset utf8 sem mb4) — VERIFICADO em config/database.php: charset='utf8mb4', collation='utf8mb4_unicode_ci'. Está correto. Não escalar.",
+    "DATA-015 (S0 padrão multi-tenant ambíguo) — DECIDIDO em TECHNICAL-DECISIONS.md §14.1. Não re-escalar."
+  ],
+  "resumo_executivo": "Wave 1B endereçou parcialmente DATA-009 (encryption casts em 14 modelos) e introduziu trait HasEncryptedSearchableField bem desenhada, mas a migration nova `add_document_hash` tem 3 problemas (down() incompleto, backfill heurística frágil, generated column ausente) e — pior — o schema dump SQLite NÃO foi efetivamente regenerado (mtime atualizou mas conteúdo termina em 2026-03-28, sem document_hash/cpf_hash). Resultado: a suíte Pest com SQLite in-memory provavelmente está executando contra schema obsoleto, mascarando regressões e podendo aprovar testes que falhariam em MySQL prod. Dos 16 findings R1, apenas 2 foram fechados (DATA-009 parcial, DATA-015 decidido); 13 permanecem ativos; 5 problemas NOVOS identificados, sendo 1 S0 (schema stale)."
+}

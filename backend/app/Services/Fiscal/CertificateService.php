@@ -4,7 +4,6 @@ namespace App\Services\Fiscal;
 
 use App\Models\Tenant;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -42,7 +41,7 @@ class CertificateService
 
         $tenant->update([
             'fiscal_certificate_path' => $path,
-            'fiscal_certificate_password' => Crypt::encryptString($password),
+            'fiscal_certificate_password' => $password,
             'fiscal_certificate_expires_at' => $certInfo['expires_at'],
         ]);
 

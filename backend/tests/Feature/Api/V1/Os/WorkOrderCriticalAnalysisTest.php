@@ -48,7 +48,7 @@ class WorkOrderCriticalAnalysisTest extends TestCase
             'customer_id' => $this->customer->id,
             'description' => 'Calibração de balança de precisão',
             'service_type' => 'calibracao',
-            'priority' => 'normal',
+            'priority' => 'medium',
             'service_modality' => 'calibracao',
             'requires_adjustment' => true,
             'requires_maintenance' => false,
@@ -115,7 +115,7 @@ class WorkOrderCriticalAnalysisTest extends TestCase
             'customer_id' => $this->customer->id,
             'description' => 'Calibração sem declaração de conformidade',
             'service_type' => 'calibracao',
-            'priority' => 'normal',
+            'priority' => 'medium',
             'client_wants_conformity_declaration' => false,
             'decision_rule_agreed' => null,
         ];

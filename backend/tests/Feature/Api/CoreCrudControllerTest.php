@@ -58,7 +58,7 @@ class CoreCrudControllerTest extends TestCase
     {
         $response = $this->actingAs($this->admin)->postJson('/api/v1/customers', [
             'name' => 'Supermercado Teste LTDA',
-            'type' => 'company',
+            'type' => 'PJ',
             'document' => '11222333000181',
             'email' => 'contato@supermercadoteste.com',
             'phone' => '11999887766',
@@ -74,7 +74,7 @@ class CoreCrudControllerTest extends TestCase
     public function test_customer_store_fails_without_name(): void
     {
         $response = $this->actingAs($this->admin)->postJson('/api/v1/customers', [
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
         $response->assertUnprocessable();
     }

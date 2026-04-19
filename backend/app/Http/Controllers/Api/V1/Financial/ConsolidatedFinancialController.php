@@ -39,12 +39,23 @@ class ConsolidatedFinancialController extends Controller
     /**
      * GET /financial/consolidated
      * Returns a consolidated financial summary across all tenants the user has access to.
+     *
+     * EXCEÇÃO AUTORIZADA À LEI H1: este endpoint aceita um filtro de tenant via
+     * query string (`tenant_filter` ou `tenant_id` legado) por design — usuários
+     * com acesso a múltiplos tenants podem querer consolidar visão de UM deles.
+     * Segurança preservada: o filtro é validado contra `userTenantIds()` e SOMENTE
+     * é aplicado se o tenant pertencer ao escopo do usuário (caso contrário, é
+     * silenciosamente ignorado e retorna a visão padrão dos tenants permitidos).
+     * Não há leitura de `tenant_id` para escopo de escrita — apenas filtro de leitura.
      */
     public function index(IndexConsolidatedFinancialRequest $request): JsonResponse
     {
         try {
             $tenantIds = $this->userTenantIds($request);
-            $tenantFilter = $request->input('tenant_id');
+
+            // Aceita `tenant_filter` (semântica nova) ou `tenant_id` (legado).
+            // Nunca é confiado: validado contra os tenants do escopo do user.
+            $tenantFilter = $request->input('tenant_filter', $request->input('tenant_id'));
 
             if ($tenantFilter && in_array((int) $tenantFilter, $tenantIds, true)) {
                 $tenantIds = [(int) $tenantFilter];

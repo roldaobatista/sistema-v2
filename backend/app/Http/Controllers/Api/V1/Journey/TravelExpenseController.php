@@ -24,7 +24,7 @@ class TravelExpenseController extends Controller
                     'travel_request_id' => $travelRequest->id,
                 ],
                 [
-                    'user_id' => $request->user()->id,
+                    'created_by' => $request->user()->id,
                     'status' => 'submitted',
                 ],
             );

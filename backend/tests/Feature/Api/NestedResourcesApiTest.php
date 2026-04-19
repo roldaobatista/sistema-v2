@@ -395,7 +395,7 @@ class NestedResourcesApiTest extends TestCase
             ->postJson("/api/v1/equipments/{$eq->id}/calibrations", [
                 'calibration_date' => now()->format('Y-m-d'),
                 'calibration_type' => 'interna',
-                'result' => 'aprovado',
+                'result' => 'approved',
             ]);
 
         $response->assertSuccessful()

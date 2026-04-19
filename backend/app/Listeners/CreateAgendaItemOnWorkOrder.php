@@ -25,14 +25,14 @@ class CreateAgendaItemOnWorkOrder implements ShouldQueue
             AgendaItem::criarDeOrigem(
                 model: $wo,
                 tipo: AgendaItemType::OS,
-                titulo: "OS #{$wo->business_number} — {$wo->customer?->name}",
+                title: "OS #{$wo->business_number} — {$wo->customer?->name}",
                 responsavelId: $responsavel,
                 extras: [
-                    'prioridade' => $wo->priority === WorkOrder::PRIORITY_URGENT
+                    'priority' => $wo->priority === WorkOrder::PRIORITY_URGENT
                         ? AgendaItemPriority::URGENTE
                         : AgendaItemPriority::MEDIA,
                     'due_at' => $wo->received_at,
-                    'contexto' => [
+                    'context' => [
                         'numero' => $wo->business_number,
                         'cliente' => $wo->customer?->name,
                         'link' => "/os/{$wo->id}",

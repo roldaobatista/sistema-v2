@@ -172,6 +172,7 @@ Deteccao periodica de drift entre o CLAUDE.md (regras declaradas) e a realidade 
 | `no-archived-refs` | Codigo/docs ativos nao referenciam `docs/.archive/` |
 | `tenant-safety` | Nenhum `tenant_id` lido do request body em PR recente; `withoutGlobalScope` recente justificado em comentario |
 | `migrations-fossil` | Nenhuma alteracao em migration ja mergeada (regra H3) |
+| `migrations-timestamp-unico` | Novas migrations usam timestamp com sufixo `_500000+` para evitar colisao (ver `TECHNICAL-DECISIONS.md §14.19`). Os 10 pares duplicados historicos listados em §14.19 sao fossil aceito — NAO reportar |
 | `schema-dump-fresco` | `backend/database/schema/sqlite-schema.sql` foi atualizado apos cada migration nova |
 
 Findings com severidade (blocker/major/minor/advisory) + `file:line` + recomendacao concreta.
@@ -204,3 +205,21 @@ Findings com severidade (blocker/major/minor/advisory) + `file:line` + recomenda
 - **Gate como teatro:** auditoria que roda mas cujo resultado ninguem olha.
 - **Escalacao crua:** despejar relatorio tecnico ao usuario sem traduzir para impacto.
 - **Postmortem com culpado:** retrospectiva blameful — foca em pessoa, nao em mecanismo.
+
+## Excecoes aceitas (nao reportar como finding)
+
+Decisoes arquiteturais documentadas em `docs/TECHNICAL-DECISIONS.md` que devem ser ignoradas em auditorias de governanca:
+
+- **Migrations pre-2026-04-18 sem guards H3** — §14.21.b. ~70 migrations legadas sem `hasColumn`/`hasTable`/`hasIndex` sao fosseis imutaveis. Reportar apenas migrations criadas **depois** dessa data sem guards.
+- **Timestamps de migrations duplicados listados em §14.19** — 10 pares fosseis aceitos. Detectar apenas novos duplicados.
+- **Migration `2025_02_10_090000_*`** — §14.21.k. Timestamp anomalo fossil H3.
+- **`add_missing_columns_for_tests`, `fix_missing_columns_*`, `fix_production_schema_drifts`** — §14.21.i. Migrations historicas de reparo. Regra para frente: novas colunas via migration dedicada ao dominio.
+- **`user_id` em migrations pre-2026-04-18 onde convencao pede `created_by`** — §14.21.j. Fossil H3. Reportar apenas em migrations novas.
+- **Naming heterogeneo de indices (`_del_idx`, `_deleted_at_idx`, etc.)** — §14.21.l / §14.21.t. Cosmetico aceito.
+- **Cosmeticos S4 gov-04/06/09/10/13/14/15** — §14.21.l. Comentarios PT em migrations antigas, imports nao utilizados, naming cosmetico.
+- **Falsos positivos §14.18** — `RespondToProposalRequest`, `ExportCsvRequest`, `Advanced/*` Requests.
+- **Roles Spatie em PT (`tecnico`, `vendedor`, `gerente`, `motorista`)** — §14.23.a. Nomes canonicos do dominio operacional BR; rename quebraria auth/permissions.
+- **Calibration type `interna`/`externa`/`rastreada_rbc`** — §14.23.b. Terminologia ISO 17025 PT-BR.
+- **Central de Tarefas types (`TAREFA`, `PROJETO`, `LEMBRETE`, `CHAMADO`, `CALIBRACAO`, `ORCAMENTO`, `CONTRATO`)** — §14.23.c. Vocabulario de produto.
+- **Nivel hierarquico `pleno`** — §14.23.d. Enum hibrido EN/PT aceito pelo mercado BR.
+- **Manter detecção EN-only para:** status operacional generico (`paid`/`pending`/`approved`), `priority` (`low`/`medium`/`high`/`urgent`), flags booleanas, tipos tecnicos de framework.

@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property array<int|string, mixed>|null $subtasks
  * @property array<int|string, mixed>|null $default_watchers
  * @property array<int|string, mixed>|null $tags
- * @property bool|null $ativo
+ * @property bool|null $is_active
  * @property int|null $due_days
  */
 class AgendaTemplate extends Model
@@ -29,7 +29,7 @@ class AgendaTemplate extends Model
             'subtasks' => 'array',
             'default_watchers' => 'array',
             'tags' => 'array',
-            'ativo' => 'boolean',
+            'is_active' => 'boolean',
             'due_days' => 'integer',
         ];
 
@@ -47,27 +47,27 @@ class AgendaTemplate extends Model
 
         $item = AgendaItem::create(array_merge([
             'tenant_id' => $tenantId,
-            'tipo' => strtolower($this->tipo),
-            'origem' => 'manual',
-            'titulo' => $overrides['titulo'] ?? $this->nome,
-            'descricao_curta' => $overrides['descricao_curta'] ?? $this->descricao,
-            'responsavel_user_id' => $responsavelId,
-            'criado_por_user_id' => $user?->id ?? $responsavelId,
+            'type' => strtolower($this->type),
+            'origin' => 'manual',
+            'title' => $overrides['title'] ?? $this->name,
+            'short_description' => $overrides['short_description'] ?? $this->description,
+            'assignee_user_id' => $responsavelId,
+            'created_by_user_id' => $user?->id ?? $responsavelId,
             'status' => AgendaItemStatus::ABERTO,
-            'prioridade' => strtolower($this->prioridade),
-            'visibilidade' => strtolower($this->visibilidade),
+            'priority' => strtolower($this->priority),
+            'visibility' => strtolower($this->visibility),
             'due_at' => $this->due_days ? now()->addDays($this->due_days) : null,
             'tags' => $this->tags,
         ], $overrides));
 
         if (! empty($this->subtasks)) {
             foreach ($this->subtasks as $i => $sub) {
-                $title = is_array($sub) ? ($sub['titulo'] ?? $sub['title'] ?? '') : (string) $sub;
+                $title = is_array($sub) ? ($sub['title'] ?? $sub['title'] ?? '') : (string) $sub;
                 if ($title) {
                     $item->subtasks()->create([
                         'tenant_id' => $tenantId,
-                        'titulo' => $title,
-                        'ordem' => $i,
+                        'title' => $title,
+                        'sort_order' => $i,
                     ]);
                 }
             }

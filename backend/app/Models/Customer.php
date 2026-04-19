@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\HasEncryptedSearchableField;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -83,10 +84,19 @@ use Illuminate\Support\Carbon;
  */
 class Customer extends Model
 {
-    use Auditable, BelongsToTenant, HasFactory, Notifiable, SoftDeletes;
+    use Auditable, BelongsToTenant, HasEncryptedSearchableField, HasFactory, Notifiable, SoftDeletes;
+
+    /**
+     * Campos encrypted que precisam de coluna *_hash para busca determinística.
+     *
+     * @var array<string, string>
+     */
+    protected array $encryptedSearchableFields = [
+        'document' => 'document_hash',
+    ];
 
     protected $fillable = [
-        'tenant_id', 'type', 'name', 'trade_name', 'document', 'asaas_id', 'email',
+        'tenant_id', 'type', 'name', 'trade_name', 'document', 'document_hash', 'asaas_id', 'email',
         'phone', 'phone2', 'notes', 'is_active',
         'address_zip', 'address_street', 'address_number',
         'address_complement', 'address_neighborhood',
@@ -104,6 +114,19 @@ class Customer extends Model
         'contract_type', 'contract_start', 'contract_end', 'health_score',
         'last_contact_at', 'next_follow_up_at', 'assigned_seller_id',
         'tags', 'rating',
+    ];
+
+    /**
+     * SEC-021 (Audit Camada 1, Wave 1D): `document_hash` é hash determinístico
+     * (HMAC-SHA256 com APP_KEY) usado para busca em coluna encrypted. Expor em
+     * payloads JSON viabiliza ataque de dicionário offline contra CPF/CNPJ —
+     * domínio enumerável (~10^11). Ocultar de toArray()/toJson() preserva o
+     * benefício de busca interna sem vazamento da prova de existência do PII.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'document_hash',
     ];
 
     private static array $brazilianStates = [
@@ -170,6 +193,7 @@ class Customer extends Model
             'enrichment_data' => 'array',
             'latitude' => 'float',
             'longitude' => 'float',
+            'document' => 'encrypted',
         ];
     }
 

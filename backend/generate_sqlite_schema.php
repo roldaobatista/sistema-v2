@@ -94,6 +94,14 @@ function convertMysqlToSqlite(string $sql): string
     // Remove CHARACTER SET on columns
     $sql = preg_replace('/\s+CHARACTER\s+SET\s+\w+/i', '', $sql);
 
+    // Remove inline "charset X" (MySQL-specific, appears inside CAST() of generated columns)
+    $sql = preg_replace('/\s+charset\s+\w+/i', '', $sql);
+
+    // Convert MySQL charset-prefixed string literals (_utf8mb4'...' -> '...').
+    // Escopo restrito aos charsets que o MySQL emite para nao comer
+    // sublinhados legitimos dentro de strings (ex: 'America/Sao_Paulo').
+    $sql = preg_replace("/_(utf8|utf8mb3|utf8mb4|utf8mb5|latin1|ascii|binary|cp1252|big5|ujis|sjis)'/i", "'", $sql);
+
     // Remove COMMENT '...'
     $sql = preg_replace("/\s+COMMENT\s+'[^']*'/i", '', $sql);
 
@@ -129,8 +137,11 @@ function convertMysqlToSqlite(string $sql): string
     // Convert enum to varchar
     $sql = preg_replace("/enum\([^)]+\)/i", 'varchar', $sql);
 
-    // Extract UNIQUE KEYs before removing — create separate CREATE UNIQUE INDEX
+    // Extract UNIQUE KEYs and KEYs before removing — create separate CREATE (UNIQUE) INDEX.
+    // SQLite exige nome global unico de indice; prefixamos com a tabela para evitar colisao
+    // entre tabelas que reusam o mesmo nome de indice (ex.: "tenant_id_idx").
     $uniqueIndexes = [];
+    $regularIndexes = [];
     if (preg_match('/CREATE\s+TABLE\s+`([^`]+)`/i', $sql, $tableMatch)) {
         $tableName = $tableMatch[1];
         if (preg_match_all('/,\s*UNIQUE\s+KEY\s+`([^`]+)`\s*\(([^)]+)\)/i', $sql, $matches, PREG_SET_ORDER)) {
@@ -138,6 +149,20 @@ function convertMysqlToSqlite(string $sql): string
                 $idxName = $m[1];
                 $cols = str_replace('`', '"', $m[2]);
                 $uniqueIndexes[] = "CREATE UNIQUE INDEX \"{$idxName}\" ON \"{$tableName}\" ({$cols})";
+            }
+        }
+        if (preg_match_all('/,\s*KEY\s+`([^`]+)`\s*\(([^)]+)\)/i', $sql, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $m) {
+                $idxName = $m[1];
+                $cols = str_replace('`', '"', $m[2]);
+                // Remove length specifiers MySQL-only: `col`(191) -> "col"
+                $cols = preg_replace('/"([^"]+)"\(\d+\)/', '"$1"', $cols);
+                // Prefixa nome do indice com tabela se ja nao comecar com ela — evita
+                // colisao entre tabelas distintas com o mesmo indice curto (ex.: `status`).
+                $qualifiedName = str_starts_with($idxName, $tableName.'_')
+                    ? $idxName
+                    : "{$tableName}_{$idxName}";
+                $regularIndexes[] = "CREATE INDEX \"{$qualifiedName}\" ON \"{$tableName}\" ({$cols})";
             }
         }
     }
@@ -148,9 +173,10 @@ function convertMysqlToSqlite(string $sql): string
     $sql = preg_replace('/,\s*FULLTEXT\s+KEY\s+`[^`]+`\s*\([^)]+\)/i', '', $sql);
     $sql = preg_replace('/,\s*SPATIAL\s+KEY\s+`[^`]+`\s*\([^)]+\)/i', '', $sql);
 
-    // Append unique indexes after CREATE TABLE
-    if (! empty($uniqueIndexes)) {
-        $sql .= ";\n".implode(";\n", $uniqueIndexes);
+    // Append unique indexes and regular indexes after CREATE TABLE
+    $indexStatements = array_merge($uniqueIndexes, $regularIndexes);
+    if (! empty($indexStatements)) {
+        $sql .= ";\n".implode(";\n", $indexStatements);
     }
 
     // Remove CONSTRAINT ... FOREIGN KEY lines

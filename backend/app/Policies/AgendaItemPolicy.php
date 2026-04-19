@@ -37,7 +37,7 @@ class AgendaItemPolicy
         if ((int) $user->current_tenant_id !== (int) $model->tenant_id) {
             return false;
         }
-        if ($model->responsavel_user_id === $user->id || $model->criado_por_user_id === $user->id) {
+        if ($model->assignee_user_id === $user->id || $model->created_by_user_id === $user->id) {
             return $this->safeHasPermission($user, 'agenda.item.view');
         }
 

@@ -261,11 +261,13 @@ class InmetroReferenceSeeder extends Seeder
             $locationId = $this->upsertAndGetId(
                 'inmetro_locations',
                 [
+                    'tenant_id' => $tenantId,
                     'owner_id' => $ownerId,
                     'address_city' => $locationData['address_city'],
                     'address_street' => $locationData['address_street'],
                 ],
                 array_merge($locationData, [
+                    'tenant_id' => $tenantId,
                     'address_number' => $locationData['address_number'],
                     'state_registration' => "IE-{$tenantId}{$ownerId}",
                     'farm_name' => null,

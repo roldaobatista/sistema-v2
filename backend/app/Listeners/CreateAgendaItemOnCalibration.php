@@ -30,13 +30,13 @@ class CreateAgendaItemOnCalibration implements ShouldQueue
             AgendaItem::criarDeOrigem(
                 model: $equipment,
                 tipo: AgendaItemType::CALIBRACAO,
-                titulo: "Calibração vencendo — {$equipment->code} ({$equipment->brand} {$equipment->model})",
+                title: "Calibração vencendo — {$equipment->code} ({$equipment->brand} {$equipment->model})",
                 responsavelId: $responsavel,
                 extras: [
-                    'prioridade' => AgendaItemPriority::ALTA,
+                    'priority' => AgendaItemPriority::ALTA,
                     'due_at' => $equipment->next_calibration_at,
-                    'descricao_curta' => "Cliente: {$equipment->customer?->name}",
-                    'contexto' => [
+                    'short_description' => "Cliente: {$equipment->customer?->name}",
+                    'context' => [
                         'equipamento_id' => $equipment->id,
                         'codigo' => $equipment->code,
                         'cliente' => $equipment->customer?->name,

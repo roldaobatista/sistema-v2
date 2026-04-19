@@ -414,16 +414,16 @@ export default function TechCertificatePage() {
                                                 <span className="text-surface-500">Resultado:</span>{' '}
                                                 <span
                                                     className={cn(
-                                                        latestCalibration.result === 'aprovado'
+                                                        latestCalibration.result === 'approved'
                                                             ? 'text-emerald-600'
-                                                            : latestCalibration.result === 'reprovado'
+                                                            : latestCalibration.result === 'rejected'
                                                               ? 'text-red-600'
                                                               : 'text-amber-600'
                                                     )}
                                                 >
-                                                    {latestCalibration.result === 'aprovado'
+                                                    {latestCalibration.result === 'approved'
                                                         ? 'Aprovado'
-                                                        : latestCalibration.result === 'reprovado'
+                                                        : latestCalibration.result === 'rejected'
                                                           ? 'Reprovado'
                                                           : 'Aprovado com Ressalva'}
                                                 </span>

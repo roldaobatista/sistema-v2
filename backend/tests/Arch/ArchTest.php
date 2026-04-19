@@ -239,7 +239,10 @@ test('deploy.yml tem health check e rollback', function (): void {
 
     expect($content)->toContain('Health Check');
     expect($content)->toContain('Rollback');
-    expect($content)->toContain('workflow_run');
+    // Trigger atual: deploy manual via workflow_dispatch (commit b8c991e — 2026-04-17).
+    // Histórico: anteriormente era workflow_run após CI verde; mudou para manual
+    // intencionalmente para evitar deploy automático em todo push para main.
+    expect($content)->toContain('workflow_dispatch');
     expect($content)->not->toContain('pull_request');
 });
 

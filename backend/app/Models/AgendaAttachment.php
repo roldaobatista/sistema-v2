@@ -18,7 +18,7 @@ class AgendaAttachment extends Model
     protected $fillable = [
         'tenant_id',
         'agenda_item_id',
-        'nome',
+        'name',
         'path',
         'mime_type',
         'size',

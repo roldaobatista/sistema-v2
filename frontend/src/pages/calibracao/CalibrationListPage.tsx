@@ -202,11 +202,11 @@ export default function CalibrationListPage() {
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
                                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                                        cal.result === 'aprovado' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                                        cal.result === 'reprovado' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                                        cal.result === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                                        cal.result === 'rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
                                         'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
                                     }`}>
-                                        {cal.result === 'aprovado' ? 'Aprovado' : cal.result === 'reprovado' ? 'Reprovado' : 'Ressalva'}
+                                        {cal.result === 'approved' ? 'Aprovado' : cal.result === 'rejected' ? 'Reprovado' : 'Ressalva'}
                                     </span>
                                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                 </div>

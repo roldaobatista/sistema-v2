@@ -17,20 +17,19 @@ class CustomerLocation extends Model
     protected $fillable = [
         'tenant_id',
         'customer_id',
+        'name',
+        'address',
+        'city',
+        'state',
+        'zip_code',
         'latitude',
         'longitude',
+        'contact_name',
+        'contact_phone',
         'source',
         'source_id',
         'label',
         'collected_by',
-        'inscricao_estadual',
-        'nome_propriedade',
-        'tipo',
-        'endereco',
-        'bairro',
-        'cidade',
-        'uf',
-        'cep',
     ];
 
     protected function casts(): array

@@ -54,7 +54,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class AccountReceivable extends Model
 {
-    use Auditable, BelongsToTenant, Concerns\SetsCreatedBy, HasFactory, SoftDeletes, SyncsWithAgenda;
+    use Auditable, BelongsToTenant, Concerns\HasAuditUserFields, Concerns\SetsCreatedBy, HasFactory, SoftDeletes, SyncsWithAgenda;
 
     protected $table = 'accounts_receivable';
 
@@ -66,7 +66,7 @@ class AccountReceivable extends Model
         'penalty_amount', 'interest_amount', 'discount_amount',
         'status', 'payment_method', 'notes',
         'nosso_numero', 'numero_documento',
-        'created_by',
+        'created_by', 'updated_by', 'deleted_by',
     ];
 
     protected function casts(): array

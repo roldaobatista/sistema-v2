@@ -2231,7 +2231,7 @@ class Run400FlowsCommand extends Command
         if (! $woId) {
             return $this->gap('workOrderId não disponível.');
         }
-        $payload = ['priority' => 'urgent', 'description' => 'OS editada — prioridade urgente'];
+        $payload = ['priority' => 'urgent', 'description' => 'OS editada — priority urgente'];
         if ($techId) {
             $payload['assigned_to'] = $techId;
         }
@@ -2240,7 +2240,7 @@ class Run400FlowsCommand extends Command
             return $this->flowFail("PUT /work-orders/{$woId}: {$res['status_code']}");
         }
 
-        return $this->pass("OS ID={$woId} editada (prioridade=urgent).");
+        return $this->pass("OS ID={$woId} editada (priority=urgent).");
     }
 
     private function runFlow99(): array
@@ -7324,7 +7324,7 @@ class Run400FlowsCommand extends Command
         }
         $res = $this->apiPost('/central/items', [
             'title' => 'Tarefa completa — Flow394',
-            'description' => 'Tarefa com prioridade Alta, responsável, prazo e subtarefas.',
+            'description' => 'Tarefa com priority Alta, responsável, prazo e subtarefas.',
             'priority' => 'high',
             'due_date' => now()->addDays(7)->format('Y-m-d'),
             'assigned_to' => 1,

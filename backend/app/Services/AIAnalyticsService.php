@@ -95,7 +95,7 @@ class AIAnalyticsService
                 ->get();
 
             // Detectar duplicatas potenciais (mesmo valor + mesma data + mesmo usuário)
-            $grouped = $expenses->groupBy(fn ($e) => $e->user_id.'_'.$e->amount.'_'.Carbon::parse($e->date ?? $e->created_at)->toDateString());
+            $grouped = $expenses->groupBy(fn ($e) => $e->created_by.'_'.$e->amount.'_'.Carbon::parse($e->date ?? $e->created_at)->toDateString());
             $duplicates = [];
             foreach ($grouped as $key => $group) {
                 if ($group->count() > 1) {

@@ -175,8 +175,9 @@ class InmetroTest extends TestCase
         $response->assertOk()
             ->assertJsonStructure(['data' => ['customer_id']]);
 
+        // Wave 1B: `customers.document` é encrypted — comparar via `document_hash`.
         $this->assertDatabaseHas('customers', [
-            'document' => $owner->document,
+            'document_hash' => Customer::hashSearchable($owner->document, digitsOnly: true),
         ]);
 
         $this->assertDatabaseHas('inmetro_owners', [

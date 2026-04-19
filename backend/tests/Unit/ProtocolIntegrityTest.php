@@ -8,16 +8,21 @@ use PHPUnit\Framework\TestCase;
 /**
  * Protocol Integrity Test.
  *
- * Garante que a camada de governança do agente (Iron Protocol + Harness Engineering)
- * permaneça consistente entre os múltiplos arquivos que a referenciam.
+ * Garante que a camada de governança do agente (CLAUDE.md como fonte canônica
+ * autocontida + AGENTS.md + GEMINI.md como entrypoints multi-IA) permaneça
+ * consistente entre os arquivos que carregam o Iron Protocol e o modo
+ * operacional Harness.
  *
- * Se este teste falhar, significa que alguém editou um dos arquivos da cadeia de
- * carregamento (CLAUDE.md, AGENTS.md, GEMINI.md, arquivos em .agent/rules/ e em
- * .agent/skills/ always-on) e quebrou a referência cruzada ao arquivo
- * .agent/rules/harness-engineering.md. Corrigir restaurando a referência —
- * NÃO remover o assert.
+ * Histórico: até abr/2026 a fonte canônica vivia em `.agent/rules/iron-protocol.md`
+ * + `.agent/rules/harness-engineering.md` + skills always-on em `.agent/skills/`.
+ * Em 2026-04-17 o harness foi consolidado e `CLAUDE.md` virou autocontido (5 leis +
+ * Modo Operacional Harness 7 passos + formato 6+1). O diretório `.agent/` foi
+ * removido. AGENTS.md e GEMINI.md continuam como entrypoints alternativos para
+ * outras IAs (Codex/Antigravity) e ainda carregam o conteúdo Harness inline.
  *
- * Fonte canônica do protocolo: `.agent/rules/harness-engineering.md` (regra H5).
+ * Se este teste falhar, significa que alguém editou um dos entrypoints e quebrou
+ * a presença obrigatória do formato Harness 6+1 ou da palavra "Harness". Corrigir
+ * restaurando o conteúdo — NÃO remover o assert.
  */
 class ProtocolIntegrityTest extends TestCase
 {
@@ -36,8 +41,8 @@ class ProtocolIntegrityTest extends TestCase
         $this->assertFileExists(
             $absolute,
             "Protocol file missing: {$relativePath}. ".
-            'The Harness Engineering governance layer depends on this file. '.
-            'Restore it from git history instead of removing the test.'
+            'A camada de governança do agente depende deste arquivo. '.
+            'Restaurar do git history em vez de remover o teste.'
         );
 
         $contents = file_get_contents($absolute);
@@ -51,22 +56,17 @@ class ProtocolIntegrityTest extends TestCase
     }
 
     // ---------------------------------------------------------------------
-    // Existência do arquivo canônico
+    // CLAUDE.md é a fonte canônica autocontida (a partir de 2026-04-17)
     // ---------------------------------------------------------------------
 
-    public function test_harness_engineering_canonical_file_exists_and_has_required_sections(): void
+    public function test_claude_md_canonical_file_exists_and_has_harness_format(): void
     {
-        $contents = $this->readProjectFile('.agent/rules/harness-engineering.md');
+        $contents = $this->readProjectFile('CLAUDE.md');
 
-        // Marcadores obrigatórios da regra H5 (formato de resposta 6+1 itens).
+        // Marcadores obrigatórios do formato Harness 6+1 + fluxo de 7 passos.
+        // Estes são os blocos que TODA resposta de alteração de código deve conter.
         $requiredMarkers = [
-            'HARNESS ENGINEERING',
-            'H1',
-            'H2',
-            'H3',
-            'H5',
-            'H7',
-            'H8',
+            'Harness',
             'Resumo do problema',
             'Arquivos alterados',
             'Motivo técnico',
@@ -74,6 +74,7 @@ class ProtocolIntegrityTest extends TestCase
             'Resultado dos testes',
             'Riscos remanescentes',
             'Como desfazer',
+            // Fluxo de 7 passos
             'entender',
             'localizar',
             'propor',
@@ -84,21 +85,18 @@ class ProtocolIntegrityTest extends TestCase
         ];
 
         foreach ($requiredMarkers as $marker) {
-            // Case-insensitive: o bloco H5 usa UPPERCASE (RESUMO DO PROBLEMA, ARQUIVOS ALTERADOS, etc.)
-            // e o fluxo de 7 passos também é UPPERCASE (ENTENDER → LOCALIZAR → ...).
-            // Queremos apenas garantir presença conceitual, não capitalização exata.
             $this->assertStringContainsStringIgnoringCase(
                 $marker,
                 $contents,
-                "harness-engineering.md missing required marker: '{$marker}'. ".
-                'This marker is part of the canonical H5 response format or H1-H8 rules. '.
-                'Do NOT remove it without updating all referencing files.'
+                "CLAUDE.md missing required Harness marker: '{$marker}'. ".
+                'Este marcador é parte do formato canônico de resposta 6+1 ou do '.
+                'fluxo Harness de 7 passos. NÃO remover sem aprovação explícita.'
             );
         }
     }
 
     // ---------------------------------------------------------------------
-    // Referência cruzada: toda fonte de boot deve citar harness-engineering.md
+    // Referência cruzada: todo entrypoint deve carregar o formato Harness
     // ---------------------------------------------------------------------
 
     /**
@@ -107,35 +105,48 @@ class ProtocolIntegrityTest extends TestCase
     public static function bootEntrypointProvider(): array
     {
         return [
-            'CLAUDE.md (project entrypoint)' => ['CLAUDE.md'],
-            'AGENTS.md (project entrypoint)' => ['AGENTS.md'],
-            '.agent/rules/iron-protocol.md (canonical laws)' => ['.agent/rules/iron-protocol.md'],
+            'CLAUDE.md (Claude Code entrypoint)' => ['CLAUDE.md'],
+            'AGENTS.md (Codex/multi-IA entrypoint)' => ['AGENTS.md'],
+            'GEMINI.md (Antigravity entrypoint)' => ['GEMINI.md'],
         ];
     }
 
     #[DataProvider('bootEntrypointProvider')]
-    public function test_boot_entrypoint_references_harness_engineering_rule(string $relativePath): void
+    public function test_boot_entrypoint_carries_harness_format(string $relativePath): void
     {
         $contents = $this->readProjectFile($relativePath);
 
-        $this->assertStringContainsString(
-            'harness-engineering.md',
-            $contents,
-            "{$relativePath} does NOT reference `.agent/rules/harness-engineering.md`. ".
-            'Every boot entrypoint must point at the Harness Engineering rule to guarantee '.
-            'the 7-step flow and 6+1 response format are loaded. Restore the reference.'
-        );
-
-        $this->assertStringContainsString(
+        // Cada entrypoint deve nomear o protocolo explicitamente.
+        $this->assertStringContainsStringIgnoringCase(
             'Harness',
             $contents,
-            "{$relativePath} mentions the file path but not the 'Harness' name. ".
-            'The boot sequence and response format sections must name the protocol explicitly.'
+            "{$relativePath} não menciona 'Harness'. ".
+            'Todo entrypoint do agente deve nomear o protocolo explicitamente '.
+            'para que o formato 6+1 e o fluxo 7-passos sejam identificáveis.'
         );
+
+        // Subset essencial dos 6 itens obrigatórios — se algum sumir, o formato quebra.
+        $coreFormatMarkers = [
+            'Resumo do problema',
+            'Arquivos alterados',
+            'Testes executados',
+            'Resultado dos testes',
+            'Riscos remanescentes',
+        ];
+
+        foreach ($coreFormatMarkers as $marker) {
+            $this->assertStringContainsString(
+                $marker,
+                $contents,
+                "{$relativePath} não contém o item Harness obrigatório: '{$marker}'. ".
+                'Os 6 itens do formato de resposta devem aparecer em todos os entrypoints '.
+                'para garantir consistência cross-IA (Claude/Codex/Antigravity).'
+            );
+        }
     }
 
     // ---------------------------------------------------------------------
-    // GEMINI.md — usa formato Harness mesmo sem citar o path completo
+    // GEMINI.md — formato Harness inline (validação reforçada)
     // ---------------------------------------------------------------------
 
     public function test_gemini_response_format_section_is_harness_compliant(): void
@@ -157,61 +168,10 @@ class ProtocolIntegrityTest extends TestCase
                 $marker,
                 $contents,
                 "GEMINI.md missing Harness marker: '{$marker}'. ".
-                'GEMINI.md must carry the same 6-item response format as CLAUDE.md and AGENTS.md.'
+                'GEMINI.md deve carregar o mesmo formato 6 itens que CLAUDE.md e AGENTS.md '.
+                'para preservar consistência cross-IA.'
             );
         }
-    }
-
-    // ---------------------------------------------------------------------
-    // Skills sempre-ligadas do projeto devem aplicar Harness
-    // ---------------------------------------------------------------------
-
-    /**
-     * @return array<string, array{0: string, 1: string}>
-     */
-    public static function alwaysOnSkillProvider(): array
-    {
-        return [
-            'iron-protocol-bootstrap' => [
-                '.agent/skills/iron-protocol-bootstrap/SKILL.md',
-                'harness-engineering.md',
-            ],
-            'end-to-end-completeness' => [
-                '.agent/skills/end-to-end-completeness/SKILL.md',
-                'Harness',
-            ],
-        ];
-    }
-
-    #[DataProvider('alwaysOnSkillProvider')]
-    public function test_always_on_skill_references_harness(string $relativePath, string $marker): void
-    {
-        $contents = $this->readProjectFile($relativePath);
-
-        $this->assertStringContainsString(
-            $marker,
-            $contents,
-            "Always-on skill {$relativePath} does NOT reference '{$marker}'. ".
-            'Skills carregadas no boot DEVEM aplicar o Harness Engineering — sem isso, '.
-            'o fluxo 7-passos e o formato 6+1 ficam órfãos. Restaurar a referência.'
-        );
-    }
-
-    // ---------------------------------------------------------------------
-    // Boot sequence completa em iron-protocol.md deve carregar Harness
-    // ---------------------------------------------------------------------
-
-    public function test_iron_protocol_boot_sequence_loads_harness_at_step_4d(): void
-    {
-        $contents = $this->readProjectFile('.agent/rules/iron-protocol.md');
-
-        // Verifica que a linha da boot sequence contém o passo 4d com harness-engineering.
-        $this->assertMatchesRegularExpression(
-            '/4d\.\s*CARREGAR:\s*`\.agent\/rules\/harness-engineering\.md`/',
-            $contents,
-            'iron-protocol.md boot sequence does NOT include step 4d loading harness-engineering.md. '.
-            'This step is required so the operational mode is loaded alongside the laws.'
-        );
     }
 
     // ---------------------------------------------------------------------
@@ -227,7 +187,6 @@ class ProtocolIntegrityTest extends TestCase
             'CLAUDE.md' => ['CLAUDE.md'],
             'AGENTS.md' => ['AGENTS.md'],
             'GEMINI.md' => ['GEMINI.md'],
-            '.agent/rules/iron-protocol.md' => ['.agent/rules/iron-protocol.md'],
         ];
     }
 
@@ -242,9 +201,9 @@ class ProtocolIntegrityTest extends TestCase
         $this->assertDoesNotMatchRegularExpression(
             '/apresentar\s+sempre\s+estes\s+4\s+itens/i',
             $contents,
-            "{$relativePath} reintroduced the legacy 4-item response format. ".
-            'The canonical format is Harness H5 (6 obrigatórios + 1 opcional). '.
-            'See .agent/rules/harness-engineering.md.'
+            "{$relativePath} reintroduziu o formato legado de 4 itens. ".
+            'O formato canônico é Harness 6+1 (6 obrigatórios + 1 opcional "Como desfazer"). '.
+            'Ver seção "Modo Operacional — Harness" em CLAUDE.md.'
         );
     }
 }

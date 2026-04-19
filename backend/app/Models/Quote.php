@@ -560,9 +560,9 @@ class Quote extends Model
         $rawStatus = $this->status instanceof QuoteStatus ? $this->status->value : $this->status;
 
         return [
-            'titulo' => "Orçamento #{$this->quote_number}",
+            'title' => "Orçamento #{$this->quote_number}",
             'status' => $statusMap[$rawStatus] ?? AgendaItemStatus::ABERTO,
-            'prioridade' => $rawStatus === QuoteStatus::SENT->value ? AgendaItemPriority::ALTA : AgendaItemPriority::MEDIA,
+            'priority' => $rawStatus === QuoteStatus::SENT->value ? AgendaItemPriority::ALTA : AgendaItemPriority::MEDIA,
         ];
     }
 }

@@ -357,7 +357,7 @@ test('equipment has many calibrations', function () {
         'equipment_id' => $equipment->id,
         'calibration_date' => now(),
         'performed_by' => $this->user->id,
-        'result' => 'aprovado',
+        'result' => 'approved',
     ]);
 
     expect($equipment->calibrations()->count())->toBe(1);
@@ -396,7 +396,7 @@ test('soft deleting equipment preserves calibration history', function () {
         'equipment_id' => $equipment->id,
         'calibration_date' => now(),
         'performed_by' => $this->user->id,
-        'result' => 'aprovado',
+        'result' => 'approved',
     ]);
 
     $equipment->delete();

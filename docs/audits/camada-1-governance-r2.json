@@ -1,0 +1,180 @@
+{
+  "auditor": "governance",
+  "camada": 1,
+  "rodada": 2,
+  "data": "2026-04-17",
+  "total_findings": 16,
+  "findings_corrigidos_da_r1": [],
+  "findings_remanescentes_da_r1": [
+    "GOV-001",
+    "GOV-002",
+    "GOV-003",
+    "GOV-004",
+    "GOV-005",
+    "GOV-006",
+    "GOV-007",
+    "GOV-008",
+    "GOV-009",
+    "GOV-010",
+    "GOV-011",
+    "GOV-012",
+    "GOV-013",
+    "GOV-014"
+  ],
+  "findings_novos_introduzidos": [
+    "GOV-R2-015",
+    "GOV-R2-016"
+  ],
+  "findings": [
+    {
+      "id": "GOV-001",
+      "severidade": "major",
+      "lei": "H3 (Iron Protocol)",
+      "titulo": "168 migrations sem guards hasTable/hasColumn",
+      "evidencia": "h3_migrations_no_guards_count = 168 (de 450 total). Lista parcial: 0001_01_01_000000_create_users_table.php, 2026_02_07_200000_create_tenant_tables.php, 2026_02_07_200001_add_tenant_fields_to_users.php, 2026_02_07_223816_create_permission_tables.php, 2026_02_07_230000_create_rbac_extensions.php, 2026_02_07_300000_create_cadastros_tables.php, 2026_02_07_400000_create_work_order_tables.php (...). Nota: nem toda Schema::create() requer guard de fato (idempotência via dropIfExists no down basta), mas migrations ALTER e add_column SEM guards são H3-violator definitivos.",
+      "recomendacao": "Triagem: separar migrations Schema::create iniciais (aceitável sem guard) de ALTER/add posteriores (DEVEM ter guard). Wave futura para retrofit dos ALTERs sem guard."
+    },
+    {
+      "id": "GOV-002",
+      "severidade": "minor",
+      "lei": "Naming/coerência",
+      "titulo": "Migrations 'update_*_to_english' contêm valores PT-BR no down() — aceitável por design",
+      "evidencia": "backend/database/migrations/2026_03_16_600000_update_equipment_status_to_english.php:25-35 e 2026_03_16_600001_update_standard_weight_status_to_english.php:30-43 — método down() reverte para 'ativo','em_calibracao','fora_de_uso','descartado'. Wave 1 NÃO alterou estas migrations (corretamente: H3 — migrations mergeadas são fósseis).",
+      "recomendacao": "MARCAR COMO FALSO POSITIVO. Os termos PT no down() são parte do rollback semântico (reverter migração = restaurar estado anterior em PT). Comportamento correto."
+    },
+    {
+      "id": "GOV-003",
+      "severidade": "minor",
+      "lei": "H3 (Imutabilidade) + Naming",
+      "titulo": "Enum legado de standard_weights em PT permanece em backend/database/migrations/2026_02_12_200000_create_standard_weights_tables.php",
+      "evidencia": "Migration original 2026_02_12_200000_create_standard_weights_tables.php cria enum em PT; foi posteriormente migrado para string + dados em EN via 2026_03_16_600001 (correto, com schema change e data backfill). Não pode ser editado retroativamente (H3).",
+      "recomendacao": "MARCAR COMO RESOLVIDO/FÓSSIL. Migration histórica imutável. Correção já existe via to_english."
+    },
+    {
+      "id": "GOV-004",
+      "severidade": "major",
+      "lei": "CLAUDE.md — Regras Críticas (expenses.created_by, não user_id)",
+      "titulo": "Migração 2026_03_17_070000_add_missing_columns_for_tests.php adiciona expenses.user_id (proibido pelo CLAUDE.md)",
+      "evidencia": "backend/database/migrations/2026_03_17_070000_add_missing_columns_for_tests.php:156 — `if (! Schema::hasColumn('expenses', 'user_id'))` adiciona coluna user_id em expenses. CLAUDE.md (Regras Críticas): expenses.created_by (NÃO user_id).",
+      "recomendacao": "Wave futura: nova migration para renomear ou remover expenses.user_id (não-quebrante: usar coluna created_by em código)."
+    },
+    {
+      "id": "GOV-005",
+      "severidade": "minor",
+      "lei": "Naming/coerência",
+      "titulo": "travel_*.user_id (advances/expense_reports/requests) usa user_id",
+      "evidencia": "backend/database/migrations/2026_04_09_220005_create_travel_requests_table.php:18, 2026_04_09_220007_create_travel_advances_table.php:19, 2026_04_09_220008_create_travel_expense_reports_table.php:19 — todos `foreignId('user_id')->constrained()`.",
+      "recomendacao": "REVISAR EM CONJUNTO COM PRODUCT. user_id pode ser semanticamente correto (quem viaja é um User, não necessariamente technician). Não é violação direta da regra (regra é sobre expenses e schedules)."
+    },
+    {
+      "id": "GOV-006",
+      "severidade": "minor",
+      "lei": "Naming",
+      "titulo": "Migration com prefix 2025 quebra ordem cronológica esperada",
+      "evidencia": "backend/database/migrations/2025_02_10_090000_add_missing_columns_to_products.php (ÚNICA com prefix 2025). Demais migrations começam em 2026 ou 0001. Conteúdo é idempotente (hasTable/hasColumn). Roda ANTES de tudo.",
+      "recomendacao": "Renomear para 2026_xx ou 0001_xx (mas H3 impede edição). Aceitar como anomalia documentada."
+    },
+    {
+      "id": "GOV-007",
+      "severidade": "advisory",
+      "lei": "CLAUDE.md — Nunca comentar código",
+      "titulo": "Linhas comentadas em migration permission_tables",
+      "evidencia": "backend/database/migrations/2026_02_07_223816_create_permission_tables.php:24,34 — `// $table->engine('InnoDB');` (2 ocorrências). Vendor-style do Spatie. Migration mergeada (H3 imutável).",
+      "recomendacao": "Aceitar (origin Spatie). Não tocar (H3)."
+    },
+    {
+      "id": "GOV-008",
+      "severidade": "advisory",
+      "lei": "Coerência de comentários",
+      "titulo": "17+ migrations com comentários em PT-BR (mistura PT/EN)",
+      "evidencia": "Lista parcial: 2026_02_07_230000_create_rbac_extensions.php:20, 2026_02_07_300000_create_cadastros_tables.php:63, 2026_02_07_400000_create_work_order_tables.php:11, 2026_02_07_600000_create_financial_tables.php:45, 2026_02_08_100000_create_quotes_tables.php:60, 2026_02_08_400000_create_technician_cash_tables.php:28, 2026_02_08_700000_alter_equipments_v2.php:11, 2026_04_10_500000_fix_production_schema_drifts.php:83,134.",
+      "recomendacao": "Aceitar para migrations existentes (H3). Padronizar EN para novas migrations."
+    },
+    {
+      "id": "GOV-009",
+      "severidade": "minor",
+      "lei": "Drift histórico",
+      "titulo": "Existência da migration 2026_04_10_500000_fix_production_schema_drifts.php evidencia drift legado tratado (auto_assignment_rules.company_id → tenant_id)",
+      "evidencia": "backend/database/migrations/2026_04_10_500000_fix_production_schema_drifts.php:14,34,36,38 — corretiva já mergeada. Nenhuma ocorrência ativa de company_id em backend/app/.",
+      "recomendacao": "MARCAR COMO RESOLVIDO. Drift histórico já corrigido."
+    },
+    {
+      "id": "GOV-010",
+      "severidade": "minor",
+      "lei": "Naming/coerência",
+      "titulo": "9 pares de migrations com mesmo timestamp completo (segundo)",
+      "evidencia": "Pares confirmados: 2026_04_09_100000 (central_item_history_and_comments + crm_child_tables), 2026_03_26_400001 (esocial_events + non_conformities), 2026_03_24_000001 (clt_compliance + work_order_id), 2026_03_23_300002, 2026_03_23_300001, 2026_03_23_200006, 2026_03_22_200000, 2026_03_16_500001, 2026_03_16_000001. Laravel ordena alfabeticamente como tiebreaker — execução determinística mas frágil.",
+      "recomendacao": "Aceitar (H3). Padrão para novas migrations: garantir timestamp único."
+    },
+    {
+      "id": "GOV-011",
+      "severidade": "advisory",
+      "lei": "Naming",
+      "titulo": "Conflito timestamp 2026_03_20_120000 (commission_schema_legacy_residue + reconcile_accounts_payable_supplier_fk)",
+      "evidencia": "duplicated_minute_check listou par adicional além dos 9 acima.",
+      "recomendacao": "Mesmo de GOV-010: aceitar."
+    },
+    {
+      "id": "GOV-012",
+      "severidade": "advisory",
+      "lei": "Naming",
+      "titulo": "Conflitos de timestamp adicionais detectados — mesmo grupo de GOV-010/011",
+      "evidencia": "Total de 10 pares listados acima.",
+      "recomendacao": "Consolidar com GOV-010."
+    },
+    {
+      "id": "GOV-013",
+      "severidade": "advisory",
+      "lei": "Coerência",
+      "titulo": "Comentário menciona 'user_id do tecnico' em coluna technician_id",
+      "evidencia": "backend/database/migrations/2026_02_07_500000_create_technician_tables.php:17 — `$t->unsignedBigInteger('technician_id'); // user_id do técnico`",
+      "recomendacao": "Aceitar (H3 — migration mergeada)."
+    },
+    {
+      "id": "GOV-014",
+      "severidade": "minor",
+      "lei": "CLAUDE.md — Lei 3 (Sistema sempre funcional)",
+      "titulo": "Migrations com sufixo '_for_tests' indicam acoplamento de produção a teste",
+      "evidencia": "backend/database/migrations/2026_03_16_110000_fix_missing_columns_for_tests.php e 2026_03_17_070000_add_missing_columns_for_tests.php. Conteúdo é idempotente e adiciona colunas que MOdels e Controllers de produção dependem (commission_rules.percentage, commission_events.amount, commission_settlements.total etc). Nome induz erro: parecem 'só para teste' mas são SCHEMA DE PRODUÇÃO.",
+      "recomendacao": "Aceitar conteúdo (H3 — mergeadas). Documentar em TECHNICAL-DECISIONS que apesar do nome, são schema de produção."
+    },
+    {
+      "id": "GOV-R2-015",
+      "severidade": "blocker",
+      "lei": "CLAUDE.md — 'Após criar migration: SEMPRE regenerar schema dump'",
+      "titulo": "Schema dump SQLite NÃO foi regenerado após migration de Wave 1",
+      "evidencia": "backend/database/schema/sqlite-schema.sql última modificação: Apr 16 18:31 (anterior à migration nova: Apr 17 12:54). Grep por 'document_hash|cpf_hash' no schema dump retorna 0 ocorrências. Commit 86564cc afirma 'Schema dump regenerado' — mas o arquivo NÃO foi atualizado/comitado. Suite passou (9752/0) provavelmente porque migrations rodam em runtime nos testes, não usando o dump.",
+      "recomendacao": "BLOQUEIA encerramento da Wave 1. Rodar `cd backend && php generate_sqlite_schema.php` e comitar o schema atualizado contendo document_hash, cpf_hash e os 4 índices."
+    },
+    {
+      "id": "GOV-R2-016",
+      "severidade": "advisory",
+      "lei": "Harness/H7 (evidência antes de afirmação)",
+      "titulo": "Mensagem de commit 86564cc afirma 'Schema dump regenerado' — afirmação não verificável pelo diff",
+      "evidencia": "git diff HEAD~3 HEAD --stat NÃO contém backend/database/schema/sqlite-schema.sql na lista de arquivos modificados. Texto do commit afirma operação que não ocorreu. Violação H7.",
+      "recomendacao": "Lição para próximas Waves: validar que arquivos citados no commit message estão de fato no diff antes de comitar."
+    }
+  ],
+  "false_positives_marcados": [
+    "GOV-002 (down() em PT é semântica de rollback correto, não violação)",
+    "GOV-003 (migration mergeada — H3 imutável, correção já existe via to_english)",
+    "GOV-009 (drift legado já corrigido por fix_production_schema_drifts)"
+  ],
+  "verificacao_wave1": {
+    "migration_nova_h3_compliant": true,
+    "migration_nova_tem_down": true,
+    "migration_nova_tem_guards_hasColumn_hasTable": true,
+    "trait_HasEncryptedSearchableField_existe": true,
+    "trait_segue_padroes": true,
+    "models_alterados_sem_TODO_FIXME": true,
+    "models_alterados_sem_codigo_comentado": true,
+    "schema_dump_regenerado": false,
+    "no_verify_em_commits_recentes": false,
+    "markTestIncomplete_introduzido": false,
+    "assertTrue_true_introduzido": false,
+    "conflito_timestamp_com_migration_nova": false,
+    "td_secao_14_documentada": true,
+    "td_secao_14_completa_S0-1_S0-2_S0-3": true
+  },
+  "resumo_executivo": "Wave 1 implementou Iron Protocol H3 corretamente na migration nova (guards, down, indexExists, driver-aware), trait segue padrões e nenhum TODO/FIXME/comentário-de-código foi introduzido nos models alterados. PORÉM: 1 finding NOVO bloqueante — schema dump SQLite NÃO foi regenerado apesar do commit afirmar que sim (file mtime 16/Abr anterior à migration de 17/Abr; grep por document_hash/cpf_hash retorna 0). Dos 14 findings R1, nenhum foi corrigido em código (esperado: Wave 1 era escopo encryption-at-rest); 3 são marcados como falso-positivo (GOV-002/003/009) por serem H3-imutáveis ou semanticamente corretos. Total R2: 16 findings (14 R1 remanescentes + 2 novos: GOV-R2-015 blocker schema dump, GOV-R2-016 advisory H7 commit-message-vs-diff)."
+}

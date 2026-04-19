@@ -62,33 +62,33 @@ class ScanOverdueFinancials extends Command
             try {
                 $existing = AgendaItem::withoutGlobalScopes()
                     ->where('tenant_id', $tenant->id)
-                    ->where('ref_tipo', AccountReceivable::class)
+                    ->where('ref_type', AccountReceivable::class)
                     ->where('ref_id', $rec->id)
                     ->whereNotIn('status', [AgendaItemStatus::CONCLUIDO, AgendaItemStatus::CANCELADO])
                     ->first();
 
                 if ($existing) {
-                    // Atualizar prioridade conforme proximidade
-                    $existing->update(['prioridade' => $this->calcularPrioridade($rec->due_date)]);
+                    // Atualizar priority conforme proximidade
+                    $existing->update(['priority' => $this->calcularPrioridade($rec->due_date)]);
                     continue;
                 }
 
                 AgendaItem::withoutGlobalScopes()->create([
                     'tenant_id' => $tenant->id,
-                    'tipo' => AgendaItemType::FINANCEIRO,
-                    'origem' => AgendaItemOrigin::JOB,
-                    'ref_tipo' => AccountReceivable::class,
+                    'type' => AgendaItemType::FINANCEIRO,
+                    'origin' => AgendaItemOrigin::JOB,
+                    'ref_type' => AccountReceivable::class,
                     'ref_id' => $rec->id,
-                    'titulo' => 'Recebível vencendo — R$ '.number_format($rec->amount ?? 0, 2, ',', '.'),
-                    'descricao_curta' => "Cliente: {$rec->customer?->name} | Vence: {$rec->due_date?->format('d/m/Y')}",
-                    'responsavel_user_id' => $rec->created_by ?? $rec->user_id ?? 1,
-                    'criado_por_user_id' => 0, // Sistema
+                    'title' => 'Recebível vencendo — R$ '.number_format($rec->amount ?? 0, 2, ',', '.'),
+                    'short_description' => "Cliente: {$rec->customer?->name} | Vence: {$rec->due_date?->format('d/m/Y')}",
+                    'assignee_user_id' => $rec->created_by ?? $rec->user_id ?? 1,
+                    'created_by_user_id' => 0, // Sistema
                     'status' => AgendaItemStatus::ABERTO,
-                    'prioridade' => $this->calcularPrioridade($rec->due_date),
-                    'visibilidade' => AgendaItemVisibility::EQUIPE,
+                    'priority' => $this->calcularPrioridade($rec->due_date),
+                    'visibility' => AgendaItemVisibility::EQUIPE,
                     'due_at' => $rec->due_date,
-                    'contexto' => [
-                        'tipo' => 'recebivel',
+                    'context' => [
+                        'type' => 'recebivel',
                         'valor' => $rec->amount,
                         'cliente' => $rec->customer?->name,
                         'link' => '/financeiro/receber',
@@ -122,32 +122,32 @@ class ScanOverdueFinancials extends Command
             try {
                 $existing = AgendaItem::withoutGlobalScopes()
                     ->where('tenant_id', $tenant->id)
-                    ->where('ref_tipo', AccountPayable::class)
+                    ->where('ref_type', AccountPayable::class)
                     ->where('ref_id', $pay->id)
                     ->whereNotIn('status', [AgendaItemStatus::CONCLUIDO, AgendaItemStatus::CANCELADO])
                     ->first();
 
                 if ($existing) {
-                    $existing->update(['prioridade' => $this->calcularPrioridade($pay->due_date)]);
+                    $existing->update(['priority' => $this->calcularPrioridade($pay->due_date)]);
                     continue;
                 }
 
                 AgendaItem::withoutGlobalScopes()->create([
                     'tenant_id' => $tenant->id,
-                    'tipo' => AgendaItemType::FINANCEIRO,
-                    'origem' => AgendaItemOrigin::JOB,
-                    'ref_tipo' => AccountPayable::class,
+                    'type' => AgendaItemType::FINANCEIRO,
+                    'origin' => AgendaItemOrigin::JOB,
+                    'ref_type' => AccountPayable::class,
                     'ref_id' => $pay->id,
-                    'titulo' => 'Conta a pagar vencendo — R$ '.number_format($pay->amount ?? 0, 2, ',', '.'),
-                    'descricao_curta' => "Fornecedor: {$pay->supplierRelation?->name} | Vence: {$pay->due_date?->format('d/m/Y')}",
-                    'responsavel_user_id' => $pay->created_by ?? $pay->user_id ?? 1,
-                    'criado_por_user_id' => 0,
+                    'title' => 'Conta a pagar vencendo — R$ '.number_format($pay->amount ?? 0, 2, ',', '.'),
+                    'short_description' => "Fornecedor: {$pay->supplierRelation?->name} | Vence: {$pay->due_date?->format('d/m/Y')}",
+                    'assignee_user_id' => $pay->created_by ?? $pay->user_id ?? 1,
+                    'created_by_user_id' => 0,
                     'status' => AgendaItemStatus::ABERTO,
-                    'prioridade' => $this->calcularPrioridade($pay->due_date),
-                    'visibilidade' => AgendaItemVisibility::EQUIPE,
+                    'priority' => $this->calcularPrioridade($pay->due_date),
+                    'visibility' => AgendaItemVisibility::EQUIPE,
                     'due_at' => $pay->due_date,
-                    'contexto' => [
-                        'tipo' => 'pagavel',
+                    'context' => [
+                        'type' => 'pagavel',
                         'valor' => $pay->amount,
                         'fornecedor' => $pay->supplierRelation?->name,
                         'link' => '/financeiro/pagar',

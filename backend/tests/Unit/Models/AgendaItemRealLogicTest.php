@@ -64,7 +64,7 @@ class AgendaItemRealLogicTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'status' => AgendaItemStatus::ABERTO,
             'due_at' => now()->subDays(5),
-            'responsavel_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
         ]);
         $this->assertGreaterThanOrEqual(1, AgendaItem::atrasados()->count());
     }
@@ -75,9 +75,9 @@ class AgendaItemRealLogicTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'status' => AgendaItemStatus::CONCLUIDO,
             'due_at' => now()->subDays(5),
-            'responsavel_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
         ]);
-        $count = AgendaItem::atrasados()->where('responsavel_user_id', $this->user->id)->count();
+        $count = AgendaItem::atrasados()->where('assignee_user_id', $this->user->id)->count();
         $this->assertEquals(0, $count);
     }
 
@@ -87,10 +87,10 @@ class AgendaItemRealLogicTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'status' => AgendaItemStatus::CANCELADO,
             'due_at' => now()->subDays(5),
-            'responsavel_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
         ]);
         $countCancelled = AgendaItem::atrasados()
-            ->where('responsavel_user_id', $this->user->id)
+            ->where('assignee_user_id', $this->user->id)
             ->where('status', AgendaItemStatus::CANCELADO)
             ->count();
         $this->assertEquals(0, $countCancelled);
@@ -102,7 +102,7 @@ class AgendaItemRealLogicTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'status' => AgendaItemStatus::ABERTO,
             'due_at' => null,
-            'responsavel_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
         ]);
         $this->assertGreaterThanOrEqual(1, AgendaItem::semPrazo()->count());
     }
@@ -111,11 +111,11 @@ class AgendaItemRealLogicTest extends TestCase
     {
         AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'responsavel_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
         ]);
         AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'responsavel_user_id' => $this->user2->id,
+            'assignee_user_id' => $this->user2->id,
         ]);
         $count = AgendaItem::doUsuario($this->user->id)->count();
         $this->assertGreaterThanOrEqual(1, $count);
@@ -137,8 +137,8 @@ class AgendaItemRealLogicTest extends TestCase
     {
         AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'responsavel_user_id' => $this->user->id,
-            'visibilidade' => AgendaItemVisibility::PRIVADA,
+            'assignee_user_id' => $this->user->id,
+            'visibility' => AgendaItemVisibility::PRIVADA,
         ]);
         $count = AgendaItem::visivelPara($this->user->id)->count();
         $this->assertGreaterThanOrEqual(1, $count);
@@ -148,8 +148,8 @@ class AgendaItemRealLogicTest extends TestCase
     {
         AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'responsavel_user_id' => $this->user2->id,
-            'visibilidade' => AgendaItemVisibility::EMPRESA,
+            'assignee_user_id' => $this->user2->id,
+            'visibility' => AgendaItemVisibility::EMPRESA,
         ]);
         $count = AgendaItem::visivelPara($this->user->id)->count();
         $this->assertGreaterThanOrEqual(1, $count);
@@ -197,9 +197,9 @@ class AgendaItemRealLogicTest extends TestCase
     {
         $item = AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'tipo' => AgendaItemType::TAREFA,
+            'type' => AgendaItemType::TAREFA,
         ]);
-        $this->assertInstanceOf(AgendaItemType::class, $item->tipo);
+        $this->assertInstanceOf(AgendaItemType::class, $item->type);
     }
 
     public function test_status_cast(): void
@@ -215,9 +215,9 @@ class AgendaItemRealLogicTest extends TestCase
     {
         $item = AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'prioridade' => AgendaItemPriority::ALTA,
+            'priority' => AgendaItemPriority::ALTA,
         ]);
-        $this->assertInstanceOf(AgendaItemPriority::class, $item->prioridade);
+        $this->assertInstanceOf(AgendaItemPriority::class, $item->priority);
     }
 
     public function test_tags_cast_array(): void
@@ -246,7 +246,7 @@ class AgendaItemRealLogicTest extends TestCase
     {
         $item = AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'responsavel_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
         ]);
         $this->assertInstanceOf(User::class, $item->responsavel);
         $this->assertEquals($this->user->id, $item->responsavel->id);
@@ -285,7 +285,7 @@ class AgendaItemRealLogicTest extends TestCase
     {
         $item = AgendaItem::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'responsavel_user_id' => $this->user->id,
+            'assignee_user_id' => $this->user->id,
         ]);
 
         $history = $item->registrarHistorico(

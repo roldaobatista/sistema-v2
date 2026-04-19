@@ -161,11 +161,11 @@ class QuoteApprovalListenersTest extends TestCase
             ->first();
 
         $this->assertNotNull($item);
-        $this->assertSame($seller->id, $item->responsavel_user_id);
-        $this->assertStringContainsString('ORC-05555', $item->titulo);
-        $this->assertSame('ORC-05555', data_get($item->contexto, 'numero'));
-        $this->assertSame('magic_link', data_get($item->contexto, 'approval_channel'));
-        $this->assertSame('Cliente Alpha', data_get($item->contexto, 'approved_by_name'));
+        $this->assertSame($seller->id, $item->assignee_user_id);
+        $this->assertStringContainsString('ORC-05555', $item->title);
+        $this->assertSame('ORC-05555', data_get($item->context, 'numero'));
+        $this->assertSame('magic_link', data_get($item->context, 'approval_channel'));
+        $this->assertSame('Cliente Alpha', data_get($item->context, 'approved_by_name'));
     }
 
     public function test_quote_approval_observer_does_not_create_redundant_system_activity_for_quote(): void

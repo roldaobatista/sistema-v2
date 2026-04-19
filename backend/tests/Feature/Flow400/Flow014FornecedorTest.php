@@ -4,6 +4,7 @@ namespace Tests\Feature\Flow400;
 
 use App\Models\Branch;
 use App\Models\Role;
+use App\Models\Supplier;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -68,12 +69,13 @@ class Flow014FornecedorTest extends TestCase
         $id = $res->json('data.id');
         $this->assertArrayHasKey('id', $res->json('data'));
 
-        // Fluxo completo: persistência no banco
+        // Fluxo completo: persistência no banco.
+        // Wave 1B: `suppliers.document` é encrypted — comparar via `document_hash`.
         $this->assertDatabaseHas('suppliers', [
             'id' => $id,
             'name' => 'Distribuidora de Metais ABC',
             'type' => 'PJ',
-            'document' => '44.332.211/0001-55',
+            'document_hash' => Supplier::hashSearchable('44.332.211/0001-55', digitsOnly: true),
         ]);
     }
 }

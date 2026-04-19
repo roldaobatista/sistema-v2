@@ -1,0 +1,211 @@
+{
+    "auditor": "security-expert",
+    "camada": 1,
+    "rodada": 1,
+    "data": "2026-04-17",
+    "total_findings": 20,
+    "findings": [
+        {
+            "id": "SEC-001",
+            "severity": "S1",
+            "file": "backend/database/migrations/2026_02_14_070000_create_remaining_module_tables.php",
+            "line": 80,
+            "title": "payment_gateway_configs.api_key/api_secret armazenados em plain text",
+            "motivo": "Colunas text(api_key) e text(api_secret) nao usam criptografia. Vazam credenciais de gateways de pagamento (Asaas, Pagar.me, etc.) caso o banco seja comprometido. Viola LGPD art.46 (medidas tecnicas) e PCI-DSS 3.4 (proteger credenciais). Criticidade alta porque um gateway compromised = saque de cobrancas reais para conta do atacante.",
+            "sugestao": "Aplicar Cast encrypted no Model (Crypt::encryptString) ou usar Laravel encrypted column casts. Migration: text() permanece, mas Model declara $casts = [api_key => encrypted, api_secret => encrypted]. Rotar todas as keys atuais apos deploy.",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-002",
+            "severity": "S1",
+            "file": "backend/database/migrations/2026_02_14_060000_create_portal_integration_security_tables.php",
+            "line": 222,
+            "title": "user_2fa.secret armazenado em text plain (nao criptografado)",
+            "motivo": "O secret TOTP do 2FA e armazenado como text() sem encryption. Se o DB vaza, o atacante reproduz codigos 2FA de TODOS os usuarios e contorna MFA. RFC 6238 + OWASP MFA Cheat Sheet exigem secret criptografado em repouso. Mesma falha em backup_codes (text plain).",
+            "sugestao": "Cast encrypted no Model User2fa para colunas secret e backup_codes. Forcar reset de 2FA de todos os usuarios apos deploy (invalidar secrets antigos).",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-003",
+            "severity": "S1",
+            "file": "backend/database/migrations/2026_02_14_060000_create_portal_integration_security_tables.php",
+            "line": 209,
+            "title": "marketing_integrations.api_key armazenado em text plain",
+            "motivo": "Colunas text(api_key) sem encryption permitem vazamento de tokens de RD Station/Mailchimp/HubSpot caso DB seja comprometido. Tokens de marketing dao acesso a base de leads (LGPD art.5).",
+            "sugestao": "Aplicar cast encrypted no Model. Rotar tokens apos deploy.",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-004",
+            "severity": "S1",
+            "file": "backend/database/migrations/2026_02_14_060000_create_portal_integration_security_tables.php",
+            "line": null,
+            "title": "whatsapp_configs.api_key armazenado em varchar(255) plain",
+            "motivo": "API key do provedor WhatsApp (Evolution API) em plain text. Vazamento permite envio de mensagens em nome do tenant + acesso a historico de conversas (PII de clientes).",
+            "sugestao": "Aplicar cast encrypted no Model WhatsappConfig.",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-005",
+            "severity": "S1",
+            "file": "backend/database/migrations/2026_02_14_060000_create_portal_integration_security_tables.php",
+            "line": 183,
+            "title": "OAuth client_secret armazenado em text plain",
+            "motivo": "Coluna text(client_secret) sem encryption. Client secret de OAuth = credencial de acesso a API externa. Vazamento permite impersonar a aplicacao (OAuth 2.1 sec 2.4 exige proteger secrets em repouso).",
+            "sugestao": "Aplicar cast encrypted. Rotar client_secrets apos deploy.",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-006",
+            "severity": "S1",
+            "file": "backend/database/migrations/2026_02_13_170000_inmetro_v3_50features.php",
+            "line": 121,
+            "title": "webhooks.secret/inmetro_webhooks.secret/fiscal_webhooks.secret em plain text (varchar)",
+            "motivo": "Secrets de assinatura HMAC de webhooks armazenados em plain. Atacante que vaza o DB pode forjar webhooks (ex: notificacao de pagamento confirmado) com assinatura valida \u2014 bypass total de validacao downstream. Consistente com webhooks (varchar(64)), inmetro_webhooks (varchar(100)), fiscal_webhooks (varchar(64)).",
+            "sugestao": "Aplicar cast encrypted nos Models Webhook/InmetroWebhook/FiscalWebhook. Rotar secrets apos deploy.",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-007",
+            "severity": "S1",
+            "file": "backend/database/migrations/2026_02_07_300000_create_cadastros_tables.php",
+            "line": 39,
+            "title": "customers.document (CPF/CNPJ) em plain text sem encryption-at-rest",
+            "motivo": "CPF e dado pessoal sensivel sob LGPD (art.5 II). Armazenado como string(20) sem encryption ou hash. Vazamento expoe identificadores nacionais de toda a base de clientes. Mesma falha em suppliers.document, employee_dependents.cpf, users.cpf (varchar(11)), inmetro_competitors.cpf.",
+            "sugestao": "Decisao de produto necessaria: (a) cast encrypted (deterministic se precisa de busca por CPF) ou (b) hash + ultimos 3 digitos visiveis. Documentar base legal LGPD do tratamento (execucao de contrato art.7 V). Adicionar campo document_hash para busca.",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-008",
+            "severity": "S0",
+            "file": "backend/database/migrations/2026_02_07_300000_create_cadastros_tables.php",
+            "line": null,
+            "title": "Inexistencia de tabela/mecanismo de consentimento LGPD para PII coletada",
+            "motivo": "Sistema coleta CPF, CNPJ, email, telefone, endereco de customers/employees/dependents sem tabela de consentimento (lgpd_consents) nem campo data_retention. LGPD art.8 exige consentimento rastreavel; art.16 exige limite de retencao. Decisao de produto: anonimizacao vs hard-delete em direito ao esquecimento (art.18).",
+            "sugestao": "Decidir approach LGPD com DPO: criar lgpd_consents (tenant_id, subject_id, basis, granted_at, revoked_at, purpose), data_retention_policies, e implementar /api/lgpd/forget endpoint. Documentar em ROPA.",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-009",
+            "severity": "S2",
+            "file": "backend/database/schema/sqlite-schema.sql",
+            "line": null,
+            "title": "40 tabelas de dominio sem coluna tenant_id (suspeitas de vazamento entre tenants)",
+            "motivo": "Tabelas como crm_web_form_submissions, central_item_history, central_item_comments, marketplace_partners, mobile_notifications, qr_scans, asset_tag_scans, biometric_configs, email_attachments, inventory_count_items, material_request_items, parts_kit_items, price_table_items, product_kits, purchase_quote_items, purchase_quote_suppliers, quality_audit_items, returned_used_item_dispositions, rma_items, service_catalog_items, service_checklist_items, stock_disposal_items, stock_transfer_items, user_favorites, user_preferences, user_sessions, visit_route_stops, warehouse_stocks, work_order_approvals, etc. nao tem tenant_id. Algumas dependem do parent (ex: items->order) \u2014 herdar e aceitavel SE BelongsToTenant fizer join. Outras (mobile_notifications, biometric_configs, user_sessions, user_favorites, user_preferences) deveriam ter tenant_id direto. Viola H2 (tenant scope em tudo).",
+            "sugestao": "Auditar individualmente: tabelas children por FK ao parent (work_order_items->work_orders) podem herdar via global scope joinado; tabelas standalone (notifications, sessions, biometric, user_*) DEVEM ter tenant_id NOT NULL + FK + index.",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-010",
+            "severity": "S2",
+            "file": "backend/database/schema/sqlite-schema.sql",
+            "line": null,
+            "title": "69 tabelas com tenant_id NULLABLE permitindo registros sem tenant",
+            "motivo": "tenant_id permitindo NULL e bypass implicito do BelongsToTenant scope: registro sem tenant nao aparece em nenhum scope, mas existe e e acessivel via relacionamento direto. Casos como audit_logs, calibration_standard_weight, calibration_types, contract_types, customer_contacts, equipment_calibrations, expense_status_history, fuel_logs, inmetro_instruments, inventory_items, payment_terms, work_order_attachments, work_order_items, work_order_status_history. Em audit_logs e perigoso porque um log SEM tenant_id pode acabar sendo exibido cross-tenant.",
+            "sugestao": "Migration nova (com guards hasColumn): para cada tabela, popular tenant_id de registros NULL via JOIN ao parent ou hard-delete orfaos, depois ALTER COLUMN ... NOT NULL. Adicionar FK to tenants + index composto.",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-011",
+            "severity": "S2",
+            "file": "backend/database/schema/sqlite-schema.sql",
+            "line": null,
+            "title": "341 tabelas com tenant_id sem indice individual em sqlite-schema",
+            "motivo": "Muitos casos reais ja tem indices compostos (tenant_id + status, tenant_id + name) \u2014 esses sao OK para performance. Mas ha ~50 tabelas sem nenhum indice envolvendo tenant_id (revisao manual necessaria por tabela). Falta de indice em tenant_id causa table-scan em queries scoped pelo BelongsToTenant \u2014 degrada perf e em tabelas grandes pode causar timeout que degrada UX. Nao e vazamento de tenant per se (scope continua filtrando), mas e amplificador de DoS por tenant grande.",
+            "sugestao": "Auditar lista (snapshot em _audit_camada1.json, chave tenant_no_index). Criar migration add_tenant_index_to_remaining_tables com hasIndex guard.",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-012",
+            "severity": "S2",
+            "file": "backend/database/migrations/2026_02_07_300000_create_cadastros_tables.php",
+            "line": 58,
+            "title": "cascadeOnDelete em FK tenant_id -> tenants em 100% das tabelas (637 ocorrencias)",
+            "motivo": "Toda tabela tenant-scoped declara FK tenant_id ON DELETE CASCADE para tenants. Hard-delete de um tenant remove TODA a base do cliente sem confirmacao adicional, sem dump, sem janela de retencao. Risco operacional alto (DBA com acesso prod pode aniquilar tenant por erro). Tambem viola LGPD art.16 (retencao apos termino) \u2014 dados de transacoes financeiras devem ser preservados por 5 anos para fisco mesmo apos cancelamento.",
+            "sugestao": "Mudar FK tenant_id para onDelete(restrict) ou softDeletes em tenants + nao deletar registros children. Implementar fluxo de offboarding com (a) export LGPD obrigatorio, (b) anonimizacao, (c) retencao de dados fiscais, (d) hard-delete apos prazo legal.",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-013",
+            "severity": "S3",
+            "file": "backend/database/migrations/2026_02_07_600000_create_financial_tables.php",
+            "line": 39,
+            "title": "accounts_payable e accounts_receivable nao tem created_by/updated_by",
+            "motivo": "Tabelas financeiras criticas nao registram autor da operacao. Nao da para responder \"quem criou esse pagamento R$50k\" sem cruzar audit_logs (que tem tenant_id NULLABLE \u2014 finding SEC-010). Compliance financeiro (especialmente CRM/empresas auditadas) exige rastreabilidade individual.",
+            "sugestao": "Adicionar foreignId(created_by)->constrained(users) e foreignId(updated_by)->nullable()->constrained(users) em accounts_payable, accounts_receivable, payments, invoices via nova migration.",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-014",
+            "severity": "S3",
+            "file": "backend/database/migrations/2026_02_07_600000_create_financial_tables.php",
+            "line": null,
+            "title": "audit_logs.tenant_id NULLABLE permite log \"fora de tenant\"",
+            "motivo": "Coluna tenant_id NULLABLE em audit_logs cria duas falhas: (1) registros sem tenant ficam invisiveis ao scope tenant-aware do CRUD de logs; (2) potencial vazamento se algum admin global lista logs com tenant_id IS NULL contendo dados de qualquer cliente. audit_logs e fonte de prova \u2014 deve ser estritamente segregado.",
+            "sugestao": "Backfill tenant_id em registros existentes via JOIN auditable->tenant_id (Eloquent activity), depois ALTER COLUMN tenant_id NOT NULL + FK + composite index.",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-015",
+            "severity": "S3",
+            "file": "backend/database/migrations/2026_02_09_500001_create_client_portal_tables.php",
+            "line": 17,
+            "title": "client_portal_users sem cpf/document para verificacao mas com password \u2014 sem 2FA opcional",
+            "motivo": "Tabela armazena password (Laravel string(255) \u2014 Hash::make presumido no Model, nao verificado nesta camada), mas nao tem failed_login_attempts, locked_until, last_password_change, password_history para compliance basico. Tambem nao tem 2FA (user_2fa pega user_id global, nao client_portal_user_id).",
+            "sugestao": "Adicionar colunas failed_login_attempts (int default 0), locked_until (timestamp nullable), password_changed_at, password_history (json). Considerar habilitar 2FA por cliente.",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-016",
+            "severity": "S3",
+            "file": "backend/database/migrations/2026_02_07_223816_create_permission_tables.php",
+            "line": 50,
+            "title": "Spatie tabelas pivot model_has_permissions/model_has_roles podem nao ter tenant_id efetivo",
+            "motivo": "Modulo Spatie permission usa \"teams\" feature (tenant_id como team_foreign_key). Configuracao deve ser explicita em config/permission.php (teams=true, team_foreign_key=tenant_id) \u2014 verificar nessa camada de config (camada 4). Se teams=false, usuario com role admin@tenantA tambem assume role admin@tenantB. Risco alto de privilege escalation cross-tenant.",
+            "sugestao": "Validar config/permission.php em camada 4. Se teams=false: ativar teams + criar migration adicionando team_foreign_key (tenant_id) em model_has_permissions, model_has_roles, role_has_permissions + popular registros existentes.",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-017",
+            "severity": "S4",
+            "file": "backend/database/migrations/2026_04_10_500000_fix_production_schema_drifts.php",
+            "line": 128,
+            "title": "DB::statement com interpolacao de variavel em ALTER TABLE (S4 contained, nao S2 porque vars sao constantes locais)",
+            "motivo": "Migrations 2026_02_10_070000_fix_branches_unique_constraint.php (l.22), 2026_03_16_200000_fix_critical_fk_on_delete_behavior.php (l.101), 2026_03_20_120000_reconcile_accounts_payable_supplier_fk.php (l.50), 2026_04_10_500000_fix_production_schema_drifts.php (ll.128, 132, 136) usam DB::statement com interpolacao \"{$table}\", \"{$fkName}\". Sao constantes locais (whitelist), nao input externo \u2014 risco real ZERO. Mas o padrao e perigoso e dificulta auditoria automatica de SQL injection. Migrations rodam em janela de deploy com privilegios elevados \u2014 qualquer comprometimento da string viraria DDL injection.",
+            "sugestao": "Refatorar para Schema::table (sem raw SQL) ou usar DB::raw com bindings via Schema Grammar. Para FK rename, usar metodos de Doctrine DBAL (renameColumn / dropForeign / foreign).",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-018",
+            "severity": "S4",
+            "file": "backend/database/migrations/0001_01_01_000000_create_users_table.php",
+            "line": null,
+            "title": "Multiplas migrations alteram tabela users (8 migrations) \u2014 verificar idempotencia (H3)",
+            "motivo": "Tabela users e modificada em 0001_01_01_000000 (create), 2026_02_07_200001, 2026_02_12_000000, 2026_02_13_230535, 2026_02_14_000006, 2026_02_14_100001, 2026_02_17_000010, 2026_03_05_140000, 2026_03_23_200002. Total 9 migrations. H3 exige imutabilidade pos-merge + guards hasColumn. 194 migrations no codebase tem hasColumn (bom sinal), mas precisamos confirmar que NENHUMA das 9 alterou create_users_table.php diretamente.",
+            "sugestao": "git log --follow em 0001_01_01_000000_create_users_table.php \u2014 se houver commits apos merge inicial, justificar. Caso contrario OK.",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-019",
+            "severity": "S4",
+            "file": "backend/database/migrations/",
+            "line": null,
+            "title": "cascadeOnDelete usado 637 vezes \u2014 perigo de cascade chains nao auditadas",
+            "motivo": "Cascade em FK criadas direto no Schema::create (vs catch-up via raw SQL). Pode haver cadeias profundas (tenants -> customers -> accounts_receivable -> payments -> bank_statement_entries) onde delete de tenant cascateia 5+ niveis silenciosamente. Em SQLite (testes) o dump nao preserva FK CASCADE \u2014 entao os testes podem nao estar exercitando as cascadas reais (MySQL prod difere de SQLite test).",
+            "sugestao": "Documentar cascade graph em docs/architecture/. Adicionar testes de tenant deletion em MySQL real (nao apenas SQLite). Considerar migrar cascadas perigosas (>2 niveis ou em dados financeiros/fiscais) para restrict + soft-delete logico.",
+            "false_positive": false
+        },
+        {
+            "id": "SEC-020",
+            "severity": "S3",
+            "file": "backend/database/migrations/2026_02_14_060000_create_portal_integration_security_tables.php",
+            "line": null,
+            "title": "user_2fa.backup_codes em text plain (nao hashed)",
+            "motivo": "Codigos de recuperacao 2FA devem ser HASHED (single-use bcrypt/argon2id) \u2014 nunca plain text. Padrao OWASP MFA Cheat Sheet: tratar cada backup code como senha. Vazamento do DB expoe codigos validos para todos os usuarios.",
+            "sugestao": "Hashear backup_codes (json com array de hashes argon2id). Ao validar: comparar hash, marcar como used, nunca reexibir.",
+            "false_positive": false
+        }
+    ],
+    "false_positives_marcados": [],
+    "resumo_executivo": "Schema apresenta tenant safety estrutural decente (BelongsToTenant + global scope na maioria das tabelas) mas ha 40 tabelas suspeitas sem tenant_id, 69 com tenant_id NULLABLE (incluindo audit_logs \u2014 critico) e configuracao Spatie teams precisa ser confirmada em camada 4. Maior risco S1 e LGPD/PCI: 6 conjuntos de credenciais em plain text (payment_gateway api_key+api_secret, user_2fa secret+backup_codes, marketing/whatsapp api_key, OAuth client_secret, webhook secrets) e CPF/CNPJ sem encryption-at-rest em customers/suppliers/users/employee_dependents \u2014 sao remediaveis via casts encrypted nos Models + rotacao de secrets pos-deploy. Cascade onDelete tenants e ferramenta de aniquilacao instantanea por DBA \u2014 recomendar restrict + offboarding controlado por LGPD."
+}

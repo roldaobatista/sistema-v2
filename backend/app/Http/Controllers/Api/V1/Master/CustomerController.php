@@ -51,9 +51,11 @@ class CustomerController extends Controller
             $search = SearchSanitizer::escapeLike($search);
             $digitsOnlySearch = preg_replace('/\D+/', '', (string) $request->get('search'));
             $query->where(function ($q) use ($search, $digitsOnlySearch) {
+                // `document` é encrypted (cast `encrypted`) — LIKE não funciona.
+                // Busca por documento exata via `document_hash` quando o termo é
+                // um CPF/CNPJ completo (11 ou 14 dígitos).
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('trade_name', 'like', "%{$search}%")
-                    ->orWhere('document', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%");
 
@@ -61,8 +63,12 @@ class CustomerController extends Controller
                     return;
                 }
 
+                if (in_array(strlen($digitsOnlySearch), [11, 14], true)) {
+                    $q->orWhere('document_hash', Customer::hashSearchable($digitsOnlySearch, digitsOnly: true));
+                }
+
+                // Demais colunas normalizáveis (não encrypted)
                 $normalizedColumns = [
-                    'document',
                     'phone',
                     'phone2',
                     'state_registration',

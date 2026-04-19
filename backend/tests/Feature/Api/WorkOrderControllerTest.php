@@ -60,7 +60,7 @@ class WorkOrderControllerTest extends TestCase
             ->postJson('/api/v1/work-orders', [
                 'customer_id' => $this->customer->id,
                 'title' => 'Calibração Balança 100kg',
-                'priority' => 'normal',
+                'priority' => 'medium',
                 'description' => 'Calibração preventiva',
             ]);
 

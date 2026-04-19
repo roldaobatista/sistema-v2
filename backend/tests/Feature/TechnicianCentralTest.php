@@ -114,9 +114,9 @@ class TechnicianCentralTest extends TestCase
     public function test_agenda_create_task(): void
     {
         $response = $this->postJson('/api/v1/agenda/items', [
-            'tipo' => 'task',
-            'titulo' => 'Tarefa de teste',
-            'prioridade' => 'medium',
+            'type' => 'task',
+            'title' => 'Tarefa de teste',
+            'priority' => 'medium',
         ]);
 
         $response->assertCreated();

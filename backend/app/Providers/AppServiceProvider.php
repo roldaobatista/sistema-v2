@@ -45,6 +45,7 @@ use App\Services\Payment\AsaasPaymentProvider;
 use App\Services\Payment\Contracts\PaymentGatewayInterface;
 use App\Services\TwilioSmsProvider;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -219,6 +220,15 @@ class AppServiceProvider extends ServiceProvider
             $frontendUrl = rtrim(config('app.frontend_url', config('app.url')), '/');
 
             return $frontendUrl.'/redefinir-senha?token='.$token.'&email='.urlencode($user->getEmailForPasswordReset());
+        });
+
+        // sec-04 (Re-auditoria Camada 1): policy de senha elevada.
+        // OWASP ASVS L1: min 12 chars + mixed case + numbers + symbols +
+        // uncompromised (checa HaveIBeenPwned). Aplicada a toda Rule::Password::defaults().
+        Password::defaults(function () {
+            $rule = Password::min(12)->mixedCase()->letters()->numbers()->symbols();
+
+            return app()->environment('production') ? $rule->uncompromised() : $rule;
         });
 
         Gate::define('viewHorizon', function ($user = null) {

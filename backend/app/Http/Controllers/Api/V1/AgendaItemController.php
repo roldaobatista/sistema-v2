@@ -25,11 +25,11 @@ class AgendaItemController extends Controller
         if ($request->has('status')) {
             $query->where('status', $request->input('status'));
         }
-        if ($request->has('tipo')) {
-            $query->where('tipo', $request->input('tipo'));
+        if ($request->has('type')) {
+            $query->where('type', $request->input('type'));
         }
 
-        $items = $query->with(['responsavel:id,name', 'criadoPor:id,name'])->latest()->paginate($request->integer('per_page', 15));
+        $items = $query->with(['assignee:id,name', 'creator:id,name'])->latest()->paginate($request->integer('per_page', 15));
 
         return ApiResponse::paginated($items, resourceClass: AgendaItemResource::class);
     }
@@ -38,12 +38,12 @@ class AgendaItemController extends Controller
     {
         $data = $request->validated();
         $data['tenant_id'] = $request->user()->current_tenant_id;
-        $data['responsavel_user_id'] = $data['responsavel_user_id'] ?? $request->user()->id;
-        $data['criado_por_user_id'] = $request->user()->id;
+        $data['assignee_user_id'] = $data['assignee_user_id'] ?? $request->user()->id;
+        $data['created_by_user_id'] = $request->user()->id;
 
         $item = AgendaItem::create($data);
 
-        return ApiResponse::data(new AgendaItemResource($item->load(['responsavel:id,name', 'criadoPor:id,name'])), 201);
+        return ApiResponse::data(new AgendaItemResource($item->load(['assignee:id,name', 'creator:id,name'])), 201);
     }
 
     public function show(Request $request, int $id): JsonResponse
@@ -51,7 +51,7 @@ class AgendaItemController extends Controller
         $item = AgendaItem::where('tenant_id', $request->user()->current_tenant_id)
             ->findOrFail($id);
 
-        return ApiResponse::data(new AgendaItemResource($item->load(['responsavel:id,name', 'criadoPor:id,name'])));
+        return ApiResponse::data(new AgendaItemResource($item->load(['assignee:id,name', 'creator:id,name'])));
     }
 
     public function update(UpdateAgendaItemRequest $request, int $id): JsonResponse
@@ -61,7 +61,7 @@ class AgendaItemController extends Controller
 
         $item->update($request->validated());
 
-        return ApiResponse::data(new AgendaItemResource($item->fresh(['responsavel:id,name', 'criadoPor:id,name'])));
+        return ApiResponse::data(new AgendaItemResource($item->fresh(['assignee:id,name', 'creator:id,name'])));
     }
 
     public function destroy(Request $request, int $id): JsonResponse
@@ -85,7 +85,7 @@ class AgendaItemController extends Controller
             'closed_by' => $request->user()->id,
         ]);
 
-        return ApiResponse::data(new AgendaItemResource($item->fresh(['responsavel:id,name', 'criadoPor:id,name'])));
+        return ApiResponse::data(new AgendaItemResource($item->fresh(['assignee:id,name', 'creator:id,name'])));
     }
 
     public function resumo(Request $request): JsonResponse
@@ -112,7 +112,7 @@ class AgendaItemController extends Controller
         $item->gerarNotificacao(
             'agenda_item_comment',
             'Novo comentário na Agenda',
-            $request->user()->name.' comentou em "'.$item->titulo.'"',
+            $request->user()->name.' comentou em "'.$item->title.'"',
             ['actor_user_id' => $request->user()->id, 'comment_id' => $comment->id]
         );
 
@@ -125,25 +125,25 @@ class AgendaItemController extends Controller
             ->findOrFail($id);
 
         $validated = $request->validated();
-        $assigneeId = $validated['user_id'] ?? $validated['responsavel_user_id'] ?? null;
+        $assigneeId = $validated['user_id'] ?? $validated['assignee_user_id'] ?? null;
 
         if (! $assigneeId) {
-            return ApiResponse::message('user_id ou responsavel_user_id é obrigatório', 422);
+            return ApiResponse::message('user_id ou assignee_user_id é obrigatório', 422);
         }
 
-        $oldAssigneeId = $item->responsavel_user_id;
-        $item->update(['responsavel_user_id' => $assigneeId]);
+        $oldAssigneeId = $item->assignee_user_id;
+        $item->update(['assignee_user_id' => $assigneeId]);
         $item->refresh();
         $item->registrarHistorico('assigned', $oldAssigneeId, $assigneeId, $request->user()->id);
         $item->gerarNotificacaoParaUsuario(
             (int) $assigneeId,
             'agenda_item_assigned',
             'Item atribuído a você',
-            'Você foi definido(a) como responsável por "'.$item->titulo.'".',
+            'Você foi definido(a) como responsável por "'.$item->title.'".',
             ['actor_user_id' => $request->user()->id]
         );
 
-        return ApiResponse::data(new AgendaItemResource($item->fresh(['responsavel:id,name', 'criadoPor:id,name'])));
+        return ApiResponse::data(new AgendaItemResource($item->fresh(['assignee:id,name', 'creator:id,name'])));
     }
 
     private function buildSummary(Request $request): array
@@ -173,7 +173,7 @@ class AgendaItemController extends Controller
             'total_aberto' => $openCount,
             'abertas' => $openCount,
             'urgentes' => (clone $base)
-                ->where('prioridade', 'urgent')
+                ->where('priority', 'urgent')
                 ->whereNotIn('status', $openStatuses)
                 ->count(),
             'seguindo' => $followingCount,

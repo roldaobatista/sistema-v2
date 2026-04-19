@@ -79,7 +79,7 @@ describe('paginas tecnicas de calibracao e certificado', () => {
                                     id: 100,
                                     work_order_id: 42,
                                     calibration_date: '2026-03-20',
-                                    result: 'aprovado',
+                                    result: 'approved',
                                     certificate_number: 'CERT-001',
                                 },
                             ],

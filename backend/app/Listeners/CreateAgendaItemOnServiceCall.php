@@ -25,17 +25,17 @@ class CreateAgendaItemOnServiceCall implements ShouldQueue
             AgendaItem::criarDeOrigem(
                 model: $sc,
                 tipo: AgendaItemType::CHAMADO,
-                titulo: "Chamado #{$sc->call_number} — {$sc->customer?->name}",
+                title: "Chamado #{$sc->call_number} — {$sc->customer?->name}",
                 responsavelId: $responsavel,
                 extras: [
-                    'prioridade' => match ($sc->priority ?? 'normal') {
+                    'priority' => match ($sc->priority ?? 'normal') {
                         'urgent' => AgendaItemPriority::URGENTE,
                         'high' => AgendaItemPriority::ALTA,
                         default => AgendaItemPriority::MEDIA,
                     },
                     'due_at' => $sc->scheduled_date,
-                    'descricao_curta' => $sc->observations,
-                    'contexto' => [
+                    'short_description' => $sc->observations,
+                    'context' => [
                         'chamado_id' => $sc->id,
                         'cliente' => $sc->customer?->name,
                         'link' => "/chamados/{$sc->id}",

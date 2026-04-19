@@ -77,7 +77,7 @@ class AgendaController extends Controller
             $item = DB::transaction(fn () => $this->service->criar($validated));
 
             return ApiResponse::data(
-                new AgendaItemResource($item->load(['responsavel:id,name', 'criadoPor:id,name', 'watchers.user:id,name'])),
+                new AgendaItemResource($item->load(['assignee:id,name', 'creator:id,name', 'watchers.user:id,name'])),
                 201
             );
         } catch (\Exception $e) {
@@ -101,8 +101,8 @@ class AgendaController extends Controller
             'subtasks',
             'attachments.uploader:id,name',
             'timeEntries.user:id,name',
-            'dependsOn:id,titulo,status',
-            'criadoPor:id,name',
+            'dependsOn:id,title,status',
+            'creator:id,name',
             'watchers.user:id,name',
         ]);
 
@@ -120,7 +120,7 @@ class AgendaController extends Controller
             $validated = $request->validated();
             $updated = $this->service->atualizar($agendaItem, $validated);
 
-            return ApiResponse::data(new AgendaItemResource($updated->load(['responsavel:id,name', 'criadoPor:id,name', 'watchers.user:id,name'])));
+            return ApiResponse::data(new AgendaItemResource($updated->load(['assignee:id,name', 'creator:id,name', 'watchers.user:id,name'])));
         } catch (\Throwable $e) {
             Log::error('Agenda update failed', ['id' => $agendaItem->id, 'error' => $e->getMessage()]);
 
@@ -164,12 +164,12 @@ class AgendaController extends Controller
         }
 
         $validated = $request->validated();
-        $assigneeId = $validated['user_id'] ?? $validated['responsavel_user_id'] ?? null;
+        $assigneeId = $validated['user_id'] ?? $validated['assignee_user_id'] ?? null;
         if (! $assigneeId) {
-            return ApiResponse::message('user_id ou responsavel_user_id é obrigatório', 422);
+            return ApiResponse::message('user_id ou assignee_user_id é obrigatório', 422);
         }
 
-        $updated = $this->service->atualizar($agendaItem, ['responsavel_user_id' => $assigneeId]);
+        $updated = $this->service->atualizar($agendaItem, ['assignee_user_id' => $assigneeId]);
 
         return ApiResponse::data(new AgendaItemResource($updated));
     }
@@ -207,7 +207,7 @@ class AgendaController extends Controller
         ]);
 
         return ApiResponse::data(new AgendaItemResource(
-            $updated->load(['responsavel:id,name', 'criadoPor:id,name', 'watchers.user:id,name'])
+            $updated->load(['assignee:id,name', 'creator:id,name', 'watchers.user:id,name'])
         ));
     }
 
@@ -229,7 +229,7 @@ class AgendaController extends Controller
     public function rules(Request $request): JsonResponse
     {
         $rules = AgendaRule::where('tenant_id', $this->tenantId())
-            ->with(['responsavel:id,name'])
+            ->with(['assignee:id,name'])
             ->orderByDesc('created_at')
             ->paginate(min($request->integer('per_page', 50), 100));
 
@@ -247,7 +247,7 @@ class AgendaController extends Controller
 
             $rule = DB::transaction(fn () => AgendaRule::create($validated));
 
-            return ApiResponse::data($rule->load('responsavel:id,name'), 201);
+            return ApiResponse::data($rule->load('assignee:id,name'), 201);
         } catch (\Exception $e) {
             Log::error('Agenda storeRule failed', ['error' => $e->getMessage()]);
 
@@ -264,7 +264,7 @@ class AgendaController extends Controller
         $validated = $this->normalizeRulePayload($request->validated());
         $agendaRule->update($validated);
 
-        return ApiResponse::data($agendaRule->fresh()->load('responsavel:id,name'));
+        return ApiResponse::data($agendaRule->fresh()->load('assignee:id,name'));
     }
 
     public function destroyRule(AgendaRule $agendaRule): JsonResponse
@@ -286,16 +286,16 @@ class AgendaController extends Controller
 
     private function normalizeRulePayload(array $payload): array
     {
-        if (array_key_exists('tipo_item', $payload) && $payload['tipo_item'] !== null) {
-            $payload['tipo_item'] = strtolower((string) $payload['tipo_item']);
+        if (array_key_exists('item_type', $payload) && $payload['item_type'] !== null) {
+            $payload['item_type'] = strtolower((string) $payload['item_type']);
         }
 
-        if (array_key_exists('prioridade_minima', $payload) && $payload['prioridade_minima'] !== null) {
-            $payload['prioridade_minima'] = strtolower((string) $payload['prioridade_minima']);
+        if (array_key_exists('min_priority', $payload) && $payload['min_priority'] !== null) {
+            $payload['min_priority'] = strtolower((string) $payload['min_priority']);
         }
 
-        if (array_key_exists('responsavel_user_id', $payload) && $payload['responsavel_user_id'] === '') {
-            $payload['responsavel_user_id'] = null;
+        if (array_key_exists('assignee_user_id', $payload) && $payload['assignee_user_id'] === '') {
+            $payload['assignee_user_id'] = null;
         }
 
         return $payload;
@@ -324,8 +324,8 @@ class AgendaController extends Controller
                         'complete' => ['status' => AgendaItemStatus::CONCLUIDO, 'closed_at' => now(), 'closed_by' => $userId],
                         'cancel' => ['status' => AgendaItemStatus::CANCELADO, 'closed_by' => $userId],
                         'set_status' => ['status' => $value],
-                        'set_priority' => ['prioridade' => $value],
-                        'assign' => ['responsavel_user_id' => $value ? (int) $value : null],
+                        'set_priority' => ['priority' => $value],
+                        'assign' => ['assignee_user_id' => $value ? (int) $value : null],
                         default => [],
                     };
 
@@ -363,11 +363,11 @@ class AgendaController extends Controller
             foreach ($data as $item) {
                 fputcsv($handle, [
                     $item->id ?? $item['id'] ?? '',
-                    $item->tipo ?? $item['tipo'] ?? '',
-                    $item->titulo ?? $item['titulo'] ?? '',
+                    $item->type ?? $item['type'] ?? '',
+                    $item->title ?? $item['title'] ?? '',
                     $item->status ?? $item['status'] ?? '',
-                    $item->prioridade ?? $item['prioridade'] ?? '',
-                    is_array($item) ? ($item['responsavel']['name'] ?? '') : ($item->responsavel?->name ?? ''),
+                    $item->priority ?? $item['priority'] ?? '',
+                    is_array($item) ? ($item['assignee']['name'] ?? '') : ($item->assignee?->name ?? ''),
                     $item->due_at ?? $item['due_at'] ?? '',
                     $item->created_at ?? $item['created_at'] ?? '',
                     is_array($item) ? implode(', ', $item['tags'] ?? []) : implode(', ', $item->tags ?? []),
@@ -392,12 +392,12 @@ class AgendaController extends Controller
     public function storeSubtask(StoreAgendaSubtaskRequest $request, AgendaItem $agendaItem): JsonResponse
     {
         $validated = $request->validated();
-        $maxOrdem = $agendaItem->subtasks()->max('ordem') ?? -1;
+        $maxOrder = $agendaItem->subtasks()->max('sort_order') ?? -1;
 
         $subtask = $agendaItem->subtasks()->create([
             'tenant_id' => $this->tenantId(),
-            'titulo' => $validated['titulo'],
-            'ordem' => $validated['ordem'] ?? ($maxOrdem + 1),
+            'title' => $validated['title'],
+            'sort_order' => $validated['sort_order'] ?? ($maxOrder + 1),
         ]);
 
         return ApiResponse::data($subtask, 201);
@@ -411,10 +411,10 @@ class AgendaController extends Controller
 
         $validated = $request->validated();
 
-        if (isset($validated['concluido']) && $validated['concluido'] && ! $subtask->concluido) {
+        if (isset($validated['is_completed']) && $validated['is_completed'] && ! $subtask->is_completed) {
             $validated['completed_by'] = $request->user()?->getAuthIdentifier();
             $validated['completed_at'] = now();
-        } elseif (isset($validated['concluido']) && ! $validated['concluido']) {
+        } elseif (isset($validated['is_completed']) && ! $validated['is_completed']) {
             $validated['completed_by'] = null;
             $validated['completed_at'] = null;
         }
@@ -456,7 +456,7 @@ class AgendaController extends Controller
 
         $attachment = $agendaItem->attachments()->create([
             'tenant_id' => $this->tenantId(),
-            'nome' => FilenameSanitizer::sanitize($file->getClientOriginalName()),
+            'name' => FilenameSanitizer::sanitize($file->getClientOriginalName()),
             'path' => $path,
             'mime_type' => $file->getMimeType(),
             'size' => $file->getSize(),
@@ -538,7 +538,7 @@ class AgendaController extends Controller
         $entry->update([
             'stopped_at' => now(),
             'duration_seconds' => now()->diffInSeconds($entry->started_at),
-            'descricao' => $request->input('descricao'),
+            'description' => $request->input('description'),
         ]);
 
         return ApiResponse::data($entry->fresh()->load('user:id,name'));
@@ -553,7 +553,7 @@ class AgendaController extends Controller
         }
         $agendaItem->dependsOn()->syncWithoutDetaching([$request->validated('depends_on_id')]);
 
-        return ApiResponse::data($agendaItem->dependsOn()->select('central_items.id', 'titulo', 'status')->get());
+        return ApiResponse::data($agendaItem->dependsOn()->select('central_items.id', 'title', 'status')->get());
     }
 
     public function removeDependency(AgendaItem $agendaItem, int $dependsOnId): JsonResponse
@@ -611,7 +611,7 @@ class AgendaController extends Controller
                     (int) $userId,
                     'agenda_item_watching',
                     'Você foi adicionado como seguidor',
-                    ($request->user()?->name ?? 'Alguém')." adicionou você como seguidor em \"{$agendaItem->titulo}\".",
+                    ($request->user()?->name ?? 'Alguém')." adicionou você como seguidor em \"{$agendaItem->title}\".",
                     ['actor_user_id' => (int) $addedByUserId]
                 );
             }
@@ -705,10 +705,10 @@ class AgendaController extends Controller
         $tenantId = $this->tenantId();
 
         $templates = AgendaTemplate::where('tenant_id', $tenantId)
-            ->where('ativo', true)
+            ->where('is_active', true)
             ->with('creator:id,name')
-            ->orderBy('categoria')
-            ->orderBy('nome')
+            ->orderBy('category')
+            ->orderBy('name')
             ->get();
 
         return ApiResponse::data($templates);
@@ -719,14 +719,14 @@ class AgendaController extends Controller
         $validated = $request->validated();
         $validated['tenant_id'] = $this->tenantId();
         $validated['created_by'] = $request->user()?->getAuthIdentifier();
-        if (isset($validated['tipo'])) {
-            $validated['tipo'] = strtolower($validated['tipo']);
+        if (isset($validated['type'])) {
+            $validated['type'] = strtolower($validated['type']);
         }
-        if (isset($validated['prioridade'])) {
-            $validated['prioridade'] = strtolower($validated['prioridade']);
+        if (isset($validated['priority'])) {
+            $validated['priority'] = strtolower($validated['priority']);
         }
-        if (isset($validated['visibilidade'])) {
-            $validated['visibilidade'] = strtolower($validated['visibilidade']);
+        if (isset($validated['visibility'])) {
+            $validated['visibility'] = strtolower($validated['visibility']);
         }
 
         $template = AgendaTemplate::create($validated);
@@ -741,14 +741,14 @@ class AgendaController extends Controller
         }
 
         $validated = $request->validated();
-        if (isset($validated['tipo'])) {
-            $validated['tipo'] = strtolower($validated['tipo']);
+        if (isset($validated['type'])) {
+            $validated['type'] = strtolower($validated['type']);
         }
-        if (isset($validated['prioridade'])) {
-            $validated['prioridade'] = strtolower($validated['prioridade']);
+        if (isset($validated['priority'])) {
+            $validated['priority'] = strtolower($validated['priority']);
         }
-        if (isset($validated['visibilidade'])) {
-            $validated['visibilidade'] = strtolower($validated['visibilidade']);
+        if (isset($validated['visibility'])) {
+            $validated['visibility'] = strtolower($validated['visibility']);
         }
 
         $agendaTemplate->update($validated);
@@ -770,14 +770,14 @@ class AgendaController extends Controller
     public function useTemplate(UseAgendaTemplateRequest $request, AgendaTemplate $agendaTemplate): JsonResponse
     {
         $validated = $request->validated();
-        $responsavelId = $validated['responsavel_user_id']
+        $responsavelId = $validated['assignee_user_id']
             ?? $request->user()?->getAuthIdentifier();
 
         try {
             $item = DB::transaction(fn () => $agendaTemplate->gerarItem((int) $responsavelId, $validated));
 
             return ApiResponse::data(
-                new AgendaItemResource($item->load(['responsavel:id,name', 'criadoPor:id,name', 'subtasks', 'watchers.user:id,name'])),
+                new AgendaItemResource($item->load(['assignee:id,name', 'creator:id,name', 'subtasks', 'watchers.user:id,name'])),
                 201
             );
         } catch (\Exception $e) {
@@ -796,7 +796,7 @@ class AgendaController extends Controller
         $userId = $request->user()?->getAuthIdentifier();
 
         $items = AgendaItem::where('tenant_id', $tenantId)
-            ->where('responsavel_user_id', $userId)
+            ->where('assignee_user_id', $userId)
             ->whereNotIn('status', [AgendaItemStatus::CONCLUIDO, AgendaItemStatus::CANCELADO])
             ->whereNotNull('due_at')
             ->get();
@@ -808,8 +808,8 @@ class AgendaController extends Controller
             $lines[] = 'BEGIN:VEVENT';
             $lines[] = "UID:{$uid}";
             $lines[] = "DTSTART:{$dtStart}";
-            $lines[] = 'SUMMARY:'.str_replace(["\r", "\n"], ' ', $item->titulo);
-            $lines[] = 'DESCRIPTION:'.str_replace(["\r", "\n"], ' ', $item->descricao_curta ?? '');
+            $lines[] = 'SUMMARY:'.str_replace(["\r", "\n"], ' ', $item->title);
+            $lines[] = 'DESCRIPTION:'.str_replace(["\r", "\n"], ' ', $item->short_description ?? '');
             $lines[] = 'END:VEVENT';
         }
         $lines[] = 'END:VCALENDAR';

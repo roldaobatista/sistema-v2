@@ -40,21 +40,21 @@ class AgendaServiceTest extends TestCase
     public function test_criar_creates_item_with_defaults(): void
     {
         $item = $this->service->criar([
-            'titulo' => 'Tarefa de teste',
-            'tipo' => 'task',
+            'title' => 'Tarefa de teste',
+            'type' => 'task',
         ]);
 
         $this->assertInstanceOf(AgendaItem::class, $item);
-        $this->assertEquals('Tarefa de teste', $item->titulo);
-        $this->assertEquals($this->user->id, $item->criado_por_user_id);
+        $this->assertEquals('Tarefa de teste', $item->title);
+        $this->assertEquals($this->user->id, $item->created_by_user_id);
         $this->assertEquals($this->tenant->id, $item->tenant_id);
     }
 
     public function test_criar_sets_default_status_and_priority(): void
     {
         $item = $this->service->criar([
-            'titulo' => 'Defaults test',
-            'tipo' => 'task',
+            'title' => 'Defaults test',
+            'type' => 'task',
         ]);
 
         $this->assertEquals(AgendaItemStatus::ABERTO->value, $item->status->value ?? $item->status);
@@ -68,12 +68,12 @@ class AgendaServiceTest extends TestCase
         ]);
 
         $item = $this->service->criar([
-            'titulo' => 'Assigned item',
-            'tipo' => 'task',
-            'responsavel_user_id' => $other->id,
+            'title' => 'Assigned item',
+            'type' => 'task',
+            'assignee_user_id' => $other->id,
         ]);
 
-        $this->assertEquals($other->id, $item->responsavel_user_id);
+        $this->assertEquals($other->id, $item->assignee_user_id);
     }
 
     public function test_criar_adds_watchers(): void
@@ -84,8 +84,8 @@ class AgendaServiceTest extends TestCase
         ]);
 
         $item = $this->service->criar([
-            'titulo' => 'Watched item',
-            'tipo' => 'task',
+            'title' => 'Watched item',
+            'type' => 'task',
             'watchers' => [$watcher->id],
         ]);
 
@@ -101,22 +101,22 @@ class AgendaServiceTest extends TestCase
     public function test_atualizar_changes_item_fields(): void
     {
         $item = $this->service->criar([
-            'titulo' => 'Original title',
-            'tipo' => 'task',
+            'title' => 'Original title',
+            'type' => 'task',
         ]);
 
         $updated = $this->service->atualizar($item, [
-            'titulo' => 'Updated title',
+            'title' => 'Updated title',
         ]);
 
-        $this->assertEquals('Updated title', $updated->titulo);
+        $this->assertEquals('Updated title', $updated->title);
     }
 
     public function test_comentar_creates_comment(): void
     {
         $item = $this->service->criar([
-            'titulo' => 'Comment test',
-            'tipo' => 'task',
+            'title' => 'Comment test',
+            'type' => 'task',
         ]);
 
         $comment = $this->service->comentar($item, 'Meu comentário', $this->user->id);
@@ -128,8 +128,8 @@ class AgendaServiceTest extends TestCase
     public function test_add_watcher_adds_user_as_watcher(): void
     {
         $item = $this->service->criar([
-            'titulo' => 'Watcher test',
-            'tipo' => 'task',
+            'title' => 'Watcher test',
+            'type' => 'task',
         ]);
 
         $other = User::factory()->create([
@@ -144,7 +144,7 @@ class AgendaServiceTest extends TestCase
 
     public function test_remove_watcher_removes_user(): void
     {
-        $item = $this->service->criar(['titulo' => 'Remove watcher test', 'tipo' => 'task']);
+        $item = $this->service->criar(['title' => 'Remove watcher test', 'type' => 'task']);
         $other = User::factory()->create(['tenant_id' => $this->tenant->id, 'current_tenant_id' => $this->tenant->id]);
 
         $watcher = $this->service->addWatcher($item, $other->id);
@@ -185,8 +185,8 @@ class AgendaServiceTest extends TestCase
 
     public function test_listar_returns_paginated_results(): void
     {
-        $this->service->criar(['titulo' => 'Item 1', 'tipo' => 'task']);
-        $this->service->criar(['titulo' => 'Item 2', 'tipo' => 'task']);
+        $this->service->criar(['title' => 'Item 1', 'type' => 'task']);
+        $this->service->criar(['title' => 'Item 2', 'type' => 'task']);
 
         $result = $this->service->listar([], 10);
 
@@ -195,8 +195,8 @@ class AgendaServiceTest extends TestCase
 
     public function test_listar_filters_by_search(): void
     {
-        $this->service->criar(['titulo' => 'Calibração urgente', 'tipo' => 'task']);
-        $this->service->criar(['titulo' => 'Reunião equipe', 'tipo' => 'task']);
+        $this->service->criar(['title' => 'Calibração urgente', 'type' => 'task']);
+        $this->service->criar(['title' => 'Reunião equipe', 'type' => 'task']);
 
         $result = $this->service->listar(['search' => 'Calibração'], 10);
 
@@ -205,7 +205,7 @@ class AgendaServiceTest extends TestCase
 
     public function test_listar_filters_by_status(): void
     {
-        $this->service->criar(['titulo' => 'Open item', 'tipo' => 'task']);
+        $this->service->criar(['title' => 'Open item', 'type' => 'task']);
 
         $result = $this->service->listar(['status' => ['open']], 10);
         $this->assertGreaterThanOrEqual(1, $result->total());
@@ -213,7 +213,7 @@ class AgendaServiceTest extends TestCase
 
     public function test_listar_filters_only_mine(): void
     {
-        $this->service->criar(['titulo' => 'My item', 'tipo' => 'task']);
+        $this->service->criar(['title' => 'My item', 'type' => 'task']);
 
         $result = $this->service->listar(['scope' => 'minhas'], 10);
         $this->assertGreaterThanOrEqual(1, $result->total());
@@ -221,7 +221,7 @@ class AgendaServiceTest extends TestCase
 
     public function test_usuario_pode_acessar_item_as_responsavel(): void
     {
-        $item = $this->service->criar(['titulo' => 'Access test', 'tipo' => 'task']);
+        $item = $this->service->criar(['title' => 'Access test', 'type' => 'task']);
 
         $this->assertTrue($this->service->usuarioPodeAcessarItem($item));
     }
@@ -230,9 +230,9 @@ class AgendaServiceTest extends TestCase
     {
         $other = User::factory()->create(['tenant_id' => $this->tenant->id, 'current_tenant_id' => $this->tenant->id]);
         $item = $this->service->criar([
-            'titulo' => 'Creator access',
-            'tipo' => 'task',
-            'responsavel_user_id' => $other->id,
+            'title' => 'Creator access',
+            'type' => 'task',
+            'assignee_user_id' => $other->id,
         ]);
 
         $this->assertTrue($this->service->usuarioPodeAcessarItem($item));

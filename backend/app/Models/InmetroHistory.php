@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/** @global Intentionally global */
 class InmetroHistory extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'inmetro_history';
 
     protected $fillable = [
-        'instrument_id', 'event_type', 'event_date',
+        'tenant_id', 'instrument_id', 'event_type', 'event_date',
         'result', 'executor', 'competitor_id', 'validity_date', 'notes', 'source',
         'executor_document', 'osint_threat_level',
     ];

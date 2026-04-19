@@ -57,7 +57,7 @@ class ExtendedModulesApiTest extends TestCase
         $response = $this->actingAs($this->admin)->postJson('/api/v1/suppliers', [
             'name' => 'Fornecedor XYZ',
             'document' => '11222333000181',
-            'type' => 'company',
+            'type' => 'PJ',
         ]);
         $this->assertTrue(in_array($response->status(), [200, 201]));
     }
@@ -110,8 +110,8 @@ class ExtendedModulesApiTest extends TestCase
     public function test_agenda_items_store(): void
     {
         $response = $this->actingAs($this->admin)->postJson('/api/v1/agenda-items', [
-            'titulo' => 'Tarefa de Teste',
-            'tipo' => 'tarefa',
+            'title' => 'Tarefa de Teste',
+            'type' => 'tarefa',
         ]);
         $this->assertTrue(in_array($response->status(), [200, 201]));
     }

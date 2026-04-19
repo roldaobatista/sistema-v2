@@ -102,7 +102,7 @@ class FiscalAndCalibrationApiTest extends TestCase
             'next_calibration_at' => now()->addYear()->format('Y-m-d'),
             'calibration_date' => now()->format('Y-m-d'),
             'calibration_type' => 'interna',
-            'result' => 'aprovado',
+            'result' => 'approved',
         ]);
         $response->assertSuccessful();
     }

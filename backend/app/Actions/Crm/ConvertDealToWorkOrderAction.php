@@ -38,7 +38,7 @@ class ConvertDealToWorkOrderAction
                     'customer_id' => $deal->customer_id,
                     'created_by' => $user->id,
                     'status' => WorkOrder::STATUS_OPEN,
-                    'priority' => WorkOrder::PRIORITY_NORMAL,
+                    'priority' => WorkOrder::PRIORITY_MEDIUM,
                     'description' => "Gerada a partir do negócio: {$deal->title}",
                     'total' => $deal->value ?? 0,
                     'origin_type' => WorkOrder::ORIGIN_MANUAL,

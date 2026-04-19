@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\TwoFactorAuth;
 use App\Http\Requests\Security\StoreAccessRestrictionRequest;
 use App\Http\Requests\Security\StoreConsentRequest;
 use App\Http\Requests\Security\StoreDataMaskingRuleRequest;
@@ -31,9 +32,13 @@ class SecurityController extends Controller
             $user = auth()->user();
             $secret = Str::random(32);
 
-            DB::table('user_2fa')->updateOrInsert(
+            TwoFactorAuth::updateOrCreate(
                 ['user_id' => $user->id],
-                ['secret' => encrypt($secret), 'is_enabled' => false, 'created_at' => now()]
+                [
+                    'secret' => $secret,
+                    'is_enabled' => false,
+                    'tenant_id' => $user->current_tenant_id ?? $user->tenant_id,
+                ]
             );
 
             return ApiResponse::data([
@@ -50,8 +55,7 @@ class SecurityController extends Controller
     public function verify2fa(Verify2faRequest $request): JsonResponse
     {
         try {
-            DB::table('user_2fa')
-                ->where('user_id', auth()->id())
+            TwoFactorAuth::where('user_id', auth()->id())
                 ->update(['is_enabled' => true, 'verified_at' => now()]);
 
             return ApiResponse::message('2FA ativado com sucesso');

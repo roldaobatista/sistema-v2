@@ -44,6 +44,13 @@ class InmetroBaseConfig extends Model
         'email_body_template',
     ];
 
+    /**
+     * qa-07 (Re-auditoria Camada 1): credencial PSIE nao vaza em toArray/toJson.
+     */
+    protected $hidden = [
+        'psie_password',
+    ];
+
     protected function casts(): array
     {
         return [
@@ -56,7 +63,6 @@ class InmetroBaseConfig extends Model
             'notification_roles' => 'array',
             'psie_password' => 'encrypted',
         ];
-
     }
 
     public function tenant(): BelongsTo

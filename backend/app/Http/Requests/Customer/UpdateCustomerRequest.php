@@ -63,10 +63,25 @@ class UpdateCustomerRequest extends FormRequest
             'document' => [
                 'nullable', 'string', 'max:20',
                 new CpfCnpj,
-                Rule::unique('customers', 'document')
-                    ->where('tenant_id', $tenantId)
-                    ->whereNull('deleted_at')
-                    ->ignore($customer),
+                // `document` é encrypted (cast `encrypted`) — Wave 1B usa `document_hash`
+                // (HMAC-SHA256 determinístico) para garantir unicidade.
+                function (string $attribute, mixed $value, \Closure $fail) use ($tenantId, $customer): void {
+                    if (! is_string($value) || $value === '') {
+                        return;
+                    }
+                    $hash = Customer::hashSearchable($value, digitsOnly: true);
+                    $ignoreId = $customer instanceof Customer ? $customer->id : (int) $customer;
+                    $exists = Customer::query()
+                        ->withoutGlobalScope('tenant')
+                        ->where('tenant_id', $tenantId)
+                        ->whereNull('deleted_at')
+                        ->where('document_hash', $hash)
+                        ->where('id', '!=', $ignoreId)
+                        ->exists();
+                    if ($exists) {
+                        $fail('já existe um cliente com este documento.');
+                    }
+                },
             ],
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',

@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\WorkOrder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -68,13 +69,43 @@ class CustomerMergeBatchExportTest extends TestCase
 
     public function test_search_duplicates_by_document(): void
     {
-        Customer::factory()->create([
+        // Wave 5 (DATA-007): UNIQUE composto (tenant_id, document_hash,
+        // sentinela soft-delete) bloqueia duplicatas em NOVOS inserts. A
+        // feature `search-duplicates` segue válida para detectar registros
+        // LEGADOS criados antes do UNIQUE entrar em vigor.
+        //
+        // Simulamos o cenário legado inserindo DOIS customers com o mesmo
+        // `document_hash` mas em estados de soft-delete diferentes — assim
+        // a UNIQUE composta não bloqueia (a sentinela difere) e o controller
+        // detecta como duplicata por agrupar pelo hash. Em produção real
+        // isso representaria registros importados de sistema legado ou
+        // criados antes de Wave 1B.
+        $hash = Customer::hashSearchable('12345678000190', digitsOnly: true);
+        $now = now();
+        // Insert 1: ativo (deleted_at NULL → sentinela = epoch)
+        DB::table('customers')->insert([
             'tenant_id' => $this->tenant->id,
-            'document' => '12.345.678/0001-90',
+            'type' => 'PJ',
+            'name' => 'Cliente Doc Legacy A',
+            'document' => encrypt('12.345.678/0001-90'),
+            'document_hash' => $hash,
+            'is_active' => true,
+            'created_at' => $now,
+            'updated_at' => $now,
+            'deleted_at' => null,
         ]);
-        Customer::factory()->create([
+        // Insert 2: soft-deleted artificial — escapa do UNIQUE (sentinela
+        // distinta) mas mantém mesmo `document_hash` para o agrupamento.
+        DB::table('customers')->insert([
             'tenant_id' => $this->tenant->id,
-            'document' => '12345678000190',
+            'type' => 'PJ',
+            'name' => 'Cliente Doc Legacy B',
+            'document' => encrypt('12345678000190'),
+            'document_hash' => $hash,
+            'is_active' => true,
+            'created_at' => $now,
+            'updated_at' => $now,
+            'deleted_at' => $now,
         ]);
 
         $response = $this->getJson('/api/v1/customers/search-duplicates?type=document');

@@ -198,7 +198,7 @@ class EquipmentProfessionalTest extends TestCase
         $response = $this->postJson("/api/v1/equipments/{$equipment->id}/calibrations", [
             'calibration_date' => '2026-02-01',
             'calibration_type' => 'externa',
-            'result' => 'aprovado',
+            'result' => 'approved',
             'laboratory' => 'Lab Teste LTDA',
             'certificate_number' => 'CERT-PRO-001',
             'cost' => 350.50,

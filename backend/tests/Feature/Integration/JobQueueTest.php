@@ -540,7 +540,7 @@ test('DetectCalibrationFraudulentPatterns detects patterns with many calibration
             'equipment_id' => $equipment->id,
             'calibration_date' => now(),
             'performed_by' => $this->user->id,
-            'result' => 'aprovado',
+            'result' => 'approved',
         ]);
     }
 

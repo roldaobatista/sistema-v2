@@ -132,11 +132,11 @@ export default function TechEquipmentHistoryPage() {
 
     const recentCalibrations = calibrations.slice(0, 3)
     const allPassed = recentCalibrations.length >= 3 && recentCalibrations.every((calibration) =>
-        ['aprovado', 'approved', 'aprovado_com_ressalva'].includes(calibration.result)
+        ['approved', 'approved_with_restriction'].includes(calibration.result)
     )
     const trendLabel = allPassed
         ? 'Tendencia estavel'
-        : recentCalibrations.some((calibration) => ['reprovado', 'rejected'].includes(calibration.result))
+        : recentCalibrations.some((calibration) => ['rejected'].includes(calibration.result))
             ? 'Atencao'
             : null
     const trendColor = allPassed ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
@@ -217,7 +217,7 @@ export default function TechEquipmentHistoryPage() {
 
                         <div className="space-y-2">
                             {calibrations.map((calibration) => {
-                                const approved = ['aprovado', 'approved', 'aprovado_com_ressalva'].includes(calibration.result)
+                                const approved = ['approved', 'approved_with_restriction'].includes(calibration.result)
 
                                 return (
                                     <button

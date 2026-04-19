@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\MarketingIntegration;
+use App\Models\SsoConfig;
 use App\Http\Requests\Integration\CalculateShippingRequest;
 use App\Http\Requests\Integration\EmailPluginWebhookRequest;
 use App\Http\Requests\Integration\PowerBiDataExportRequest;
@@ -194,14 +196,13 @@ class IntegrationController extends Controller
         $validated = $request->validated();
 
         try {
-            DB::table('sso_configurations')->updateOrInsert(
+            SsoConfig::updateOrCreate(
                 ['tenant_id' => $this->tenantId(), 'provider' => $validated['provider']],
                 [
-                    'client_id' => encrypt($validated['client_id']),
-                    'client_secret' => encrypt($validated['client_secret']),
+                    'client_id' => $validated['client_id'],
+                    'client_secret' => $validated['client_secret'],
                     'tenant_domain' => $validated['tenant_domain'] ?? null,
                     'is_active' => $validated['is_active'] ?? true,
-                    'updated_at' => now(),
                 ]
             );
 
@@ -293,14 +294,13 @@ class IntegrationController extends Controller
         $validated = $request->validated();
 
         try {
-            DB::table('marketing_integrations')->updateOrInsert(
+            MarketingIntegration::updateOrCreate(
                 ['tenant_id' => $this->tenantId()],
                 [
                     'provider' => $validated['provider'],
-                    'api_key' => encrypt($validated['api_key']),
+                    'api_key' => $validated['api_key'],
                     'sync_contacts' => $validated['sync_contacts'] ?? true,
                     'sync_events' => $validated['sync_events'] ?? false,
-                    'updated_at' => now(),
                 ]
             );
 

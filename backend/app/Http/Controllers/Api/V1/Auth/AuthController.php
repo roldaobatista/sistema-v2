@@ -255,7 +255,11 @@ class AuthController extends Controller
 
             $user->update(['current_tenant_id' => $tenantId]);
 
-            $this->revokeRequestAccessToken($request);
+            // SEC-RA-13: revogar TODOS os tokens do usuário ao trocar de tenant.
+            // Garante que nenhum token antigo (de outro tenant) permanece valido
+            // em outros devices — alinhado com ability `tenant:X` do novo token.
+            $user->tokens()->delete();
+
             $newToken = $user->createToken('api', ["tenant:{$tenant->id}"])->plainTextToken;
 
             app()->instance('current_tenant_id', $tenant->id);

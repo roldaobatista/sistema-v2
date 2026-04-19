@@ -27,12 +27,19 @@ class SupplierController extends Controller
 
         if ($search = $request->get('search')) {
             $search = SearchSanitizer::escapeLike($search);
-            $query->where(function ($q) use ($search) {
+            $digitsOnlySearch = preg_replace('/\D+/', '', (string) $request->get('search'));
+            $query->where(function ($q) use ($search, $digitsOnlySearch) {
+                // `document` é encrypted (cast `encrypted`) — LIKE não funciona.
+                // Wave 1B: busca exata via `document_hash` quando o termo é
+                // CPF/CNPJ completo (11 ou 14 dígitos).
                 $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('document', 'like', "%{$search}%")
                     ->orWhere('trade_name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%");
+
+                if (is_string($digitsOnlySearch) && in_array(strlen($digitsOnlySearch), [11, 14], true)) {
+                    $q->orWhere('document_hash', Supplier::hashSearchable($digitsOnlySearch, digitsOnly: true));
+                }
             });
         }
 

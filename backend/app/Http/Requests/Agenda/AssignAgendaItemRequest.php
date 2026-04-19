@@ -14,7 +14,7 @@ class AssignAgendaItemRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $nullable = ['user_id', 'responsavel_user_id'];
+        $nullable = ['user_id', 'assignee_user_id'];
         $cleaned = [];
         foreach ($nullable as $field) {
             if ($this->has($field) && $this->input($field) === '') {
@@ -35,7 +35,7 @@ class AssignAgendaItemRequest extends FormRequest
                 'nullable',
                 Rule::exists('users', 'id')->where(fn ($q) => $q->where('tenant_id', $tenantId)),
             ],
-            'responsavel_user_id' => [
+            'assignee_user_id' => [
                 'nullable',
                 Rule::exists('users', 'id')->where(fn ($q) => $q->where('tenant_id', $tenantId)),
             ],
@@ -45,7 +45,7 @@ class AssignAgendaItemRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'user_id.required' => 'user_id ou responsavel_user_id é obrigatório.',
+            'user_id.required' => 'user_id ou assignee_user_id é obrigatório.',
         ];
     }
 
