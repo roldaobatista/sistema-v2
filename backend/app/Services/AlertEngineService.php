@@ -80,8 +80,7 @@ class AlertEngineService
         }
 
         $threshold = now()->subHours(24);
-        $unbilled = WorkOrder::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $unbilled = WorkOrder::forTenant($tenantId)
             ->whereIn('status', [WorkOrder::STATUS_COMPLETED, WorkOrder::STATUS_DELIVERED])
             ->where(function ($q) use ($threshold) {
                 $q->where(function ($q2) use ($threshold) {
@@ -126,8 +125,7 @@ class AlertEngineService
             return 0;
         }
 
-        $contracts = RecurringContract::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $contracts = RecurringContract::forTenant($tenantId)
             ->where('is_active', true)
             ->where('next_execution_date', '<=', now()->addDays($days))
             ->where('next_execution_date', '>=', now())
@@ -158,8 +156,7 @@ class AlertEngineService
             return 0;
         }
 
-        $equipments = Equipment::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $equipments = Equipment::forTenant($tenantId)
             ->whereNotNull('next_calibration_at')
             ->where('next_calibration_at', '<=', now()->addDays($days))
             ->where('next_calibration_at', '>=', now())
@@ -191,8 +188,7 @@ class AlertEngineService
             return 0;
         }
 
-        $equipments = Equipment::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $equipments = Equipment::forTenant($tenantId)
             ->whereNotNull('next_calibration_at')
             ->where('next_calibration_at', '<', now())
             ->with('customer')
@@ -223,8 +219,7 @@ class AlertEngineService
             return 0;
         }
 
-        $quotes = Quote::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $quotes = Quote::forTenant($tenantId)
             ->whereIn('status', Quote::expirableStatuses())
             ->whereNotNull('valid_until')
             ->whereDate('valid_until', '<', today())
@@ -259,8 +254,7 @@ class AlertEngineService
             return 0;
         }
 
-        $overdue = ToolCalibration::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $overdue = ToolCalibration::forTenant($tenantId)
             ->where('next_due_date', '<', now())
             ->with('tool')
             ->get();
@@ -290,8 +284,7 @@ class AlertEngineService
             return 0;
         }
 
-        $expenses = Expense::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $expenses = Expense::forTenant($tenantId)
             ->where('status', ExpenseStatus::PENDING)
             ->where('created_at', '<=', now()->subDays($days))
             ->get();
@@ -320,8 +313,7 @@ class AlertEngineService
             return 0;
         }
 
-        $products = Product::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $products = Product::forTenant($tenantId)
             ->where('is_active', true)
             ->where('stock_min', '>', 0)
             ->whereColumn('stock_qty', '<=', 'stock_min')
@@ -355,8 +347,7 @@ class AlertEngineService
             return 0;
         }
 
-        $overdue = AccountPayable::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $overdue = AccountPayable::forTenant($tenantId)
             ->whereIn('status', [AccountPayable::STATUS_PENDING, AccountPayable::STATUS_OVERDUE])
             ->where('due_date', '<', now())
             ->get();
@@ -391,8 +382,7 @@ class AlertEngineService
             return 0;
         }
 
-        $expiring = AccountPayable::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $expiring = AccountPayable::forTenant($tenantId)
             ->where('status', AccountPayable::STATUS_PENDING)
             ->where('due_date', '>=', now())
             ->where('due_date', '<=', now()->addDays($days))
@@ -465,8 +455,7 @@ class AlertEngineService
             return 0;
         }
 
-        $contracts = SupplierContract::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $contracts = SupplierContract::forTenant($tenantId)
             ->whereNotNull('end_date')
             ->where('end_date', '>=', now())
             ->where('end_date', '<=', now()->addDays($days))
@@ -502,8 +491,7 @@ class AlertEngineService
             return 0;
         }
 
-        $overdue = Commitment::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $overdue = Commitment::forTenant($tenantId)
             ->where('status', 'pending')
             ->where('due_date', '<', today())
             ->with('customer:id,name')
@@ -537,8 +525,7 @@ class AlertEngineService
             return 0;
         }
 
-        $upcoming = ImportantDate::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $upcoming = ImportantDate::forTenant($tenantId)
             ->where('is_active', true)
             ->whereBetween('date', [now()->toDateString(), now()->addDays($days)->toDateString()])
             ->with('customer:id,name')
@@ -570,8 +557,7 @@ class AlertEngineService
             return 0;
         }
 
-        $customers = Customer::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $customers = Customer::forTenant($tenantId)
             ->noContactSince($days)
             ->limit(50)
             ->get();
@@ -601,8 +587,7 @@ class AlertEngineService
             return 0;
         }
 
-        $overdue = FollowUp::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $overdue = FollowUp::forTenant($tenantId)
             ->where('status', 'pending')
             ->where('scheduled_at', '<', now())
             ->get();
@@ -632,8 +617,7 @@ class AlertEngineService
             return 0;
         }
 
-        $calls = ServiceCall::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $calls = ServiceCall::forTenant($tenantId)
             ->whereIn('status', ServiceCallStatus::unattendedValues())
             ->where('created_at', '<', now()->subMinutes($minutes))
             ->with('customer:id,name')
@@ -667,8 +651,7 @@ class AlertEngineService
             return 0;
         }
 
-        $pending = DebtRenegotiation::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $pending = DebtRenegotiation::forTenant($tenantId)
             ->where('status', 'pending')
             ->where('created_at', '<=', now()->subDays($days))
             ->with('customer:id,name')
@@ -699,8 +682,7 @@ class AlertEngineService
         }
 
         $threshold = $config->threshold_amount ? (float) $config->threshold_amount : 50000;
-        $total = AccountReceivable::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $total = AccountReceivable::forTenant($tenantId)
             ->where('status', 'overdue')
             ->where('due_date', '<', now())
             ->sum('amount');
@@ -709,8 +691,7 @@ class AlertEngineService
             return 0;
         }
 
-        $existing = SystemAlert::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $existing = SystemAlert::forTenant($tenantId)
             ->where('alert_type', 'receivables_concentration')
             ->where('status', 'active')
             ->exists();
@@ -719,8 +700,7 @@ class AlertEngineService
             return 0;
         }
 
-        $count = AccountReceivable::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $count = AccountReceivable::forTenant($tenantId)
             ->where('status', 'overdue')
             ->where('due_date', '<', now())
             ->count();
@@ -746,8 +726,7 @@ class AlertEngineService
             return 0;
         }
 
-        $wos = WorkOrder::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $wos = WorkOrder::forTenant($tenantId)
             ->whereIn('status', [WorkOrder::STATUS_OPEN, WorkOrder::STATUS_AWAITING_DISPATCH])
             ->whereNotNull('received_at')
             ->where('received_at', '<', now()->subHours($hours))
@@ -781,8 +760,7 @@ class AlertEngineService
             return 0;
         }
 
-        $weights = StandardWeight::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $weights = StandardWeight::forTenant($tenantId)
             ->expiring($days)
             ->get();
 
@@ -812,8 +790,7 @@ class AlertEngineService
             return 0;
         }
 
-        $quotes = Quote::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $quotes = Quote::forTenant($tenantId)
             ->whereIn('status', Quote::expirableStatuses())
             ->whereNotNull('valid_until')
             ->whereDate('valid_until', '<=', today()->addDays($days))
@@ -846,8 +823,7 @@ class AlertEngineService
             return 0;
         }
 
-        $overdue = AccountReceivable::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $overdue = AccountReceivable::forTenant($tenantId)
             ->where('status', 'overdue')
             ->where('due_date', '<', now())
             ->with('customer')
@@ -881,8 +857,7 @@ class AlertEngineService
             return 0;
         }
 
-        $expiring = ToolCalibration::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $expiring = ToolCalibration::forTenant($tenantId)
             ->expiring($days)
             ->with('tool')
             ->get();
@@ -909,16 +884,14 @@ class AlertEngineService
 
     private function getConfig(int $tenantId, string $alertType): ?AlertConfiguration
     {
-        return AlertConfiguration::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        return AlertConfiguration::forTenant($tenantId)
             ->where('alert_type', $alertType)
             ->first();
     }
 
     private function alertExists(int $tenantId, string $type, $model): bool
     {
-        $q = SystemAlert::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $q = SystemAlert::forTenant($tenantId)
             ->where('alert_type', $type)
             ->where('status', 'active');
 
@@ -990,16 +963,14 @@ class AlertEngineService
     /** Executa escalação: alertas críticos ativos há mais de X horas sem reconhecimento. */
     public function runEscalationChecks(int $tenantId): int
     {
-        $configs = AlertConfiguration::withoutGlobalScope('tenant')
-            ->where('tenant_id', $tenantId)
+        $configs = AlertConfiguration::forTenant($tenantId)
             ->whereNotNull('escalation_recipients')
             ->where('escalation_hours', '>', 0)
             ->get();
 
         $escalated = 0;
         foreach ($configs as $config) {
-            $alerts = SystemAlert::withoutGlobalScope('tenant')
-                ->where('tenant_id', $tenantId)
+            $alerts = SystemAlert::forTenant($tenantId)
                 ->where('alert_type', $config->alert_type)
                 ->where('severity', 'critical')
                 ->where('status', 'active')

@@ -396,13 +396,14 @@ class AgendaItem extends Model
             'tags' => $extras['tags'] ?? null,
         ]);
 
-        $item = static::withoutGlobalScopes()->updateOrCreate(
+        // Operação multi-tenant legítima: tenantId vem do $model (registro fonte),
+        // scope forTenant centraliza justificativa H2 (re-audit 2026-04-19 data-08).
+        $item = static::forTenant($tenantId)->updateOrCreate(
             [
-                'tenant_id' => $tenantId,
                 'ref_type' => $model->getMorphClass(),
                 'ref_id' => $model->getKey(),
             ],
-            $payload
+            $payload + ['tenant_id' => $tenantId]
         );
 
         if ($item->wasRecentlyCreated) {
@@ -454,8 +455,8 @@ class AgendaItem extends Model
             return;
         }
 
-        $item = static::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
+        // Operação multi-tenant legítima: tenantId vem do $source (re-audit data-08).
+        $item = static::forTenant($tenantId)
             ->where('ref_type', $source->getMorphClass())
             ->where('ref_id', $source->getKey())
             ->first();

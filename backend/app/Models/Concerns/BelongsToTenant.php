@@ -82,4 +82,42 @@ trait BelongsToTenant
     {
         return $this->belongsTo(Tenant::class);
     }
+
+    /**
+     * Scope para operacoes legitimas multi-tenant (jobs cron, comandos Artisan,
+     * services que iteram todos os tenants em loop).
+     *
+     * REGRA H2 (CLAUDE.md Lei 4): uso explicito de bypass do global scope de
+     * tenant exige justificativa. Esta e a justificativa centralizada:
+     *   (a) chamador esta em contexto de processamento multi-tenant (cron/job);
+     *   (b) chamador passa o $tenantId alvo explicitamente, provindo de fonte
+     *       confiavel (loop sobre Tenant::all(), payload do job serializado
+     *       com tenant_id do registro, etc).
+     *
+     * Valida que $tenantId e inteiro > 0 — chamadas sem tenant valido lancam
+     * InvalidArgumentException em vez de operar cross-tenant silenciosamente
+     * (fail-fast: erro ruidoso > vazamento silencioso).
+     *
+     * Centraliza o padrao que antes era replicado em ~30 call sites do
+     * AlertEngineService como `Model::withoutGlobalScope('tenant')
+     * ->where('tenant_id', $tenantId)`, removendo a necessidade de justificar
+     * inline em cada chamada (re-auditoria Camada 1 2026-04-19: data-01/02/08).
+     *
+     * Uso:
+     *   WorkOrder::forTenant($tenantId)->where(...)->get();
+     *
+     * NAO usar em controllers HTTP — nesses o tenant deve vir do binding
+     * `current_tenant_id` via middleware EnsureTenantScope (invariante H1).
+     */
+    public function scopeForTenant(Builder $query, int $tenantId): Builder
+    {
+        if ($tenantId <= 0) {
+            throw new \InvalidArgumentException(
+                'forTenant() exige tenant_id valido (> 0). Recebido: '.$tenantId
+            );
+        }
+
+        return $query->withoutGlobalScope('tenant')
+            ->where($query->getModel()->getTable().'.tenant_id', $tenantId);
+    }
 }

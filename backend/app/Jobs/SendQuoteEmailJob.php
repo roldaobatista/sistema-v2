@@ -38,7 +38,10 @@ class SendQuoteEmailJob implements ShouldQueue
 
     public function handle(): void
     {
-        $quote = Quote::withoutGlobalScopes()->with([
+        // Job enfileirado sem binding current_tenant_id. Usar withoutGlobalScope('tenant')
+        // explícito (não withoutGlobalScopes() agressivo que remove soft-delete também).
+        // Logo após carregar, bindamos o tenant do próprio Quote (linha seguinte).
+        $quote = Quote::withoutGlobalScope('tenant')->with([
             'customer',
             'seller',
             'equipments.equipment',
@@ -93,7 +96,9 @@ class SendQuoteEmailJob implements ShouldQueue
 
     public function failed(\Throwable $e): void
     {
-        $quote = Quote::withoutGlobalScopes()->find($this->quoteId);
+        // Callback de falha sem binding — scope de tenant ausente é esperado.
+        // Bind ocorre após carregar (linha seguinte).
+        $quote = Quote::withoutGlobalScope('tenant')->find($this->quoteId);
         if ($quote) {
             app()->instance('current_tenant_id', $quote->tenant_id);
         }

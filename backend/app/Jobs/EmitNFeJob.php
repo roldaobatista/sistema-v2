@@ -25,7 +25,9 @@ class EmitNFeJob implements ShouldQueue
 
     public function handle(): void
     {
-        $invoice = Invoice::withoutGlobalScopes()->find($this->invoiceId);
+        // Job enfileirado sem binding current_tenant_id. Usar withoutGlobalScope('tenant')
+        // explícito (não o agressivo withoutGlobalScopes() que removeria soft-delete).
+        $invoice = Invoice::withoutGlobalScope('tenant')->find($this->invoiceId);
         if (! $invoice) {
             return;
         }
@@ -61,7 +63,8 @@ class EmitNFeJob implements ShouldQueue
 
     public function failed(\Throwable $exception): void
     {
-        $invoice = Invoice::withoutGlobalScopes()->find($this->invoiceId);
+        // Callback de falha sem binding — ver handle() acima.
+        $invoice = Invoice::withoutGlobalScope('tenant')->find($this->invoiceId);
         if ($invoice) {
             SystemAlert::create([
                 'tenant_id' => $invoice->tenant_id,
