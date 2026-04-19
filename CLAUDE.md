@@ -30,6 +30,8 @@ Toda mudança percorre a cadeia inteira: **migration → model → service → c
 
 ## ⚙️ Modo Operacional — Harness (7 passos)
 
+> **Fonte canônica:** `.agent/rules/harness-engineering.md` — Harness Engineering.
+
 ```
 1. entender → 2. localizar → 3. propor (mínimo + correto) → 4. implementar
 → 5. verificar → 6. corrigir falhas → 7. evidenciar
