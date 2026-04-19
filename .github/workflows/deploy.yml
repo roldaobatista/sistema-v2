@@ -2,7 +2,7 @@ name: Deploy to Production
 
 on:
     workflow_run:
-        workflows: ["CI"]
+        workflows: ["CI", "Security Scans", "Nightly Regression"]
         types: [completed]
         branches: [main]
     workflow_dispatch:
@@ -19,26 +19,85 @@ concurrency:
 
 permissions:
     contents: read
+    actions: read
 
 jobs:
-    ci-green-notice:
-        name: CI Green Notice
+    validate-deploy-gates:
+        name: Validate Deploy Gates
         runs-on: ubuntu-latest
-        if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
+        if: >
+            (github.event_name == 'workflow_dispatch' && github.event.inputs.confirm == 'deploy') ||
+            (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+        outputs:
+            target-sha: ${{ steps.required-workflows.outputs.target-sha }}
         steps:
-            - name: Deployment remains manually gated
-              run: |
-                  {
-                    echo "## CI workflow completed successfully"
-                    echo ""
-                    echo "Production deployment is intentionally gated by workflow_dispatch and requires confirm=deploy."
-                  } >> "$GITHUB_STEP_SUMMARY"
+            - name: Require green workflows on main
+              id: required-workflows
+              uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
+              with:
+                  script: |
+                      const requiredWorkflows = ['CI', 'Security Scans', 'Nightly Regression'];
+                      const targetBranch = 'main';
+                      const targetSha = context.eventName === 'workflow_run'
+                        ? context.payload.workflow_run.head_sha
+                        : context.sha;
 
-    # Wait for CI to pass before deploying
+                      core.setOutput('target-sha', targetSha);
+
+                      if (context.ref !== `refs/heads/${targetBranch}`) {
+                        core.setFailed(`Production deploys must run from ${targetBranch}; received ${context.ref}.`);
+                        return;
+                      }
+
+                      const workflows = await github.paginate(github.rest.actions.listRepoWorkflows, {
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        per_page: 100,
+                      });
+
+                      const failures = [];
+
+                      for (const workflowName of requiredWorkflows) {
+                        const workflow = workflows.find((item) => item.name === workflowName);
+
+                        if (!workflow) {
+                          failures.push(`${workflowName}: workflow is missing`);
+                          continue;
+                        }
+
+                        const runs = await github.paginate(github.rest.actions.listWorkflowRuns, {
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          workflow_id: workflow.id,
+                          branch: targetBranch,
+                          status: 'completed',
+                          per_page: 100,
+                        });
+
+                        const matchingRun = runs.find((run) => run.head_sha === targetSha);
+
+                        if (!matchingRun) {
+                          failures.push(`${workflowName}: no completed run found for ${targetSha}`);
+                          continue;
+                        }
+
+                        if (matchingRun.conclusion !== 'success') {
+                          failures.push(`${workflowName}: ${matchingRun.conclusion} for ${targetSha}`);
+                        }
+                      }
+
+                      if (failures.length > 0) {
+                        core.setFailed(`Deploy gate blocked:\n${failures.map((failure) => `- ${failure}`).join('\n')}`);
+                        return;
+                      }
+
+                      core.info(`Deploy gate passed for ${targetSha}: ${requiredWorkflows.join(', ')}`);
+
     deploy:
         name: Deploy (Zero-Downtime)
         runs-on: ubuntu-latest
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm == 'deploy'
+        needs: validate-deploy-gates
+        if: needs.validate-deploy-gates.result == 'success'
         environment: production
 
         steps:
@@ -106,11 +165,13 @@ jobs:
             - name: Deploy Summary
               if: always()
               run: |
-                  echo "## 🚀 Deploy Summary" >> $GITHUB_STEP_SUMMARY
-                  echo "" >> $GITHUB_STEP_SUMMARY
-                  echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
-                  echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
-                  echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-                  echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
-                  echo "| Triggered by | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
-                  echo "| Result | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+                  {
+                    echo "## Deploy Summary"
+                    echo ""
+                    echo "| Item | Value |"
+                    echo "|------|-------|"
+                    echo "| Commit | \`${{ needs.validate-deploy-gates.outputs.target-sha }}\` |"
+                    echo "| Branch | \`${{ github.ref_name }}\` |"
+                    echo "| Triggered by | ${{ github.actor }} |"
+                    echo "| Result | ${{ job.status }} |"
+                  } >> "$GITHUB_STEP_SUMMARY"
