@@ -1,6 +1,10 @@
 name: Deploy to Production
 
 on:
+    workflow_run:
+        workflows: ["CI"]
+        types: [completed]
+        branches: [main]
     workflow_dispatch:
         inputs:
             confirm:
@@ -17,11 +21,24 @@ permissions:
     contents: read
 
 jobs:
+    ci-green-notice:
+        name: CI Green Notice
+        runs-on: ubuntu-latest
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
+        steps:
+            - name: Deployment remains manually gated
+              run: |
+                  {
+                    echo "## CI workflow completed successfully"
+                    echo ""
+                    echo "Production deployment is intentionally gated by workflow_dispatch and requires confirm=deploy."
+                  } >> "$GITHUB_STEP_SUMMARY"
+
     # Wait for CI to pass before deploying
     deploy:
         name: Deploy (Zero-Downtime)
         runs-on: ubuntu-latest
-        if: github.event.inputs.confirm == 'deploy'
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm == 'deploy'
         environment: production
 
         steps:
