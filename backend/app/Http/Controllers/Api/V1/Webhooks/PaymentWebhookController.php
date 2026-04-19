@@ -62,6 +62,9 @@ class PaymentWebhookController extends Controller
 
         // 3. Find the payment
         $expectedTenantId = $this->resolveExpectedTenantId($paymentData);
+        $referenceContext = $this->resolveExternalReferenceContext($externalReference);
+        $referenceTenantId = $referenceContext['tenant_id'];
+        $trustedTenantId = $expectedTenantId ?? $referenceTenantId;
         $payment = Payment::withoutGlobalScopes()->where('external_id', $externalId)->first();
         $paymentExistedBeforeWebhook = $payment !== null;
 
@@ -69,66 +72,69 @@ class PaymentWebhookController extends Controller
         $newStatus = $this->mapEventToStatus($event);
         $isConfirmed = in_array($newStatus, ['confirmed', 'received']);
 
-        if ($payment && $expectedTenantId !== null && (int) $payment->tenant_id !== $expectedTenantId) {
+        if ($expectedTenantId !== null && $referenceTenantId !== null && $expectedTenantId !== $referenceTenantId) {
+            Log::warning('PaymentWebhook: payload tenant does not match external reference tenant', [
+                'external_id' => $externalId,
+                'payload_tenant_id' => $expectedTenantId,
+                'reference_tenant_id' => $referenceTenantId,
+            ]);
+
+            return ApiResponse::message('Payload inválido: tenant da referência não confere.', 422);
+        }
+
+        if ($payment && $trustedTenantId === null) {
+            Log::warning('PaymentWebhook: missing trusted tenant for existing payment', [
+                'external_id' => $externalId,
+                'payment_id' => $payment->id,
+                'payment_tenant_id' => $payment->tenant_id,
+            ]);
+
+            return ApiResponse::message('Payload inválido: tenant do pagamento não informado.', 422);
+        }
+
+        if ($payment && (int) $payment->tenant_id !== $trustedTenantId) {
             Log::warning('PaymentWebhook: tenant mismatch for existing payment', [
                 'external_id' => $externalId,
                 'payment_id' => $payment->id,
                 'payment_tenant_id' => $payment->tenant_id,
-                'payload_tenant_id' => $expectedTenantId,
+                'trusted_tenant_id' => $trustedTenantId,
             ]);
 
             return ApiResponse::message('Payload inválido: tenant do pagamento não confere.', 422);
         }
 
         // 5. If confirmed and payment record doesn't exist, create it (triggers reconciliation hook)
-        if ($isConfirmed && ! $payment && $externalReference && str_contains($externalReference, ':')) {
+        if ($isConfirmed && ! $payment && $referenceContext['payable']) {
             try {
-                [$type, $id] = explode(':', $externalReference);
-                $payableClass = self::ALLOWED_PAYABLE_TYPES[$type] ?? null;
+                $payable = $referenceContext['payable'];
+                $payableClass = $referenceContext['payable_type'];
+                $payableId = $referenceContext['payable_id'];
+                $receiverId = $this->resolveWebhookPaymentReceiver($payable);
+                $tenantId = $referenceContext['tenant_id'];
 
-                if ($payableClass && is_numeric($id) && is_subclass_of($payableClass, Model::class)) {
-                    $payable = $payableClass::withoutGlobalScopes()->find((int) $id);
-                    if ($payable) {
-                        $receiverId = $this->resolveWebhookPaymentReceiver($payable);
-                        $tenantId = $this->resolveWebhookPaymentTenantId($payable);
-
-                        if ($expectedTenantId === null || $tenantId !== $expectedTenantId) {
-                            Log::warning('PaymentWebhook: external reference tenant mismatch', [
-                                'external_id' => $externalId,
-                                'payable_type' => $payableClass,
-                                'payable_id' => $id,
-                                'payable_tenant_id' => $tenantId,
-                                'payload_tenant_id' => $expectedTenantId,
-                            ]);
-
-                            return ApiResponse::message('Payload inválido: tenant da referência não confere.', 422);
-                        }
-
-                        if ($receiverId && $tenantId) {
-                            $payment = Payment::create([
-                                'tenant_id' => $tenantId,
-                                'payable_type' => $payableClass,
-                                'payable_id' => $id,
-                                'received_by' => $receiverId,
-                                'amount' => $paymentData['value'] ?? 0,
-                                'payment_method' => strtolower($paymentData['billingType'] ?? 'pix'),
-                                'payment_date' => now(),
-                                'external_id' => $externalId,
-                                'status' => $newStatus,
-                                'paid_at' => now(),
-                                'gateway_provider' => 'asaas',
-                                'gateway_response' => $payload,
-                            ]);
-                        } else {
-                            Log::warning('PaymentWebhook: payable missing payment creation attributes', [
-                                'external_id' => $externalId,
-                                'payable_type' => $payableClass,
-                                'payable_id' => $id,
-                                'has_receiver' => $receiverId !== null,
-                                'has_tenant' => $tenantId !== null,
-                            ]);
-                        }
-                    }
+                if ($receiverId !== null && $tenantId !== null) {
+                    $payment = Payment::create([
+                        'tenant_id' => $tenantId,
+                        'payable_type' => $payableClass,
+                        'payable_id' => $payableId,
+                        'received_by' => $receiverId,
+                        'amount' => $paymentData['value'] ?? 0,
+                        'payment_method' => strtolower($paymentData['billingType'] ?? 'pix'),
+                        'payment_date' => now(),
+                        'external_id' => $externalId,
+                        'status' => $newStatus,
+                        'paid_at' => now(),
+                        'gateway_provider' => 'asaas',
+                        'gateway_response' => $payload,
+                    ]);
+                } else {
+                    Log::warning('PaymentWebhook: payable missing payment creation attributes', [
+                        'external_id' => $externalId,
+                        'payable_type' => $payableClass,
+                        'payable_id' => $payableId,
+                        'has_receiver' => $receiverId !== null,
+                        'tenant_id' => $tenantId,
+                    ]);
                 }
             } catch (\Exception $e) {
                 Log::error('PaymentWebhook: failed to auto-create payment', ['error' => $e->getMessage()]);
@@ -290,6 +296,45 @@ class PaymentWebhookController extends Controller
         $tenantId = (int) $tenantId;
 
         return $tenantId > 0 ? $tenantId : null;
+    }
+
+    /**
+     * Resolve the tenant-bound payable identified by the gateway reference.
+     *
+     * @return array{payable: Model|null, payable_type: class-string<Model>|null, payable_id: int|null, tenant_id: int|null}
+     */
+    private function resolveExternalReferenceContext(mixed $externalReference): array
+    {
+        if (! is_string($externalReference) || ! str_contains($externalReference, ':')) {
+            return [
+                'payable' => null,
+                'payable_type' => null,
+                'payable_id' => null,
+                'tenant_id' => null,
+            ];
+        }
+
+        [$type, $id] = explode(':', $externalReference, 2);
+        $payableClass = self::ALLOWED_PAYABLE_TYPES[$type] ?? null;
+
+        if (! $payableClass || ! is_numeric($id)) {
+            return [
+                'payable' => null,
+                'payable_type' => null,
+                'payable_id' => null,
+                'tenant_id' => null,
+            ];
+        }
+
+        $payableId = (int) $id;
+        $payable = $payableClass::withoutGlobalScopes()->find($payableId);
+
+        return [
+            'payable' => $payable,
+            'payable_type' => $payableClass,
+            'payable_id' => $payableId,
+            'tenant_id' => $payable ? $this->resolveWebhookPaymentTenantId($payable) : null,
+        ];
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Models\AnalyticsDataset;
 use App\Models\AuditLog;
 use App\Models\Customer;
 use App\Models\DataExportJob;
+use App\Models\Payment;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
@@ -194,6 +195,51 @@ class TenantIsolationTest extends TestCase
             'external_id' => 'pay-cross-tenant-attempt',
         ]);
         $this->assertEquals('0.00', AccountReceivable::withoutGlobalScopes()->findOrFail($receivableB->id)->amount_paid);
+    }
+
+    public function test_payment_webhook_rejects_existing_payment_without_trusted_tenant(): void
+    {
+        config(['services.payment.webhook_secret' => 'tenant-webhook-secret']);
+
+        $receivableB = AccountReceivable::factory()->create([
+            'tenant_id' => $this->tenantB->id,
+            'customer_id' => $this->customerB->id,
+            'created_by' => $this->userB->id,
+            'amount' => 250,
+            'amount_paid' => 0,
+        ]);
+
+        $paymentB = Payment::create([
+            'tenant_id' => $this->tenantB->id,
+            'payable_type' => AccountReceivable::class,
+            'payable_id' => $receivableB->id,
+            'received_by' => $this->userB->id,
+            'amount' => 250,
+            'payment_method' => 'pix',
+            'payment_date' => now(),
+            'external_id' => 'pay-existing-cross-tenant-attempt',
+            'status' => 'pending',
+        ]);
+
+        $payload = [
+            'event' => 'PAYMENT_CONFIRMED',
+            'payment' => [
+                'id' => 'pay-existing-cross-tenant-attempt',
+                'value' => 250,
+                'billingType' => 'PIX',
+            ],
+        ];
+
+        $this->postJson('/api/v1/webhooks/payment', $payload, [
+            'X-Webhook-Secret' => 'tenant-webhook-secret',
+        ])->assertStatus(422);
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $paymentB->id,
+            'tenant_id' => $this->tenantB->id,
+            'external_id' => 'pay-existing-cross-tenant-attempt',
+            'status' => 'pending',
+        ]);
     }
 
     public function test_storage_path_from_other_tenant_is_not_reachable_through_work_order_route(): void

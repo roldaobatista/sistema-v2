@@ -55,6 +55,7 @@ class PaymentWebhookControllerTest extends TestCase
             'event' => 'PAYMENT_CONFIRMED',
             'payment' => [
                 'id' => 'PAY-TEST-001',
+                'tenant_id' => $this->tenant->id,
                 'status' => 'CONFIRMED',
             ],
         ]);
@@ -140,7 +141,10 @@ class PaymentWebhookControllerTest extends TestCase
 
         $response = $this->postJson('/api/v1/webhooks/payment', [
             'event' => 'PAYMENT_CONFIRMED',
-            'payment' => ['id' => 'PAY-TEST-001'],
+            'payment' => [
+                'id' => 'PAY-TEST-001',
+                'tenant_id' => $this->tenant->id,
+            ],
         ]);
 
         $response->assertOk();
@@ -151,7 +155,10 @@ class PaymentWebhookControllerTest extends TestCase
     {
         $response = $this->postJson('/api/v1/webhooks/payment', [
             'event' => 'PAYMENT_CANCELLED',
-            'payment' => ['id' => 'PAY-TEST-001'],
+            'payment' => [
+                'id' => 'PAY-TEST-001',
+                'tenant_id' => $this->tenant->id,
+            ],
         ]);
 
         $response->assertOk();
@@ -165,7 +172,10 @@ class PaymentWebhookControllerTest extends TestCase
     {
         $response = $this->postJson('/api/v1/webhooks/payment', [
             'event' => 'PAYMENT_OVERDUE',
-            'payment' => ['id' => 'PAY-TEST-001'],
+            'payment' => [
+                'id' => 'PAY-TEST-001',
+                'tenant_id' => $this->tenant->id,
+            ],
         ]);
 
         $response->assertOk();
@@ -178,6 +188,7 @@ class PaymentWebhookControllerTest extends TestCase
             'event' => 'PAYMENT_CONFIRMED',
             'payment' => [
                 'id' => 'PAY-TEST-001',
+                'tenant_id' => $this->tenant->id,
                 'status' => 'CONFIRMED',
                 'value' => 150.00,
             ],
