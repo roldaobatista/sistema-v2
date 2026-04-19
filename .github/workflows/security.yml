@@ -76,7 +76,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
           exit-code: '0'
 
-  # ---------- Dependency Review (free for all repos) ----------
+  # ---------- Dependency Review (lockfile scan, no repository settings required) ----------
   dependency-review:
     name: Dependency Review
     runs-on: ubuntu-latest
@@ -84,7 +84,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Dependency Review
-        uses: actions/dependency-review-action@v4
+      - name: Trivy - Dependency Lockfiles
+        uses: aquasecurity/trivy-action@master
         with:
-          fail-on-severity: critical
+          scan-type: 'fs'
+          scan-ref: '.'
+          scanners: 'vuln'
+          format: 'table'
+          severity: 'CRITICAL'
+          vuln-type: 'library'
+          exit-code: '1'
