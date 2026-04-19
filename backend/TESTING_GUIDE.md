@@ -88,7 +88,7 @@ O script:
 | `phpunit.xml` | Suites, env vars, source directories |
 | `.env.testing` | Variáveis de ambiente para testes |
 | `tests/TestCase.php` | Base class com `LazilyRefreshDatabase` + seed de roles |
-| `tests/UnitTestCase.php` | Base class LEVE para unit tests sem DB |
+| `tests/UnitTestCase.php` | Base class para unit tests sem DB (boota framework Laravel normalmente — apenas sem `LazilyRefreshDatabase`) |
 | `tests/bootstrap.php` | Bootstrap com filtro de warnings |
 | `database/schema/sqlite-schema.sql` | Schema dump (292KB, 466 tabelas) |
 | `generate_sqlite_schema.php` | Script de geração do schema dump |
@@ -279,7 +279,7 @@ Gate::before(fn () => true);
 ```
 tests/
 ├── TestCase.php              # Base com LazilyRefreshDatabase + roles seed
-├── UnitTestCase.php          # Base leve sem DB
+├── UnitTestCase.php          # Base sem DB (boota Laravel; apenas sem LazilyRefreshDatabase)
 ├── bootstrap.php             # Bootstrap com warning filter
 ├── Unit/
 │   ├── Models/               # Testes de models (relationships, casts, scopes)

@@ -61,7 +61,7 @@ Durante desenvolvimento, **nunca** rodar a suite completa no meio de uma task. E
 | Classe | Uso | DB |
 |--------|-----|-----|
 | `TestCase` | Feature tests que precisam de DB | Sim (LazilyRefreshDatabase) |
-| `UnitTestCase` | Unit tests puros sem DB | Nao |
+| `UnitTestCase` | Unit tests que NAO tocam DB (boota framework Laravel normalmente — apenas sem `LazilyRefreshDatabase`) | Nao |
 
 ## Padrão de setUp
 
