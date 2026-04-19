@@ -119,3 +119,45 @@ Garantia de que não quebrou.
   - Riscos remanescentes
   - Tokens consumidos
 - Board (humano) **NÃO** precisa aprovar. Apenas observa.
+
+---
+
+## CAMADA 11 — Deploy em Produção (FINAL)
+
+> **Só executa quando Camadas 1-10 estiverem 100% verdes** (zero findings, CI verde, main estável).
+
+### Pré-condições obrigatórias
+- [ ] Todas as 10 camadas concluídas
+- [ ] Suite de testes passa (`pest --parallel`, `vitest`, `playwright`)
+- [ ] CHANGELOG atualizado com todas as mudanças das 10 camadas
+- [ ] Runbook de rollback documentado em `docs/runbooks/rollback.md`
+- [ ] Backup do banco de produção feito (mesmo sem clientes, por garantia)
+
+### Passos do deploy
+1. **Tech Lead** cria tag de versão: `git tag v2.0.0 -m "Post-refactor: 10 camadas concluídas"` e push
+2. **Implementer** dispara o workflow de deploy:
+   ```bash
+   gh workflow run deploy.yml --ref main
+   ```
+3. **Auditor DevOps** monitora o job em tempo real (logs, health checks pós-deploy)
+4. **Auditor Performance** valida métricas: p95 < 500ms, error rate < 0.1%
+5. **Red Team** executa smoke tests de segurança em produção:
+   - Tentar login com credenciais inválidas
+   - Tentar cross-tenant access
+   - Verificar headers (CSP, HSTS, etc)
+6. **PR-Approver** confirma sucesso no PR de tag release e fecha o ciclo
+
+### Se algo falhar no deploy
+- **Auditor DevOps** executa rollback imediato (`gh workflow run rollback.yml`)
+- **Red Team** + **Auditor Segurança** auditam o incidente
+- CEO cria issue `KALA-INCIDENT-N: <título>` com post-mortem em PT-BR
+- Ciclo de correção começa novamente do ponto da falha
+
+### Após deploy bem-sucedido
+- CEO reporta ao board (roldao) via comentário em KALA-1 (issue-mãe da Camada 1):
+  - Data/hora do deploy
+  - Commit SHA deployado
+  - Resultado dos smoke tests
+  - Métricas pós-deploy (latência, erro rate)
+  - Tokens/horas consumidas na correção completa
+- Sistema em produção com 10 camadas corrigidas + entregue ao board
