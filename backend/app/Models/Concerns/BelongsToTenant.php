@@ -42,12 +42,24 @@ trait BelongsToTenant
     }
 
     /**
-     * Override de save() — atribui `tenant_id` antes de persistir quando vazio.
+     * Override de save() — auto-preenche `tenant_id` a partir do binding
+     * `current_tenant_id` quando o atributo está vazio.
      *
-     * Usar override (não event) garante que o auto-fill funciona mesmo com
-     * `Event::fake()` ativo, fechando o gap SEC-022 sem alterar a semântica
-     * pública do Eloquent (`save()` continua retornando bool e disparando os
-     * events `saving`/`saved` quando não há fake).
+     * SEC-022 (Wave 1D): migrado de `static::creating(...)` para override de
+     * save() porque event listeners são silenciados por `Event::fake()`.
+     *
+     * Sobre proteção cross-tenant (sec-11 / re-auditoria Camada 1 2026-04-19):
+     * a proteção real contra mass-assignment cross-tenant é via:
+     *
+     *  1. Nenhum FormRequest valida `tenant_id` no body (exceto whitelist auth/
+     *     cross-tenant-reporting) — garantido por `tests/Feature/Security/
+     *     TenantFillableSafetyTest.php`.
+     *  2. User::$fillable sem campos privilegiados (sec-08).
+     *  3. Middleware EnsureTenantScope não injeta `tenant_id` no body (sec-10).
+     *
+     * Não há guard no save() porque bloqueio de "sem binding + sem tenant_id"
+     * quebraria sistemicamente seeders globais, commands de observabilidade e
+     * fluxos de convite de usuário sem tenant prévio. Ver re-auditoria 2026-04-19.
      *
      * @param  array<string, mixed>  $options
      */

@@ -317,9 +317,9 @@ class CustomerTest extends TestCase
     {
         $switchedTenant = Tenant::factory()->create();
 
-        $this->user->update([
+        $this->user->forceFill([
             'current_tenant_id' => $switchedTenant->id,
-        ]);
+        ])->save();
 
         app()->instance('current_tenant_id', $switchedTenant->id);
 
