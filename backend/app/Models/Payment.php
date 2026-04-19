@@ -8,10 +8,22 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
+ * Payment = baixa financeira (parcial/total) sobre AccountReceivable ou
+ * AccountPayable. NUNCA é deletado fisicamente — usa SoftDeletes para
+ * preservar histórico de auditoria (re-auditoria Camada 1 2026-04-19,
+ * finding data-03).
+ *
+ * Integridade referencial do polimórfico (`payable_type` + `payable_id`)
+ * NÃO é imposta pelo banco — MySQL não suporta FK em coluna polimórfica.
+ * A responsabilidade é da aplicação: ao deletar o payable (AR/AP), o
+ * controller/service DEVE cascatear soft-delete nos pagamentos vinculados
+ * via `$receivable->payments()->delete()` antes de deletar o parent.
+ *
  * @property int $id
  * @property int $tenant_id
  * @property string|null $payable_type
@@ -23,6 +35,7 @@ use Illuminate\Support\Facades\DB;
  * @property Carbon|null $payment_date
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  * @property-read Model|null $payable
  * @property-read User|null $receiver
  * @property Carbon|null $paid_at
@@ -30,7 +43,7 @@ use Illuminate\Support\Facades\DB;
  */
 class Payment extends Model
 {
-    use Auditable, BelongsToTenant, HasFactory;
+    use Auditable, BelongsToTenant, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'tenant_id', 'payable_type', 'payable_id', 'received_by',
