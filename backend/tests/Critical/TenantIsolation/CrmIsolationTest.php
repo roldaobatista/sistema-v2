@@ -9,8 +9,6 @@
  * FAILURE HERE = CRM DATA LEAK BETWEEN TENANTS
  */
 
-use App\Http\Middleware\CheckPermission;
-use App\Http\Middleware\EnsureTenantScope;
 use App\Models\CrmActivity;
 use App\Models\CrmDeal;
 use App\Models\CrmMessage;
@@ -19,11 +17,9 @@ use App\Models\CrmPipelineStage;
 use App\Models\Customer;
 use App\Models\Tenant;
 use App\Models\User;
-use Illuminate\Support\Facades\Gate;
 use Laravel\Sanctum\Sanctum;
 
 beforeEach(function () {
-    Gate::before(fn () => true);
 
     $this->tenantA = Tenant::factory()->create();
     $this->tenantB = Tenant::factory()->create();
@@ -47,10 +43,12 @@ beforeEach(function () {
         'tenant_id' => $this->tenantB->id, 'name' => 'CRM Cust B', 'type' => 'PJ',
     ]);
 
-    $this->withoutMiddleware([
-        EnsureTenantScope::class,
-        CheckPermission::class,
-    ]);
+    foreach ([[$this->userA, $this->tenantA], [$this->userB, $this->tenantB]] as [$user, $tenant]) {
+        $user->tenants()->syncWithoutDetaching([$tenant->id => ['is_default' => true]]);
+        app()->instance('current_tenant_id', $tenant->id);
+        setPermissionsTeamId($tenant->id);
+        $user->assignRole('super_admin');
+    }
 });
 
 function actAsTenantCrm(object $test, User $user, Tenant $tenant): void

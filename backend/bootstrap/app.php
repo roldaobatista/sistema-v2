@@ -6,7 +6,6 @@ use App\Http\Middleware\CheckReportExportPermission;
 use App\Http\Middleware\CorrelationIdMiddleware;
 use App\Http\Middleware\EnsurePortalAccess;
 use App\Http\Middleware\EnsureTenantScope;
-use App\Http\Middleware\InjectBearerFromCookie;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\VerifyFiscalWebhookSecret;
 use App\Http\Middleware\VerifyWebhookSignature;
@@ -53,7 +52,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(SecurityHeaders::class);
         $middleware->prepend(CorrelationIdMiddleware::class);
         $middleware->append(ApiRequestMetricsMiddleware::class);
-        $middleware->prepend(InjectBearerFromCookie::class);
 
         // Confiar em proxies da rede Docker interna (Nginx container)
         $middleware->trustProxies(at: ['172.16.0.0/12', '10.0.0.0/8', '192.168.0.0/16']);

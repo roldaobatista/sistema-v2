@@ -55,6 +55,7 @@ class PaymentWebhookControllerTest extends TestCase
             'event' => 'PAYMENT_CONFIRMED',
             'payment' => [
                 'id' => 'PAY-TEST-001',
+                'tenant_id' => $this->tenant->id,
                 'status' => 'CONFIRMED',
             ],
         ]);
@@ -140,18 +141,48 @@ class PaymentWebhookControllerTest extends TestCase
 
         $response = $this->postJson('/api/v1/webhooks/payment', [
             'event' => 'PAYMENT_CONFIRMED',
-            'payment' => ['id' => 'PAY-TEST-001'],
+            'payment' => [
+                'id' => 'PAY-TEST-001',
+                'tenant_id' => $this->tenant->id,
+            ],
         ]);
 
         $response->assertOk();
         $response->assertJsonPath('data.status', 'already_processed');
     }
 
+    public function test_red_team_rejects_confirmed_replay_without_trusted_tenant(): void
+    {
+        $this->payment->update([
+            'status' => 'confirmed',
+            'paid_at' => now(),
+            'gateway_response' => null,
+        ]);
+
+        $response = $this->postJson('/api/v1/webhooks/payment', [
+            'event' => 'PAYMENT_CONFIRMED',
+            'payment' => [
+                'id' => 'PAY-TEST-001',
+                'status' => 'CONFIRMED',
+            ],
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonPath('message', 'Payload inválido: tenant do pagamento não informado.');
+
+        $this->payment->refresh();
+        $this->assertEquals('confirmed', $this->payment->status);
+        $this->assertNull($this->payment->gateway_response);
+    }
+
     public function test_webhook_cancellation_updates_status(): void
     {
         $response = $this->postJson('/api/v1/webhooks/payment', [
             'event' => 'PAYMENT_CANCELLED',
-            'payment' => ['id' => 'PAY-TEST-001'],
+            'payment' => [
+                'id' => 'PAY-TEST-001',
+                'tenant_id' => $this->tenant->id,
+            ],
         ]);
 
         $response->assertOk();
@@ -165,7 +196,10 @@ class PaymentWebhookControllerTest extends TestCase
     {
         $response = $this->postJson('/api/v1/webhooks/payment', [
             'event' => 'PAYMENT_OVERDUE',
-            'payment' => ['id' => 'PAY-TEST-001'],
+            'payment' => [
+                'id' => 'PAY-TEST-001',
+                'tenant_id' => $this->tenant->id,
+            ],
         ]);
 
         $response->assertOk();
@@ -178,6 +212,7 @@ class PaymentWebhookControllerTest extends TestCase
             'event' => 'PAYMENT_CONFIRMED',
             'payment' => [
                 'id' => 'PAY-TEST-001',
+                'tenant_id' => $this->tenant->id,
                 'status' => 'CONFIRMED',
                 'value' => 150.00,
             ],

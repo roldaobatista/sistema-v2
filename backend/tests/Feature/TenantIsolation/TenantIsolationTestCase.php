@@ -2,10 +2,8 @@
 
 namespace Tests\Feature\TenantIsolation;
 
-use App\Http\Middleware\CheckPermission;
 use App\Models\Tenant;
 use App\Models\User;
-use Illuminate\Support\Facades\Gate;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -13,8 +11,7 @@ use Tests\TestCase;
  * Base class for tenant isolation tests.
  *
  * Provides two tenants (A and B) with authenticated users.
- * Middleware CheckPermission is disabled; Gate bypasses permissions.
- * EnsureTenantScope is kept active to test real tenant filtering.
+ * Tests run through the real tenant and permission middleware.
  */
 abstract class TenantIsolationTestCase extends TestCase
 {
@@ -29,11 +26,6 @@ abstract class TenantIsolationTestCase extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        Gate::before(fn () => true);
-        $this->withoutMiddleware([
-            CheckPermission::class,
-        ]);
 
         $this->tenantA = Tenant::factory()->create(['name' => 'Tenant A']);
         $this->tenantB = Tenant::factory()->create(['name' => 'Tenant B']);
@@ -58,7 +50,7 @@ abstract class TenantIsolationTestCase extends TestCase
         foreach ([[$this->userA, $this->tenantA], [$this->userB, $this->tenantB]] as [$user, $tenant]) {
             setPermissionsTeamId($tenant->id);
             app()->instance('current_tenant_id', $tenant->id);
-            $user->assignRole('admin');
+            $user->assignRole('super_admin');
         }
     }
 
@@ -67,8 +59,9 @@ abstract class TenantIsolationTestCase extends TestCase
      */
     protected function actingAsTenantA(): static
     {
-        Sanctum::actingAs($this->userA, ['*']);
+        Sanctum::actingAs($this->userA, ["tenant:{$this->tenantA->id}"]);
         app()->instance('current_tenant_id', $this->tenantA->id);
+        setPermissionsTeamId($this->tenantA->id);
 
         return $this;
     }
@@ -78,8 +71,9 @@ abstract class TenantIsolationTestCase extends TestCase
      */
     protected function actingAsTenantB(): static
     {
-        Sanctum::actingAs($this->userB, ['*']);
+        Sanctum::actingAs($this->userB, ["tenant:{$this->tenantB->id}"]);
         app()->instance('current_tenant_id', $this->tenantB->id);
+        setPermissionsTeamId($this->tenantB->id);
 
         return $this;
     }

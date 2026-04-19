@@ -140,6 +140,46 @@ jobs:
         working-directory: backend
         run: vendor/bin/pest --parallel --processes=16 --no-coverage
 
+  tenant-isolation:
+    name: Tenant Isolation (S1)
+    needs: [static-analysis, code-formatting]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, xml, mysql, bcmath, sqlite3, pdo_sqlite
+          coverage: none
+
+      - name: Install Composer Dependencies
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Setup Environment
+        working-directory: backend
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          sed -i 's/APP_ENV=.*/APP_ENV=testing/' .env
+          sed -i 's/APP_DEBUG=.*/APP_DEBUG=true/' .env
+          sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+          sed -i 's|DB_DATABASE=.*|DB_DATABASE=:memory:|' .env
+          sed -i 's/CACHE_STORE=.*/CACHE_STORE=array/' .env
+          sed -i 's/QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
+          sed -i 's/SESSION_DRIVER=.*/SESSION_DRIVER=array/' .env
+
+      - name: Run Migrations
+        working-directory: backend
+        run: php artisan migrate --no-interaction --force
+
+      - name: Run Tenant Isolation Tests
+        working-directory: backend
+        run: php artisan test --filter TenantIsolationTest --parallel --no-coverage
+
   frontend-build:
     needs: [frontend-lint]
     runs-on: ubuntu-latest
@@ -204,9 +244,9 @@ jobs:
               echo "Server ready (attempt $i/30)"
               break
             fi
-            if [ $i -eq 30 ]; then
+            if [ "$i" -eq 30 ]; then
               echo "::error::Server failed to start on port 5173"
-              kill $SERVER_PID 2>/dev/null || true
+              kill "$SERVER_PID" 2>/dev/null || true
               exit 1
             fi
             sleep 1
@@ -220,10 +260,10 @@ jobs:
             2>&1 | tee axe-output.txt
 
           EXIT_CODE=${PIPESTATUS[0]}
-          kill $SERVER_PID 2>/dev/null || true
+          kill "$SERVER_PID" 2>/dev/null || true
 
           # Fail pipeline if critical or serious violations found
-          if [ $EXIT_CODE -ne 0 ]; then
+          if [ "$EXIT_CODE" -ne 0 ]; then
             echo "::error::axe-core found accessibility violations (critical/serious)"
             exit 1
           fi

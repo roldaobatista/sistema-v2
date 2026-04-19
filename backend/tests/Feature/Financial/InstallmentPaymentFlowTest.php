@@ -167,6 +167,7 @@ test('webhook idempotente nao reprocessa pagamento ja confirmado', function () {
         'event' => 'PAYMENT_CONFIRMED',
         'payment' => [
             'id' => 'pay_already_done',
+            'tenant_id' => $this->tenant->id,
             'status' => 'CONFIRMED',
             'value' => 150.00,
             'billingType' => 'PIX',

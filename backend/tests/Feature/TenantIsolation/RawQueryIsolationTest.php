@@ -3,7 +3,8 @@
 namespace Tests\Feature\TenantIsolation;
 
 use App\Models\Customer;
-use Illuminate\Support\Facades\DB;
+use App\Support\TenantSafeQuery;
+use InvalidArgumentException;
 
 class RawQueryIsolationTest extends TenantIsolationTestCase
 {
@@ -34,38 +35,28 @@ class RawQueryIsolationTest extends TenantIsolationTestCase
         $this->assertCount(1, $customers->where('tenant_id', $this->tenantA->id));
     }
 
-    public function test_raw_query_with_tenant_filter_respects_isolation(): void
+    public function test_tenant_safe_raw_query_respects_isolation(): void
     {
         [$customerA, $customerB] = $this->createCustomersForBothTenants();
 
         $this->actingAsTenantA();
 
-        $customers = DB::table('customers')
-            ->where('tenant_id', app('current_tenant_id'))
-            ->get();
+        $customers = TenantSafeQuery::table('customers')->get();
 
         $this->assertCount(1, $customers);
         $this->assertEquals($customerA->id, $customers->first()->id);
         $this->assertTrue($customers->every(fn ($c) => $c->tenant_id === $this->tenantA->id));
     }
 
-    public function test_raw_query_without_tenant_filter_leaks_data(): void
+    public function test_tenant_safe_raw_query_requires_tenant_context(): void
     {
-        [$customerA, $customerB] = $this->createCustomersForBothTenants();
+        $this->createCustomersForBothTenants();
 
-        $this->actingAsTenantA();
+        app()->forgetInstance('current_tenant_id');
 
-        $customers = DB::table('customers')->get();
+        $this->expectException(InvalidArgumentException::class);
 
-        // Raw queries without tenant filter return ALL tenants' data — this documents the risk.
-        $tenantIds = $customers->pluck('tenant_id')->unique()->sort()->values();
-
-        $this->assertTrue(
-            $tenantIds->count() >= 2,
-            'Raw DB::table() without tenant filter must return data from multiple tenants, proving global scope bypass.'
-        );
-        $this->assertTrue($customers->contains('id', $customerA->id));
-        $this->assertTrue($customers->contains('id', $customerB->id));
+        TenantSafeQuery::table('customers')->get();
     }
 
     public function test_belongstotenant_creating_event_auto_sets_tenant_id(): void

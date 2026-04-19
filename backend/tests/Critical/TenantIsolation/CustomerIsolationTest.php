@@ -9,19 +9,15 @@
  * FAILURE HERE = CRITICAL SECURITY BREACH
  */
 
-use App\Http\Middleware\CheckPermission;
-use App\Http\Middleware\EnsureTenantScope;
 use App\Models\Customer;
 use App\Models\Lookups\LeadSource;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Gate;
 use Laravel\Sanctum\Sanctum;
 
 beforeEach(function () {
     Model::unguard();
-    Gate::before(fn () => true);
 
     $this->tenantA = Tenant::factory()->create();
     $this->tenantB = Tenant::factory()->create();
@@ -38,10 +34,12 @@ beforeEach(function () {
         'is_active' => true,
     ]);
 
-    $this->withoutMiddleware([
-        EnsureTenantScope::class,
-        CheckPermission::class,
-    ]);
+    foreach ([[$this->userA, $this->tenantA], [$this->userB, $this->tenantB]] as [$user, $tenant]) {
+        $user->tenants()->syncWithoutDetaching([$tenant->id => ['is_default' => true]]);
+        app()->instance('current_tenant_id', $tenant->id);
+        setPermissionsTeamId($tenant->id);
+        $user->assignRole('super_admin');
+    }
 });
 
 // ─── Helper: act as tenant ────────────────────────────────────────
