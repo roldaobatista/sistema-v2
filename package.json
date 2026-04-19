@@ -1,4 +1,5 @@
 {
+  "name": "sistema",
   "private": true,
   "scripts": {
     "test": "node scripts/test-runner.mjs",
@@ -9,7 +10,7 @@
     "test:watch": "node scripts/test-runner.mjs frontend --watch",
     "test:coverage": "node scripts/test-runner.mjs --coverage",
     "test:quick": "node scripts/test-runner.mjs backend --suite=Unit",
-    "prepare": "husky"
+    "prepare": "node -e \"process.env.NODE_ENV === 'production' || require('child_process').execFileSync('husky', { stdio: 'inherit', shell: true })\""
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",
