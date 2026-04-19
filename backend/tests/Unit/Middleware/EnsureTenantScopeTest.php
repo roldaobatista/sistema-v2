@@ -141,11 +141,14 @@ class EnsureTenantScopeTest extends TestCase
         $this->assertEquals($this->tenant->id, app('current_tenant_id'));
     }
 
-    public function test_merges_tenant_id_into_request(): void
+    public function test_does_not_merge_tenant_id_into_request_body(): void
     {
+        // sec-10 / CLAUDE.md Lei 4: middleware não injeta tenant_id no body.
+        // Contexto de tenant fica apenas em `app('current_tenant_id')`.
         $request = $this->createRequest('/api/v1/work-orders', $this->user);
         $this->passThrough($request);
-        $this->assertEquals($this->tenant->id, $request->get('tenant_id'));
+        $this->assertNull($request->get('tenant_id'), 'Middleware não deve mergear tenant_id no body (sec-10 / Lei 4)');
+        $this->assertEquals($this->tenant->id, app('current_tenant_id'), 'Binding legítimo de tenant é no container');
     }
 
     // ── Inactive tenant ──

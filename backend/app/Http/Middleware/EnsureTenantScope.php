@@ -74,9 +74,10 @@ class EnsureTenantScope
 
         app()->instance('current_tenant_id', $tenantId);
 
-        if (! $this->isTenantSwitchEndpoint($request)) {
-            $request->merge(['tenant_id' => $tenantId]);
-        }
+        // sec-10 / CLAUDE.md Lei 4: tenant_id jamais sai do body. O contexto de
+        // tenant é o container binding `current_tenant_id`; controllers devem ler
+        // via `$request->user()->current_tenant_id`. Não injetar no request body
+        // para evitar precedente de "tenant_id vindo do request" em refactor futuro.
 
         setPermissionsTeamId($tenantId);
 
