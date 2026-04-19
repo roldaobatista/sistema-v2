@@ -23,6 +23,13 @@ use Illuminate\Support\Facades\Log;
 class PaymentWebhookController extends Controller
 {
     /**
+     * @var array<string, class-string<Model>>
+     */
+    private const ALLOWED_PAYABLE_TYPES = [
+        'AccountReceivable' => AccountReceivable::class,
+    ];
+
+    /**
      * Handle incoming webhook from payment gateway.
      */
     public function handle(Request $request): JsonResponse
@@ -54,24 +61,48 @@ class PaymentWebhookController extends Controller
         ]);
 
         // 3. Find the payment
-        $payment = Payment::where('external_id', $externalId)->first();
+        $expectedTenantId = $this->resolveExpectedTenantId($paymentData);
+        $payment = Payment::withoutGlobalScopes()->where('external_id', $externalId)->first();
         $paymentExistedBeforeWebhook = $payment !== null;
 
         // 4. Map status and handle confirmation
         $newStatus = $this->mapEventToStatus($event);
         $isConfirmed = in_array($newStatus, ['confirmed', 'received']);
 
+        if ($payment && $expectedTenantId !== null && (int) $payment->tenant_id !== $expectedTenantId) {
+            Log::warning('PaymentWebhook: tenant mismatch for existing payment', [
+                'external_id' => $externalId,
+                'payment_id' => $payment->id,
+                'payment_tenant_id' => $payment->tenant_id,
+                'payload_tenant_id' => $expectedTenantId,
+            ]);
+
+            return ApiResponse::message('Payload inválido: tenant do pagamento não confere.', 422);
+        }
+
         // 5. If confirmed and payment record doesn't exist, create it (triggers reconciliation hook)
         if ($isConfirmed && ! $payment && $externalReference && str_contains($externalReference, ':')) {
             try {
                 [$type, $id] = explode(':', $externalReference);
-                $payableClass = "App\\Models\\{$type}";
+                $payableClass = self::ALLOWED_PAYABLE_TYPES[$type] ?? null;
 
-                if (class_exists($payableClass) && is_subclass_of($payableClass, Model::class)) {
-                    $payable = $payableClass::find($id);
+                if ($payableClass && is_numeric($id) && is_subclass_of($payableClass, Model::class)) {
+                    $payable = $payableClass::withoutGlobalScopes()->find((int) $id);
                     if ($payable) {
                         $receiverId = $this->resolveWebhookPaymentReceiver($payable);
                         $tenantId = $this->resolveWebhookPaymentTenantId($payable);
+
+                        if ($expectedTenantId === null || $tenantId !== $expectedTenantId) {
+                            Log::warning('PaymentWebhook: external reference tenant mismatch', [
+                                'external_id' => $externalId,
+                                'payable_type' => $payableClass,
+                                'payable_id' => $id,
+                                'payable_tenant_id' => $tenantId,
+                                'payload_tenant_id' => $expectedTenantId,
+                            ]);
+
+                            return ApiResponse::message('Payload inválido: tenant da referência não confere.', 422);
+                        }
 
                         if ($receiverId && $tenantId) {
                             $payment = Payment::create([
@@ -180,6 +211,19 @@ class PaymentWebhookController extends Controller
             return true;
         }
 
+        $genericSecretHeader = (string) $request->header('X-Webhook-Secret', '');
+        if (! empty($genericSecret) && $genericSecretHeader !== '' && hash_equals($genericSecret, $genericSecretHeader)) {
+            return true;
+        }
+
+        if (! empty($genericSecret) && $genericHeader !== '') {
+            $expectedSignature = hash_hmac('sha256', $request->getContent(), $genericSecret);
+
+            if (hash_equals($expectedSignature, $genericHeader)) {
+                return true;
+            }
+        }
+
         if (! empty($genericSecret) && $genericHeader !== '' && hash_equals($genericSecret, $genericHeader)) {
             return true;
         }
@@ -225,6 +269,27 @@ class PaymentWebhookController extends Controller
         }
 
         return (int) $tenantId;
+    }
+
+    /**
+     * Resolve tenant explicitly emitted when the payment reference was created.
+     *
+     * @param  array<int|string, mixed>  $paymentData
+     */
+    private function resolveExpectedTenantId(array $paymentData): ?int
+    {
+        $tenantId = $paymentData['tenant_id']
+            ?? $paymentData['tenantId']
+            ?? data_get($paymentData, 'metadata.tenant_id')
+            ?? data_get($paymentData, 'metadata.tenantId');
+
+        if (! is_numeric($tenantId)) {
+            return null;
+        }
+
+        $tenantId = (int) $tenantId;
+
+        return $tenantId > 0 ? $tenantId : null;
     }
 
     /**

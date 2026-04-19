@@ -2,11 +2,8 @@
 
 namespace Tests\Critical;
 
-use App\Http\Middleware\CheckPermission;
-use App\Http\Middleware\EnsureTenantScope;
 use App\Models\Tenant;
 use App\Models\User;
-use Illuminate\Support\Facades\Gate;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -32,12 +29,6 @@ abstract class CriticalTestCase extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Gate::before(fn () => true);
-
-        $this->withoutMiddleware([
-            EnsureTenantScope::class,
-            CheckPermission::class,
-        ]);
 
         $this->tenant = Tenant::factory()->create();
         $this->user = User::factory()->create([
@@ -48,6 +39,8 @@ abstract class CriticalTestCase extends TestCase
 
         app()->instance('current_tenant_id', $this->tenant->id);
         setPermissionsTeamId($this->tenant->id);
-        Sanctum::actingAs($this->user, ['*']);
+        $this->user->tenants()->syncWithoutDetaching([$this->tenant->id => ['is_default' => true]]);
+        $this->user->assignRole('super_admin');
+        Sanctum::actingAs($this->user, ["tenant:{$this->tenant->id}"]);
     }
 }

@@ -4,6 +4,8 @@ Instalado:
 - Node 20.20.2, pnpm 10.33
 - Docker 29.4.0 + Compose v5.1.3
 - PHP 8.4.20, Composer 2.9.7
+- Extensao PHP `php8.4-sqlite3` (`pdo_sqlite`/`sqlite3`) instalada para executar a suite Laravel com SQLite em testes.
+- Extensao PHP `php8.4-mysql` (`pdo_mysql`/`mysqli`/`mysqlnd`) instalada para executar migrations contra o MySQL local do compose.
 - gh CLI (autenticado como roldaosolution-spec)
 
 Agentes têm `sudo NOPASSWD` — podem instalar qualquer coisa via apt/npm/docker.
