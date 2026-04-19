@@ -43,9 +43,24 @@ class BiometricConsent extends Model
         'alternative_method', 'retention_days', 'is_active',
     ];
 
+    /**
+     * Campos sensiveis sob LGPD Art. 11 (dado pessoal sensivel biometrico).
+     * Permanecem encriptados no DB via $casts e omitidos por default em
+     * toArray()/toJson(). Endpoints que legitimamente precisem retornar
+     * devem invocar makeVisible([...]) explicitamente.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'purpose',
+        'alternative_method',
+    ];
+
     protected function casts(): array
     {
         return [
+            'purpose' => 'encrypted',
+            'alternative_method' => 'encrypted',
             'consented_at' => 'date',
             'expires_at' => 'date',
             'revoked_at' => 'date',
