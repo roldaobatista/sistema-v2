@@ -10,6 +10,7 @@
     "test:watch": "node scripts/test-runner.mjs frontend --watch",
     "test:coverage": "node scripts/test-runner.mjs --coverage",
     "test:quick": "node scripts/test-runner.mjs backend --suite=Unit",
+    "build": "npm --prefix frontend ci --include=dev && npm --prefix frontend run build",
     "prepare": "node -e \"process.env.NODE_ENV === 'production' || require('child_process').execFileSync('husky', { stdio: 'inherit', shell: true })\""
   },
   "devDependencies": {
