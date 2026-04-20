@@ -14,10 +14,15 @@ class ResetPasswordRequest extends FormRequest
 
     public function rules(): array
     {
+        // sec-17 (Re-auditoria Camada 1 r3): delega para Password::defaults()
+        // centralizado em AppServiceProvider — garante que a política de senha
+        // (12+ chars, mixed case, letters, numbers, symbols, uncompromised) é
+        // aplicada consistentemente em todos os fluxos que criam/alteram senha,
+        // sem regra local divergente.
         return [
             'token' => 'required|string',
             'email' => 'required|email',
-            'password' => ['required', 'confirmed', PasswordRule::min(8)->mixedCase()->numbers()],
+            'password' => ['required', 'confirmed', PasswordRule::defaults()],
         ];
     }
 }

@@ -71,6 +71,17 @@ class AuthController extends Controller
                 return ApiResponse::message('Conta desativada.', 403);
             }
 
+            // sec-26 (Re-auditoria Camada 1 r3): bloqueia emissão de Bearer
+            // para usuário com email não verificado. Flag AUTH_REQUIRE_EMAIL_VERIFIED
+            // permite override temporário (default true) para transição. Usuários
+            // legados foram backfilled em migration 2026_04_19_500005.
+            if (config('auth.require_email_verified', true) && is_null($user->email_verified_at)) {
+                return ApiResponse::message(
+                    'E-mail não verificado. Verifique sua caixa de entrada antes de fazer login.',
+                    403
+                );
+            }
+
             Cache::forget($throttleKey);
             Cache::forget($throttleKey.':ttl');
 

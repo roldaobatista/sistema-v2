@@ -22,6 +22,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Email Verification Required on Login (sec-26)
+    |--------------------------------------------------------------------------
+    |
+    | Quando true (default), login bloqueia usuário com email_verified_at=NULL
+    | e retorna 403. Override com AUTH_REQUIRE_EMAIL_VERIFIED=false em prod
+    | apenas para emergência (usuários legados foram backfilled em
+    | migration 2026_04_19_500005; não deve ser necessário).
+    |
+    */
+
+    'require_email_verified' => env('AUTH_REQUIRE_EMAIL_VERIFIED', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | Authentication Guards
     |--------------------------------------------------------------------------
     |
