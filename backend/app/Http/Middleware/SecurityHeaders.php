@@ -31,8 +31,14 @@ class SecurityHeaders
         ]);
         $response->headers->set('Content-Security-Policy', $csp);
 
-        if ($request->isSecure()) {
-            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        // Re-auditoria Camada 1 r3 — sec-02:
+        // Em produção, emitir HSTS SEMPRE (atrás de proxy reverso `$request->isSecure()`
+        // pode retornar false mesmo com TLS real). max-age >= 2 anos + preload para
+        // elegibilidade à preload list dos navegadores.
+        if (app()->environment('production')) {
+            $response->headers->set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+        } elseif ($request->isSecure()) {
+            $response->headers->set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
         }
 
         return $response;
