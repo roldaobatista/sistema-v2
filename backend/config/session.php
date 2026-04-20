@@ -169,7 +169,11 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    // Re-auditoria Camada 1 r3 — sec-04:
+    // Em produção, default é true (força HTTPS-only). Env var ainda pode
+    // sobrescrever se necessário (ex: load balancer termina TLS e passa HTTP
+    // interno — configurar SESSION_SECURE_COOKIE=false explicitamente).
+    'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production'),
 
     /*
     |--------------------------------------------------------------------------
@@ -199,7 +203,11 @@ return [
     |
     */
 
-    'same_site' => env('SESSION_SAME_SITE', 'lax'),
+    // Re-auditoria Camada 1 r3 — sec-05:
+    // Em produção, default é 'strict' (bloqueia envio em navegação cross-site,
+    // mitiga CSRF sem depender apenas de token). Em dev/local, 'lax' por
+    // conveniência (aceita GET top-level de outra origem, facilita debug OAuth).
+    'same_site' => env('SESSION_SAME_SITE', env('APP_ENV') === 'production' ? 'strict' : 'lax'),
 
     /*
     |--------------------------------------------------------------------------

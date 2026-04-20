@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\Config\SanctumStatefulResolver;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Laravel\Sanctum\Http\Middleware\AuthenticateSession;
@@ -11,11 +12,16 @@ return [
     | Stateful Domains
     |--------------------------------------------------------------------------
     */
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
-        '%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
-        env('APP_URL') ? ','.parse_url(env('APP_URL'), PHP_URL_HOST) : ''
-    ))),
+    // Re-auditoria Camada 1 r3 — sec-03:
+    // Em produção, fallback default é vazio (força configuração explícita via
+    // SANCTUM_STATEFUL_DOMAINS). Em dev/local/testing, inclui localhost por
+    // conveniência. Alinhado com config/cors.php (sec-02 r2).
+    // Lógica extraída em SanctumStatefulResolver para permitir teste isolado.
+    'stateful' => SanctumStatefulResolver::resolve(
+        env('APP_ENV'),
+        env('SANCTUM_STATEFUL_DOMAINS'),
+        env('APP_URL'),
+    ),
 
     /*
     |--------------------------------------------------------------------------
