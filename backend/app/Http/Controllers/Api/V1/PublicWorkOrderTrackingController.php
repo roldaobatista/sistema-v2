@@ -42,6 +42,7 @@ class PublicWorkOrderTrackingController extends Controller
         }
 
         DB::table('qr_scans')->insert([
+            'tenant_id' => $workOrderModel->tenant_id,
             'work_order_id' => $workOrderModel->id,
             'ip_address' => $request->ip(),
             'user_agent' => substr((string) $request->userAgent(), 0, 500),

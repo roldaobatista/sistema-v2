@@ -87,5 +87,19 @@ Use a `Agent` tool para invocar. Para auditoria multi-perspectiva, rodar em para
 
 **TUDO mais** (5 Leis, Harness, formato 6+1, proibições, stack, testes, fechamento, equivalências com Codex) → `AGENTS.md`.
 
+### Formato Harness obrigatório (6+1)
+
+Toda resposta que altere código deve manter os itens canônicos definidos em `AGENTS.md`:
+
+1. **Resumo do problema**
+2. **Arquivos alterados**
+3. **Motivo técnico**
+4. **Testes executados**
+5. **Resultado dos testes**
+6. **Riscos remanescentes**
+7. **Como desfazer** quando exigido por migration, contrato de API, rota pública, deploy, remoção de feature ou risco alto.
+
+Fluxo operacional: entender → localizar → propor → implementar → verificar → corrigir falhas → evidenciar.
+
 Se você é o Claude, pode invocar agents/commands/skills nativamente.
 Se você é Codex ou outro agente, a tabela de equivalências em `AGENTS.md` §Equivalências mostra como fazer o mesmo trabalho manualmente.

@@ -16,6 +16,9 @@ class QuoteTag extends Model
 
     public function quotes(): BelongsToMany
     {
-        return $this->belongsToMany(Quote::class, 'quote_quote_tag');
+        $relation = $this->belongsToMany(Quote::class, 'quote_quote_tag')
+            ->withPivot('tenant_id');
+
+        return $this->tenant_id ? $relation->withPivotValue('tenant_id', $this->tenant_id) : $relation;
     }
 }

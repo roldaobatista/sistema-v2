@@ -93,6 +93,7 @@ class InventoryPwaController extends Controller
                 $stocks = WarehouseStock::whereBelongsTo($warehouse, 'warehouse')->get();
                 foreach ($stocks as $stock) {
                     $inventory->items()->create([
+                        'tenant_id' => $tenantId,
                         'product_id' => $stock->product_id,
                         'batch_id' => $stock->batch_id,
                         'expected_quantity' => $stock->quantity,
@@ -114,6 +115,7 @@ class InventoryPwaController extends Controller
                 $item = $existingItems->get($row['product_id']);
                 if (! $item) {
                     $item = $inventory->items()->create([
+                        'tenant_id' => $tenantId,
                         'product_id' => $row['product_id'],
                         'batch_id' => null,
                         'expected_quantity' => $warehouseStocks->get($row['product_id'], 0),

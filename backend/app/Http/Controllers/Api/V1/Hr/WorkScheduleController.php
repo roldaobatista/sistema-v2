@@ -26,7 +26,7 @@ class WorkScheduleController extends Controller
     {
         $query = WorkSchedule::query()
             ->where('tenant_id', $this->tenantId())
-            ->with('user:id,name');
+            ->with('technician:id,name');
 
         if ($search = $request->get('search')) {
             $search = SearchSanitizer::escapeLike($search);
@@ -36,7 +36,7 @@ class WorkScheduleController extends Controller
                     ->orWhere('region', 'like', "%{$search}%")
                     ->orWhere('notes', 'like', "%{$search}%")
                     ->orWhereDate('date', $search)
-                    ->orWhereHas('user', fn ($userQuery) => $userQuery->where('name', 'like', "%{$search}%"));
+                    ->orWhereHas('technician', fn ($userQuery) => $userQuery->where('name', 'like', "%{$search}%"));
             });
         }
 
@@ -54,14 +54,14 @@ class WorkScheduleController extends Controller
                 return WorkSchedule::updateOrCreate(
                     [
                         'tenant_id' => $this->tenantId(),
-                        'user_id' => $validated['user_id'],
+                        'technician_id' => $validated['technician_id'],
                         'date' => $validated['date'],
                     ],
                     $validated + ['tenant_id' => $this->tenantId()]
                 );
             });
 
-            return ApiResponse::data($schedule->fresh('user:id,name'), 201);
+            return ApiResponse::data($schedule->fresh('technician:id,name'), 201);
         } catch (\Throwable $e) {
             Log::error('WorkSchedule store failed', ['error' => $e->getMessage()]);
 
@@ -71,7 +71,7 @@ class WorkScheduleController extends Controller
 
     public function show(WorkSchedule $workSchedule): JsonResponse
     {
-        return ApiResponse::data($workSchedule->load('user:id,name'));
+        return ApiResponse::data($workSchedule->load('technician:id,name'));
     }
 
     public function update(UpdateWorkScheduleRequest $request, WorkSchedule $workSchedule): JsonResponse
@@ -81,7 +81,7 @@ class WorkScheduleController extends Controller
         try {
             DB::transaction(fn () => $workSchedule->update($validated));
 
-            return ApiResponse::data($workSchedule->fresh('user:id,name'));
+            return ApiResponse::data($workSchedule->fresh('technician:id,name'));
         } catch (\Throwable $e) {
             Log::error('WorkSchedule update failed', ['id' => $workSchedule->id, 'error' => $e->getMessage()]);
 

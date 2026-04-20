@@ -374,9 +374,11 @@ class CrmMessageController extends Controller
                     continue;
                 }
 
-                // Webhook não tem contexto autenticado → scope BelongsToTenant bloquearia busca
+                // LEI 4 JUSTIFICATIVA: webhook autenticado por assinatura nao tem usuario/current_tenant_id;
+                // external_id e unico globalmente para localizar o evento sem aceitar tenant do payload.
                 $message = CrmMessage::withoutGlobalScope('tenant')
                     ->where('external_id', $messageId)
+                    ->where('channel', CrmMessage::CHANNEL_EMAIL)
                     ->first();
                 if (! $message) {
                     continue;

@@ -242,6 +242,7 @@ class StockAdvancedController extends Controller
                         $unitPrice = $productsMap->get($item['product_id'], 0) ?? 0;
                         $itemTotal = round((float) $item['quantity'] * (float) $unitPrice, 2);
                         DB::table('purchase_quotation_items')->insert([
+                            'tenant_id' => $tenantId,
                             'purchase_quotation_id' => $pq->id,
                             'product_id' => $item['product_id'],
                             'quantity' => $item['quantity'],

@@ -152,7 +152,7 @@ class HrModelsTest extends TestCase
     {
         $ws = WorkSchedule::create([
             'tenant_id' => $this->tenant->id,
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-17',
             'shift_type' => 'regular',
             'start_time' => '08:00',

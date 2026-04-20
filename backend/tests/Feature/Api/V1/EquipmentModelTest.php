@@ -294,7 +294,7 @@ class EquipmentModelTest extends TestCase
             'unit' => 'un',
             'stock_qty' => 0,
         ]);
-        $model->products()->attach($product->id);
+        $model->products()->attach($product->id, ['tenant_id' => $this->tenant->id]);
 
         $response = $this->getJson('/api/v1/equipment-models');
 

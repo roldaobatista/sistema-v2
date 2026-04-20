@@ -31,7 +31,7 @@ class UpdateWorkScheduleRequest extends FormRequest
         $tenantId = (int) ($this->user()->current_tenant_id ?? $this->user()->tenant_id);
 
         return [
-            'user_id' => ['sometimes', 'integer', Rule::exists('users', 'id')->where('tenant_id', $tenantId)],
+            'technician_id' => ['sometimes', 'integer', Rule::exists('users', 'id')->where('tenant_id', $tenantId)],
             'date' => 'sometimes|date',
             'shift_type' => 'sometimes|nullable|in:normal,overtime,off,vacation,sick',
             'start_time' => 'sometimes|nullable|date_format:H:i',

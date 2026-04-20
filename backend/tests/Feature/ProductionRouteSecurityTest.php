@@ -192,10 +192,13 @@ class ProductionRouteSecurityTest extends TestCase
         $this->get("/api/v1/track/os/{$workOrder->id}?token={$token}")
             ->assertRedirect("https://portal.example.com/portal/os/{$workOrder->id}");
 
-        $this->assertSame(1, DB::table('qr_scans')->where('work_order_id', $workOrder->id)->count());
+        $this->assertDatabaseHas('qr_scans', [
+            'work_order_id' => $workOrder->id,
+            'tenant_id' => $tenant->id,
+        ]);
         $this->assertDatabaseHas('audit_logs', [
             'tenant_id' => $tenant->id,
-            'user_id' => null,
+            'user_id' => 0,
             'action' => 'public_viewed',
             'auditable_type' => WorkOrder::class,
             'auditable_id' => $workOrder->id,

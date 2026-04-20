@@ -42,7 +42,7 @@ class AuditLogTest extends TestCase
     public function test_index_returns_only_tenant_logs(): void
     {
         // Log do tenant atual
-        AuditLog::create([
+        AuditLog::forceCreate([
             'tenant_id' => $this->tenant->id,
             'user_id' => $this->user->id,
             'action' => 'created',
@@ -52,7 +52,7 @@ class AuditLogTest extends TestCase
 
         // Log de outro tenant
         $otherTenant = Tenant::factory()->create();
-        AuditLog::create([
+        AuditLog::forceCreate([
             'tenant_id' => $otherTenant->id,
             'user_id' => User::factory()->create(['tenant_id' => $otherTenant->id])->id,
             'action' => 'created',
@@ -70,7 +70,7 @@ class AuditLogTest extends TestCase
 
     public function test_show_returns_log_details_with_diff(): void
     {
-        $log = AuditLog::create([
+        $log = AuditLog::forceCreate([
             'tenant_id' => $this->tenant->id,
             'user_id' => $this->user->id,
             'action' => 'updated',
@@ -92,7 +92,7 @@ class AuditLogTest extends TestCase
     public function test_show_fails_for_other_tenant_log(): void
     {
         $otherTenant = Tenant::factory()->create();
-        $log = AuditLog::create([
+        $log = AuditLog::forceCreate([
             'tenant_id' => $otherTenant->id,
             'user_id' => User::factory()->create(['tenant_id' => $otherTenant->id])->id,
             'action' => 'created',
@@ -107,7 +107,7 @@ class AuditLogTest extends TestCase
 
     public function test_filters_work_correctly(): void
     {
-        AuditLog::create([
+        AuditLog::forceCreate([
             'tenant_id' => $this->tenant->id,
             'user_id' => $this->user->id,
             'action' => 'created',
@@ -115,7 +115,7 @@ class AuditLogTest extends TestCase
             'created_at' => now()->subDay(),
         ]);
 
-        AuditLog::create([
+        AuditLog::forceCreate([
             'tenant_id' => $this->tenant->id,
             'user_id' => $this->user->id,
             'action' => 'updated',
@@ -138,7 +138,7 @@ class AuditLogTest extends TestCase
 
     public function test_export_generates_csv(): void
     {
-        AuditLog::create([
+        AuditLog::forceCreate([
             'tenant_id' => $this->tenant->id,
             'user_id' => $this->user->id,
             'action' => 'created',

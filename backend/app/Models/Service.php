@@ -60,9 +60,11 @@ class Service extends Model
 
     public function skills(): BelongsToMany
     {
-        return $this->belongsToMany(Skill::class, 'service_skills')
-            ->withPivot('required_level')
+        $relation = $this->belongsToMany(Skill::class, 'service_skills')
+            ->withPivot('required_level', 'tenant_id')
             ->withTimestamps();
+
+        return $this->tenant_id ? $relation->withPivotValue('tenant_id', $this->tenant_id) : $relation;
     }
 
     public function priceHistories(): MorphMany

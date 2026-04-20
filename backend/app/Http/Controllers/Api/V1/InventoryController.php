@@ -87,6 +87,7 @@ class InventoryController extends Controller
 
                 foreach ($stocks as $stock) {
                     $inventory->items()->create([
+                        'tenant_id' => $tenantId,
                         'product_id' => $stock->product_id,
                         'batch_id' => $stock->batch_id,
                         'expected_quantity' => $stock->quantity,

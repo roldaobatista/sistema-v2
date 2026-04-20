@@ -370,7 +370,7 @@ class EquipmentController extends Controller
 
                 // Attach standard weights (pesos padrão)
                 if (! empty($standardWeightIds)) {
-                    $calibration->standardWeights()->attach($standardWeightIds);
+                    $calibration->standardWeights()->attach($standardWeightIds, ['tenant_id' => $equipment->tenant_id]);
                 }
 
                 $newStatus = $data['result'] === 'rejected'

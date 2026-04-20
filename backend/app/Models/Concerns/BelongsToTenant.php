@@ -127,6 +127,9 @@ trait BelongsToTenant
      *
      * NAO usar em controllers HTTP — nesses o tenant deve vir do binding
      * `current_tenant_id` via middleware EnsureTenantScope (invariante H1).
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeForTenant(Builder $query, int $tenantId): Builder
     {

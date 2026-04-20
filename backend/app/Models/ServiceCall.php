@@ -193,9 +193,11 @@ class ServiceCall extends Model
 
     public function equipments(): BelongsToMany
     {
-        return $this->belongsToMany(Equipment::class, 'service_call_equipments')
-            ->withPivot('observations')
+        $relation = $this->belongsToMany(Equipment::class, 'service_call_equipments')
+            ->withPivot('observations', 'tenant_id')
             ->withTimestamps();
+
+        return $this->tenant_id ? $relation->withPivotValue('tenant_id', $this->tenant_id) : $relation;
     }
 
     public function comments(): HasMany

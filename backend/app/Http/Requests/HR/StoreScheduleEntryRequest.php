@@ -28,7 +28,7 @@ class StoreScheduleEntryRequest extends FormRequest
         $tenantId = (int) ($this->user()->current_tenant_id ?? $this->user()->tenant_id);
 
         return [
-            'user_id' => ['required', Rule::exists('users', 'id')->where('tenant_id', $tenantId)],
+            'technician_id' => ['required', Rule::exists('users', 'id')->where('tenant_id', $tenantId)],
             'date' => 'required|date',
             'shift_type' => 'nullable|in:normal,overtime,off,vacation,sick',
             'start_time' => 'nullable|date_format:H:i',

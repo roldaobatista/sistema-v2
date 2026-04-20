@@ -460,7 +460,7 @@ class ConfigSystemDeepAuditTest extends TestCase
 
     public function test_show_audit_log_with_diff(): void
     {
-        $log = AuditLog::create([
+        $log = AuditLog::forceCreate([
             'tenant_id' => $this->tenantA->id,
             'user_id' => $this->adminA->id,
             'action' => AuditAction::UPDATED,
@@ -486,7 +486,7 @@ class ConfigSystemDeepAuditTest extends TestCase
 
     public function test_show_audit_log_from_other_tenant_returns_404(): void
     {
-        $logB = AuditLog::create([
+        $logB = AuditLog::forceCreate([
             'tenant_id' => $this->tenantB->id,
             'user_id' => $this->adminB->id,
             'action' => AuditAction::CREATED,
@@ -503,13 +503,13 @@ class ConfigSystemDeepAuditTest extends TestCase
 
     public function test_audit_log_actions_list(): void
     {
-        AuditLog::create([
+        AuditLog::forceCreate([
             'tenant_id' => $this->tenantA->id,
             'user_id' => $this->adminA->id,
             'action' => AuditAction::CREATED,
             'description' => 'Test',
         ]);
-        AuditLog::create([
+        AuditLog::forceCreate([
             'tenant_id' => $this->tenantA->id,
             'user_id' => $this->adminA->id,
             'action' => AuditAction::DELETED,
@@ -531,13 +531,13 @@ class ConfigSystemDeepAuditTest extends TestCase
 
     public function test_audit_log_filter_by_action(): void
     {
-        AuditLog::create([
+        AuditLog::forceCreate([
             'tenant_id' => $this->tenantA->id,
             'user_id' => $this->adminA->id,
             'action' => AuditAction::CREATED,
             'description' => 'Created something',
         ]);
-        AuditLog::create([
+        AuditLog::forceCreate([
             'tenant_id' => $this->tenantA->id,
             'user_id' => $this->adminA->id,
             'action' => AuditAction::DELETED,
@@ -555,7 +555,7 @@ class ConfigSystemDeepAuditTest extends TestCase
 
     public function test_audit_log_filter_by_date_range(): void
     {
-        AuditLog::create([
+        AuditLog::forceCreate([
             'tenant_id' => $this->tenantA->id,
             'user_id' => $this->adminA->id,
             'action' => AuditAction::CREATED,
@@ -575,7 +575,7 @@ class ConfigSystemDeepAuditTest extends TestCase
 
     public function test_audit_log_filter_by_search(): void
     {
-        AuditLog::create([
+        AuditLog::forceCreate([
             'tenant_id' => $this->tenantA->id,
             'user_id' => $this->adminA->id,
             'action' => AuditAction::UPDATED,

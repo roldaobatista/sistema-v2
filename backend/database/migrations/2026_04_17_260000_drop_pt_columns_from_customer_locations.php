@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * @var list<string>
+     */
     private array $cols = [
         'inscricao_estadual',
         'nome_propriedade',

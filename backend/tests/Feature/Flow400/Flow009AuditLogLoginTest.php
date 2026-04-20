@@ -31,6 +31,9 @@ class Flow009AuditLogLoginTest extends TestCase
         ]);
         $log = AuditLog::where('action', 'login')->latest()->first();
         $this->assertNotNull($log);
-        $this->assertStringContainsString('user@flow9.test', $log->description ?? '');
+        $this->assertSame($user->id, $log->user_id);
+        $this->assertSame($tenant->id, $log->tenant_id);
+        $this->assertSame('Login realizado', $log->description);
+        $this->assertStringNotContainsString('user@flow9.test', $log->description ?? '');
     }
 }

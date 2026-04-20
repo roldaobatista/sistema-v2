@@ -18,7 +18,7 @@ class BatchScheduleEntryRequest extends FormRequest
 
         return [
             'schedules' => 'required|array|min:1',
-            'schedules.*.user_id' => ['required', Rule::exists('users', 'id')->where('tenant_id', $tenantId)],
+            'schedules.*.technician_id' => ['required', Rule::exists('users', 'id')->where('tenant_id', $tenantId)],
             'schedules.*.date' => 'required|date',
             'schedules.*.shift_type' => 'nullable|in:normal,overtime,off,vacation,sick',
             'schedules.*.start_time' => 'nullable|date_format:H:i',

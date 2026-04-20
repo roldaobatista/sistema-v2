@@ -101,8 +101,8 @@ class PasswordResetControllerTest extends TestCase
         $response = $this->postJson('/api/v1/reset-password', [
             'token' => 'invalid-token-xyz',
             'email' => $this->user->email,
-            'password' => 'NewStrongPass123',
-            'password_confirmation' => 'NewStrongPass123',
+            'password' => 'NewStrongPass123!',
+            'password_confirmation' => 'NewStrongPass123!',
         ]);
 
         $response->assertStatus(422);
@@ -124,14 +124,14 @@ class PasswordResetControllerTest extends TestCase
         $response = $this->postJson('/api/v1/reset-password', [
             'token' => $token,
             'email' => $this->user->email,
-            'password' => 'BrandNewPass123',
-            'password_confirmation' => 'BrandNewPass123',
+            'password' => 'BrandNewPass123!',
+            'password_confirmation' => 'BrandNewPass123!',
         ]);
 
         $response->assertStatus(200);
 
         $fresh = $this->user->fresh();
-        $this->assertTrue(Hash::check('BrandNewPass123', $fresh->password));
+        $this->assertTrue(Hash::check('BrandNewPass123!', $fresh->password));
         $this->assertFalse(Hash::check('OldPassword123', $fresh->password));
 
         // Todos os tokens devem ter sido revogados

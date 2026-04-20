@@ -65,7 +65,9 @@ class PaymentWebhookController extends Controller
         $referenceContext = $this->resolveExternalReferenceContext($externalReference);
         $referenceTenantId = $referenceContext['tenant_id'];
         $trustedTenantId = $expectedTenantId ?? $referenceTenantId;
-        $payment = Payment::withoutGlobalScopes()->where('external_id', $externalId)->first();
+        // LEI 4 JUSTIFICATIVA: webhook autenticado por assinatura não tem usuário/current_tenant_id;
+        // a busca precisa escapar apenas do tenant scope e o tenant confiável é validado logo abaixo.
+        $payment = Payment::withoutGlobalScope('tenant')->where('external_id', $externalId)->first();
         $paymentExistedBeforeWebhook = $payment !== null;
 
         // 4. Map status and handle confirmation
@@ -327,7 +329,9 @@ class PaymentWebhookController extends Controller
         }
 
         $payableId = (int) $id;
-        $payable = $payableClass::withoutGlobalScopes()->find($payableId);
+        // LEI 4 JUSTIFICATIVA: referencia externa chega por webhook assinado sem current_tenant_id;
+        // escapamos somente do tenant scope e usamos o proprio payable para derivar tenant confiavel.
+        $payable = $payableClass::withoutGlobalScope('tenant')->find($payableId);
 
         return [
             'payable' => $payable,

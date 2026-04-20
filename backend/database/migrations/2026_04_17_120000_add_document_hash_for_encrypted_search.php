@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Mapa: tabela => [coluna_origem, coluna_hash, índice composto, índice nome]
+     * @var array<string, array{source: string, hash: string, index: string}>
      */
     private array $targets = [
         'customers' => [
@@ -112,7 +112,7 @@ return new class extends Migration
                 ->getSchemaBuilder()
                 ->getIndexes($table));
 
-            return $indexes->contains(fn ($idx) => ($idx['name'] ?? null) === $index);
+            return $indexes->contains(fn ($idx) => $idx['name'] === $index);
         } catch (Throwable) {
             return false;
         }

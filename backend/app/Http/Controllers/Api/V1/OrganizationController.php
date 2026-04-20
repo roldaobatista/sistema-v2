@@ -184,7 +184,10 @@ class OrganizationController extends Controller
         $this->authorize('viewAny', Department::class);
 
         try {
-            $departments = Department::with(['manager', 'positions.users'])->get();
+            $departments = Department::with(['manager', 'positions.users'])
+                ->orderBy('name')
+                ->limit(200)
+                ->get();
 
             return ApiResponse::data(DepartmentResource::collection($departments));
         } catch (\Exception $e) {

@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\AgendaItem;
+use BackedEnum;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,13 +17,13 @@ class AgendaItemResource extends JsonResource
         $arr = [
             'id' => $this->id,
             'tenant_id' => $this->tenant_id,
-            'type' => $this->type?->value ?? $this->type,
+            'type' => $this->enumValue($this->type),
             'title' => $this->title,
             'short_description' => $this->short_description,
-            'status' => $this->status?->value ?? $this->status,
-            'priority' => $this->priority?->value ?? $this->priority,
-            'origin' => $this->origin?->value ?? $this->origin,
-            'visibility' => $this->visibility?->value ?? $this->visibility,
+            'status' => $this->enumValue($this->status),
+            'priority' => $this->enumValue($this->priority),
+            'origin' => $this->enumValue($this->origin),
+            'visibility' => $this->enumValue($this->visibility),
             'due_at' => $this->due_at?->toIso8601String(),
             'remind_at' => $this->remind_at?->toIso8601String(),
             'snooze_until' => $this->snooze_until?->toIso8601String(),
@@ -41,11 +42,11 @@ class AgendaItemResource extends JsonResource
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
             // Legacy PT aliases para compatibilidade com frontend/clientes existentes
-            'tipo' => $this->type?->value ?? $this->type,
+            'tipo' => $this->enumValue($this->type),
             'titulo' => $this->title,
             'descricao_curta' => $this->short_description,
-            'prioridade' => $this->priority?->value ?? $this->priority,
-            'visibilidade' => $this->visibility?->value ?? $this->visibility,
+            'prioridade' => $this->enumValue($this->priority),
+            'visibilidade' => $this->enumValue($this->visibility),
             'contexto' => $this->context,
             'ref_tipo' => $this->ref_type,
             'responsavel_user_id' => $this->assignee_user_id,
@@ -84,5 +85,10 @@ class AgendaItemResource extends JsonResource
         }
 
         return $arr;
+    }
+
+    private function enumValue(mixed $value): mixed
+    {
+        return $value instanceof BackedEnum ? $value->value : $value;
     }
 }

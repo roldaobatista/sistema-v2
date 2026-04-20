@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Enums\TenantStatus;
 use App\Models\Tenant;
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -19,10 +20,12 @@ class EnsureTenantScope
             return response()->json(['message' => 'Nao autenticado.'], 401);
         }
 
+        $this->hydrateTenantAttributes($user);
+
         $tenantId = $this->resolveTenantFromToken($user);
 
         if (! $tenantId) {
-            $tenantId = (int) ($user->current_tenant_id ?? $user->tenant_id ?? 0);
+            $tenantId = $this->resolveTenantFromUser($user);
         }
 
         $isMeOrMyTenants = $this->isTenantSelectionSafeEndpoint($request);
@@ -73,6 +76,7 @@ class EnsureTenantScope
         }
 
         app()->instance('current_tenant_id', $tenantId);
+        $this->syncResolvedTenantToUser($user, $tenantId);
 
         // sec-10 / CLAUDE.md Lei 4: tenant_id jamais sai do body. O contexto de
         // tenant é o container binding `current_tenant_id`; controllers devem ler
@@ -119,5 +123,58 @@ class EnsureTenantScope
         }
 
         return null;
+    }
+
+    private function resolveTenantFromUser(User $user): int
+    {
+        $currentTenantId = (int) ($this->rawUserAttribute($user, 'current_tenant_id') ?? 0);
+        if ($currentTenantId > 0) {
+            return $currentTenantId;
+        }
+
+        return 0;
+    }
+
+    private function hydrateTenantAttributes(User $user): void
+    {
+        $attributes = $user->getAttributes();
+        if (array_key_exists('tenant_id', $attributes) && array_key_exists('current_tenant_id', $attributes)) {
+            return;
+        }
+
+        $identifier = $user->getAuthIdentifier();
+        if (! $identifier) {
+            return;
+        }
+
+        $fresh = User::query()->whereKey($identifier)->first(['tenant_id', 'current_tenant_id']);
+        if (! $fresh) {
+            return;
+        }
+
+        $fill = [];
+        foreach (['tenant_id', 'current_tenant_id'] as $key) {
+            if (! array_key_exists($key, $attributes) && array_key_exists($key, $fresh->getAttributes())) {
+                $fill[$key] = $fresh->getAttributes()[$key];
+            }
+        }
+
+        if ($fill !== []) {
+            $user->forceFill($fill);
+        }
+    }
+
+    private function syncResolvedTenantToUser(User $user, int $tenantId): void
+    {
+        if ((int) ($this->rawUserAttribute($user, 'current_tenant_id') ?? 0) !== $tenantId) {
+            $user->forceFill(['current_tenant_id' => $tenantId]);
+        }
+    }
+
+    private function rawUserAttribute(User $user, string $key): mixed
+    {
+        $attributes = $user->getAttributes();
+
+        return array_key_exists($key, $attributes) ? $attributes[$key] : null;
     }
 }

@@ -5,11 +5,12 @@ namespace Tests\Feature;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /**
@@ -33,7 +34,6 @@ class AuthSecurityTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Gate::before(fn () => true);
 
         $this->tenant = Tenant::factory()->create(['status' => Tenant::STATUS_ACTIVE]);
         $this->otherTenant = Tenant::factory()->create(['status' => Tenant::STATUS_ACTIVE]);
@@ -58,6 +58,10 @@ class AuthSecurityTest extends TestCase
         $this->inactiveUser->tenants()->attach($this->tenant->id, ['is_default' => true]);
 
         app()->instance('current_tenant_id', $this->tenant->id);
+        setPermissionsTeamId($this->tenant->id);
+        Permission::findOrCreate('platform.tenant.switch');
+        $this->activeUser->givePermissionTo('platform.tenant.switch');
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
     // ══════════════════════════════════════════════
@@ -492,6 +496,24 @@ class AuthSecurityTest extends TestCase
         $token = PersonalAccessToken::findToken($response->json('data.token'));
         $this->assertNotNull($token);
         $this->assertContains("tenant:{$this->otherTenant->id}", $token->abilities);
+    }
+
+    public function test_switch_tenant_without_platform_permission_returns_403(): void
+    {
+        $restrictedUser = User::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'current_tenant_id' => $this->tenant->id,
+            'email_verified_at' => now(),
+            'is_active' => true,
+        ]);
+        $restrictedUser->tenants()->attach([$this->tenant->id, $this->otherTenant->id]);
+        Sanctum::actingAs($restrictedUser, ['*']);
+
+        $response = $this->postJson('/api/v1/switch-tenant', [
+            'tenant_id' => $this->otherTenant->id,
+        ]);
+
+        $response->assertForbidden();
     }
 
     public function test_switch_tenant_to_unauthorized_tenant_returns_403(): void

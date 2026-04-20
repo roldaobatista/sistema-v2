@@ -27,7 +27,7 @@ class CorrelationIdMiddleware
         Log::shareContext([
             'correlation_id' => $correlationId,
             'request_id' => $correlationId,
-            'tenant_id' => $request->user()?->current_tenant_id,
+            'tenant_id' => $this->tenantIdForLog($request),
             'user_id' => $request->user()?->id,
             'path' => '/'.$request->path(),
             'method' => $request->method(),
@@ -38,5 +38,21 @@ class CorrelationIdMiddleware
         $response->headers->set('X-Request-ID', $correlationId);
 
         return $response;
+    }
+
+    private function tenantIdForLog(Request $request): mixed
+    {
+        if (app()->bound('current_tenant_id')) {
+            return app('current_tenant_id');
+        }
+
+        $user = $request->user();
+        if (! $user) {
+            return null;
+        }
+
+        $attributes = $user->getAttributes();
+
+        return $attributes['current_tenant_id'] ?? $attributes['tenant_id'] ?? null;
     }
 }

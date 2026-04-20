@@ -38,15 +38,15 @@ class TwoFactorController extends Controller
 
         $secret = Str::random(32);
 
-        $user->twoFactorAuth()->updateOrCreate(
-            ['user_id' => $user->id],
-            [
-                'method' => $validated['method'],
-                'secret' => $secret,
-                'is_enabled' => false,
-                'tenant_id' => $user->current_tenant_id ?? $user->tenant_id,
-            ]
-        );
+        $twoFactor = $user->twoFactorAuth()->firstOrNew(['user_id' => $user->id]);
+        $twoFactor->fill([
+            'method' => $validated['method'],
+            'secret' => $secret,
+            'is_enabled' => false,
+        ]);
+        $twoFactor->forceFill([
+            'tenant_id' => $user->current_tenant_id ?? $user->tenant_id,
+        ])->save();
 
         if ($validated['method'] === 'email') {
             $code = random_int(100000, 999999);

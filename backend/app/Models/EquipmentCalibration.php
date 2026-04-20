@@ -154,12 +154,16 @@ class EquipmentCalibration extends Model
      */
     public function standardWeights(): BelongsToMany
     {
-        return $this->belongsToMany(
+        $relation = $this->belongsToMany(
             StandardWeight::class,
             'calibration_standard_weight',
             'equipment_calibration_id',
             'standard_weight_id'
-        )->withTimestamps();
+        )
+            ->withPivot('tenant_id')
+            ->withTimestamps();
+
+        return $this->tenant_id ? $relation->withPivotValue('tenant_id', $this->tenant_id) : $relation;
     }
 
     public function readings(): HasMany

@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 /**
@@ -45,9 +44,27 @@ class UserFactory extends Factory
     {
         return $this->afterMaking(function (User $user) {
             // Defaults coerentes com testes historicamente baseados em is_active=true
-            // e tenant_id/current_tenant_id = null (quando o chamador não informar).
-            if ($user->getAttribute('is_active') === null) {
-                $user->forceFill(['is_active' => true]);
+            // e tenant_id/current_tenant_id hidratados mesmo quando nulos. Quando
+            // o teste informa tenant_id, o usuário representa uma sessão válida
+            // nesse tenant; ausência intencional deve ser explícita:
+            // current_tenant_id => null.
+            $attributes = $user->getAttributes();
+            $fill = [];
+
+            if (! array_key_exists('is_active', $attributes)) {
+                $fill['is_active'] = true;
+            }
+
+            if (! array_key_exists('tenant_id', $attributes)) {
+                $fill['tenant_id'] = null;
+            }
+
+            if (! array_key_exists('current_tenant_id', $attributes)) {
+                $fill['current_tenant_id'] = $attributes['tenant_id'] ?? $fill['tenant_id'] ?? null;
+            }
+
+            if ($fill !== []) {
+                $user->forceFill($fill);
             }
         });
     }
@@ -58,7 +75,6 @@ class UserFactory extends Factory
      * o método create() do factory aplica o array via forceFill explícito.
      *
      * @param  array<string, mixed>  $attributes
-     * @param  Model|null  $parent
      */
     public function newModel(array $attributes = [])
     {

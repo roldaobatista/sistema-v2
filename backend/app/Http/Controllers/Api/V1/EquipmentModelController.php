@@ -110,7 +110,7 @@ class EquipmentModelController extends Controller
         $validated = $request->validated();
         $productIds = collect($validated['product_ids'])->unique()->values()->all();
         $allowed = Product::where('tenant_id', $tenantId)->whereIn('id', $productIds)->pluck('id')->all();
-        $equipmentModel->products()->sync($allowed);
+        $equipmentModel->products()->sync(array_fill_keys($allowed, ['tenant_id' => $tenantId]));
         $equipmentModel->load('products:id,name,code');
 
         return ApiResponse::data(['equipment_model' => new EquipmentModelResource($equipmentModel)]);

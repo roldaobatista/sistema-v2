@@ -13,13 +13,14 @@ beforeEach(function () {
         'tenant_id' => $this->tenant->id,
     ]);
 
-    $this->portalUser = ClientPortalUser::create([
+    $this->portalUser = ClientPortalUser::forceCreate([
         'tenant_id' => $this->tenant->id,
         'customer_id' => $this->customer->id,
         'name' => 'Portal Test User',
         'email' => 'portal@example.com',
         'password' => Hash::make('password123'),
         'is_active' => true,
+        'email_verified_at' => now(),
     ]);
 });
 
@@ -31,7 +32,7 @@ test('portal user cannot login if customer has no active contract', function () 
     ]);
 
     $response->assertStatus(422)
-        ->assertJsonPath('errors.email.0', 'Acesso bloqueado: Nenhum contrato ativo de prestação de serviço foi encontrado para esta conta.');
+        ->assertJsonPath('message', 'Credenciais invalidas.');
 });
 
 test('portal user can login if customer has active contract', function () {

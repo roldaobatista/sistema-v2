@@ -12,7 +12,7 @@ class WorkSchedule extends Model
     use BelongsToTenant;
 
     protected $fillable = [
-        'tenant_id', 'user_id', 'date', 'shift_type', 'start_time', 'end_time', 'region', 'notes',
+        'tenant_id', 'technician_id', 'date', 'shift_type', 'start_time', 'end_time', 'region', 'notes',
     ];
 
     public function setDateAttribute(string|\DateTimeInterface|null $value): void
@@ -22,8 +22,11 @@ class WorkSchedule extends Model
             : null;
     }
 
-    public function user(): BelongsTo
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function technician(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'technician_id');
     }
 }

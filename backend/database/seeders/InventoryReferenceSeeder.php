@@ -295,6 +295,7 @@ class InventoryReferenceSeeder extends Seeder
                     'batch_id' => $batchIds[$product['id']] ?? null,
                 ],
                 [
+                    'tenant_id' => $tenantId,
                     'product_serial_id' => null,
                     'expected_quantity' => $expected,
                     'counted_quantity' => $counted,

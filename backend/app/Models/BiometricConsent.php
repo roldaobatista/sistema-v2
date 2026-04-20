@@ -49,7 +49,7 @@ class BiometricConsent extends Model
      * toArray()/toJson(). Endpoints que legitimamente precisem retornar
      * devem invocar makeVisible([...]) explicitamente.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $hidden = [
         'purpose',

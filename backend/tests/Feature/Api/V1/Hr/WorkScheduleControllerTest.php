@@ -38,7 +38,7 @@ class WorkScheduleControllerTest extends TestCase
     {
         WorkSchedule::create([
             'tenant_id' => $this->tenant->id,
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-10',
             'shift_type' => 'normal',
             'start_time' => '08:00',
@@ -63,7 +63,7 @@ class WorkScheduleControllerTest extends TestCase
     public function test_store_creates_work_schedule(): void
     {
         $response = $this->postJson('/api/v1/work-schedules', [
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-12',
             'shift_type' => 'normal',
             'start_time' => '08:00',
@@ -71,23 +71,23 @@ class WorkScheduleControllerTest extends TestCase
         ]);
 
         $response->assertStatus(201)
-            ->assertJsonPath('data.user_id', $this->user->id);
+            ->assertJsonPath('data.technician_id', $this->user->id);
     }
 
-    public function test_store_validation_requires_user_id(): void
+    public function test_store_validation_requires_technician_id(): void
     {
         $response = $this->postJson('/api/v1/work-schedules', [
             'date' => '2026-03-12',
         ]);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['user_id']);
+            ->assertJsonValidationErrors(['technician_id']);
     }
 
     public function test_store_validation_requires_date(): void
     {
         $response = $this->postJson('/api/v1/work-schedules', [
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
         ]);
 
         $response->assertStatus(422)
@@ -97,7 +97,7 @@ class WorkScheduleControllerTest extends TestCase
     public function test_store_validation_requires_valid_shift_type(): void
     {
         $response = $this->postJson('/api/v1/work-schedules', [
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-12',
             'shift_type' => 'invalid_type',
         ]);
@@ -110,7 +110,7 @@ class WorkScheduleControllerTest extends TestCase
     {
         $schedule = WorkSchedule::create([
             'tenant_id' => $this->tenant->id,
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-10',
             'shift_type' => 'normal',
             'start_time' => '08:00',
@@ -128,7 +128,7 @@ class WorkScheduleControllerTest extends TestCase
         $otherTenant = Tenant::factory()->create();
         $schedule = WorkSchedule::create([
             'tenant_id' => $otherTenant->id,
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-10',
         ]);
 
@@ -141,7 +141,7 @@ class WorkScheduleControllerTest extends TestCase
     {
         $schedule = WorkSchedule::create([
             'tenant_id' => $this->tenant->id,
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-10',
             'shift_type' => 'normal',
             'start_time' => '08:00',
@@ -164,7 +164,7 @@ class WorkScheduleControllerTest extends TestCase
         $otherTenant = Tenant::factory()->create();
         $schedule = WorkSchedule::create([
             'tenant_id' => $otherTenant->id,
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-10',
         ]);
 
@@ -179,7 +179,7 @@ class WorkScheduleControllerTest extends TestCase
     {
         $schedule = WorkSchedule::create([
             'tenant_id' => $this->tenant->id,
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-10',
             'shift_type' => 'normal',
         ]);
@@ -196,7 +196,7 @@ class WorkScheduleControllerTest extends TestCase
         $otherTenant = Tenant::factory()->create();
         $schedule = WorkSchedule::create([
             'tenant_id' => $otherTenant->id,
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-10',
         ]);
 
@@ -211,13 +211,13 @@ class WorkScheduleControllerTest extends TestCase
 
         WorkSchedule::create([
             'tenant_id' => $this->tenant->id,
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-10',
         ]);
 
         WorkSchedule::create([
             'tenant_id' => $otherTenant->id,
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-11',
         ]);
 

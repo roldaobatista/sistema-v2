@@ -8,7 +8,7 @@
 #
 # Bypass proibido: --no-verify é violação da Lei 2 (AGENTS.md §Proibições).
 
-set -u
+set -uo pipefail
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'

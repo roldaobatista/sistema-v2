@@ -8,6 +8,7 @@ use App\Http\Requests\Auth\SendPasswordResetLinkRequest;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Support\ApiResponse;
+use Illuminate\Auth\SessionGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -55,8 +56,11 @@ class PasswordResetController extends Controller
                 // com Hash::check antes de regenerar, entao passamos a senha
                 // em texto claro recebida no request.
                 try {
-                    Auth::guard('web')->setUser($user);
-                    Auth::guard('web')->logoutOtherDevices($password);
+                    $guard = Auth::guard('web');
+                    if ($guard instanceof SessionGuard) {
+                        $guard->setUser($user);
+                        $guard->logoutOtherDevices($password);
+                    }
                 } catch (\Throwable $e) {
                     // Falha de guard web (ex: ambiente sem sessao) nao deve
                     // bloquear reset — mas e registrada para observabilidade.

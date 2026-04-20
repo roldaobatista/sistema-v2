@@ -820,16 +820,20 @@ class WorkOrder extends Model
 
     public function technicians(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'work_order_technicians')
-            ->withPivot('role')
+        $relation = $this->belongsToMany(User::class, 'work_order_technicians')
+            ->withPivot('role', 'tenant_id')
             ->withTimestamps();
+
+        return $this->tenant_id ? $relation->withPivotValue('tenant_id', $this->tenant_id) : $relation;
     }
 
     public function equipmentsList(): BelongsToMany
     {
-        return $this->belongsToMany(Equipment::class, 'work_order_equipments')
-            ->withPivot('observations')
+        $relation = $this->belongsToMany(Equipment::class, 'work_order_equipments')
+            ->withPivot('observations', 'tenant_id')
             ->withTimestamps();
+
+        return $this->tenant_id ? $relation->withPivotValue('tenant_id', $this->tenant_id) : $relation;
     }
 
     public function displacementStops(): HasMany

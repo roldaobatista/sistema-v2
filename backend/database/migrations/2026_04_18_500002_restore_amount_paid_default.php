@@ -25,6 +25,9 @@ use Illuminate\Support\Facades\Schema;
  */
 return new class extends Migration
 {
+    /**
+     * @var list<array{table: string, column: string, default: string}>
+     */
     private array $targets = [
         ['table' => 'accounts_payable', 'column' => 'amount_paid', 'default' => '0.00'],
         ['table' => 'accounts_receivable', 'column' => 'amount_paid', 'default' => '0.00'],

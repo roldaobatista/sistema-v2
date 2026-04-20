@@ -52,7 +52,7 @@ return new class extends Migration
     /**
      * Tabelas filhas com parent direto [child => [parent, fk_column]].
      *
-     * @var array<string, array{0: string, 1: string}>
+     * @var array<string, array{0: string, 1: string, 2?: string}>
      */
     private array $childToParent = [
         // Customers

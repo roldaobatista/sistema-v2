@@ -34,19 +34,26 @@ class EnsurePortalAccess
         // ja existentes no model. Ate este fix, lockout e gate de 2FA eram
         // inertes — middleware so validava is_active/tenant/customer.
 
+        $attributes = $user->getAttributes();
+        $lockedUntil = array_key_exists('locked_until', $attributes) ? $user->locked_until : null;
+        $twoFactorEnabled = array_key_exists('two_factor_enabled', $attributes) && (bool) $user->two_factor_enabled;
+        $twoFactorConfirmedAt = array_key_exists('two_factor_confirmed_at', $attributes)
+            ? $user->two_factor_confirmed_at
+            : null;
+
         // Lockout temporario por tentativas de login falhas.
-        if ($user->locked_until && $user->locked_until->isFuture()) {
+        if ($lockedUntil && $lockedUntil->isFuture()) {
             abort(response()->json([
                 'message' => 'Conta do portal temporariamente bloqueada.',
                 'locked' => true,
-                'unlocks_at' => $user->locked_until->toIso8601String(),
+                'unlocks_at' => $lockedUntil->toIso8601String(),
             ], 403));
         }
 
         // 2FA habilitado porem nao finalizado no enrollment (sem
         // two_factor_confirmed_at) — bloquear acesso a endpoints
         // protegidos ate conclusao do setup.
-        if ($user->two_factor_enabled && ! $user->two_factor_confirmed_at) {
+        if ($twoFactorEnabled && ! $twoFactorConfirmedAt) {
             abort(response()->json([
                 'message' => 'Finalize a configuracao do segundo fator para acessar o portal.',
                 'require_2fa_setup' => true,

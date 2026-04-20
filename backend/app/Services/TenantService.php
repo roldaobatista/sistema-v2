@@ -154,13 +154,15 @@ class TenantService
                 $tenant->users()->attach($user->id, ['is_default' => false]);
             } else {
                 $isNewUser = true;
-                $user = new User([
+                $user = new User;
+                // SEC-08: campos de tenant do usuário não são mass-assignable; convite é path interno.
+                $user->forceFill([
                     'name' => $data['name'],
                     'email' => $data['email'],
                     'password' => Str::random(32),
                     'current_tenant_id' => $tenant->id,
+                    'tenant_id' => max(0, (int) $tenant->id),
                 ]);
-                $user->tenant_id = max(0, (int) $tenant->id);
                 $user->save();
                 $tenant->users()->attach($user->id, ['is_default' => true]);
             }

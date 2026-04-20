@@ -41,7 +41,7 @@ class PortalTicketTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->portalUser = ClientPortalUser::create([
+        $this->portalUser = ClientPortalUser::forceCreate([
             'tenant_id' => $this->tenant->id,
             'customer_id' => $this->customer->id,
             'name' => 'Portal Test User',

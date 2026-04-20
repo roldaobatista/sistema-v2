@@ -49,7 +49,7 @@ class EmployeeDependent extends Model
      * publicamente facilita ataque de dicionário offline contra o CPF.
      * Ocultar de toArray()/toJson() preserva busca interna sem vazamento.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $hidden = [
         'cpf_hash',

@@ -42,6 +42,8 @@ return new class extends Migration
     /**
      * Tabelas cujas inserções atuais bypassam o auto-fill do trait.
      * Identificadas empiricamente via suite Pest (Wave 2B-fix, 2026-04-17).
+     *
+     * @var list<string>
      */
     private array $tables = [
         // Pivots M2M (attach/sync/detach)

@@ -238,7 +238,7 @@ class AgendaAutomationService
      */
     public function overdueByTeam(int $tenantId): array
     {
-        /** @var Collection<int, object{tipo:string,total:int|string,avg_atraso_horas:float|int|string|null}> $rows */
+        /** @var Collection<int, object{type:string,total:int|string,avg_atraso_horas:float|int|string|null}> $rows */
         $rows = AgendaItem::where('tenant_id', $tenantId)
             ->whereNotNull('due_at')
             ->where('due_at', '<', now())

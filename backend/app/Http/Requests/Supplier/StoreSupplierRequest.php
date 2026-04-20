@@ -56,6 +56,9 @@ class StoreSupplierRequest extends FormRequest
                         return;
                     }
                     $hash = Supplier::hashSearchable($value, digitsOnly: true);
+                    // LEI 4 JUSTIFICATIVA: validacao precisa procurar duplicados
+                    // incluindo soft-deleted/escopo atual; a query fica limitada
+                    // ao tenant autenticado logo abaixo.
                     $exists = Supplier::query()
                         ->withoutGlobalScope('tenant')
                         ->where('tenant_id', $tenantId)

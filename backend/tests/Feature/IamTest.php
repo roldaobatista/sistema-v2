@@ -195,8 +195,8 @@ class IamTest extends TestCase
 
         $response = $this->postJson('/api/v1/profile/change-password', [
             'current_password' => 'senhaAtual123',
-            'new_password' => 'novaSenha456',
-            'new_password_confirmation' => 'novaSenha456',
+            'new_password' => 'novaSenha456!',
+            'new_password_confirmation' => 'novaSenha456!',
         ]);
 
         $response->assertOk()
@@ -204,7 +204,7 @@ class IamTest extends TestCase
 
         // FIX-12: Verificar que a senha realmente mudou
         $this->user->refresh();
-        $this->assertTrue(Hash::check('novaSenha456', $this->user->password));
+        $this->assertTrue(Hash::check('novaSenha456!', $this->user->password));
     }
 
     public function test_change_password_wrong_current(): void
@@ -213,8 +213,8 @@ class IamTest extends TestCase
 
         $response = $this->postJson('/api/v1/profile/change-password', [
             'current_password' => 'senhaErrada',
-            'new_password' => 'novaSenha456',
-            'new_password_confirmation' => 'novaSenha456',
+            'new_password' => 'novaSenha456!',
+            'new_password_confirmation' => 'novaSenha456!',
         ]);
 
         $response->assertStatus(422);

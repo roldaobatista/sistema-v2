@@ -52,7 +52,8 @@ class TwoFactorControllerTest extends TestCase
     public function test_status_reflects_enabled_two_factor_auth(): void
     {
         // Cria registro 2FA ativo para o user
-        $this->user->twoFactorAuth()->create([
+        $this->user->twoFactorAuth()->forceCreate([
+            'user_id' => $this->user->id,
             'method' => 'email',
             'secret' => encrypt('test-secret'),
             'is_enabled' => true,
@@ -74,7 +75,8 @@ class TwoFactorControllerTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'current_tenant_id' => $this->tenant->id,
         ]);
-        $otherUser->twoFactorAuth()->create([
+        $otherUser->twoFactorAuth()->forceCreate([
+            'user_id' => $otherUser->id,
             'method' => 'app',
             'secret' => encrypt('other-secret'),
             'is_enabled' => true,

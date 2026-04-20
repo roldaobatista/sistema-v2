@@ -27,7 +27,7 @@ trait HasAuditUserFields
                 return;
             }
             if (! $model->isDirty('updated_by')) {
-                $model->updated_by = Auth::id();
+                $model->setAttribute('updated_by', Auth::id());
             }
         });
 
@@ -38,7 +38,7 @@ trait HasAuditUserFields
             // Soft-delete: registra quem deletou.
             // Usa saveQuietly para não disparar Auditable.updated em loop.
             if (in_array('deleted_by', (array) $model->getFillable(), true)) {
-                $model->deleted_by = Auth::id();
+                $model->setAttribute('deleted_by', Auth::id());
                 $model->saveQuietly();
             }
         });

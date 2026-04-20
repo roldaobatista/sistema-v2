@@ -49,7 +49,7 @@ class SupportTicketFlowTest extends TestCase
             'tenant_id' => $this->tenant->id,
         ]);
 
-        $this->portalUser = ClientPortalUser::create([
+        $this->portalUser = ClientPortalUser::forceCreate([
             'tenant_id' => $this->tenant->id,
             'customer_id' => $this->customer->id,
             'name' => 'Portal Test User',

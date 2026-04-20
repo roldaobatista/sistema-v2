@@ -35,7 +35,8 @@ class EquipmentModel extends Model
 
     public function products(): BelongsToMany
     {
-        return $this->belongsToMany(Product::class, 'equipment_model_product');
+        return $this->belongsToMany(Product::class, 'equipment_model_product')
+            ->withPivot('tenant_id');
     }
 
     public function equipments(): HasMany

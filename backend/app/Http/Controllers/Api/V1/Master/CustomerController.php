@@ -164,10 +164,10 @@ class CustomerController extends Controller
 
     public function show(Customer $customer): JsonResponse
     {
-        $this->authorize('view', $customer);
         if ($deny = $this->ensureTenantOwnership($customer, 'Cliente')) {
             return $deny;
         }
+        $this->authorize('view', $customer);
 
         return ApiResponse::data(new CustomerResource(
             $customer->load(['contacts', 'assignedSeller:id,name', 'equipments'])
@@ -176,10 +176,10 @@ class CustomerController extends Controller
 
     public function update(UpdateCustomerRequest $request, Customer $customer): JsonResponse
     {
-        $this->authorize('update', $customer);
         if ($deny = $this->ensureTenantOwnership($customer, 'Cliente')) {
             return $deny;
         }
+        $this->authorize('update', $customer);
 
         $validated = $request->validated();
         $tenantId = $this->tenantId();
@@ -237,10 +237,10 @@ class CustomerController extends Controller
 
     public function destroy(Request $request, Customer $customer): JsonResponse
     {
-        $this->authorize('delete', $customer);
         if ($deny = $this->ensureTenantOwnership($customer, 'Cliente')) {
             return $deny;
         }
+        $this->authorize('delete', $customer);
 
         $workOrdersCount = $this->countDependency(WorkOrder::class, $customer->id);
         $receivablesCount = $this->countDependency(
@@ -319,10 +319,10 @@ class CustomerController extends Controller
 
     public function addresses(Customer $customer): JsonResponse
     {
-        $this->authorize('view', $customer);
         if ($deny = $this->ensureTenantOwnership($customer, 'Cliente')) {
             return $deny;
         }
+        $this->authorize('view', $customer);
 
         return ApiResponse::data(
             $customer->addresses()
@@ -335,10 +335,10 @@ class CustomerController extends Controller
 
     public function storeAddress(StoreCustomerAddressRequest $request, Customer $customer): JsonResponse
     {
-        $this->authorize('update', $customer);
         if ($deny = $this->ensureTenantOwnership($customer, 'Cliente')) {
             return $deny;
         }
+        $this->authorize('update', $customer);
 
         $address = $customer->addresses()->create([
             ...$request->validated(),
@@ -350,10 +350,10 @@ class CustomerController extends Controller
 
     public function contacts(Customer $customer): JsonResponse
     {
-        $this->authorize('view', $customer);
         if ($deny = $this->ensureTenantOwnership($customer, 'Cliente')) {
             return $deny;
         }
+        $this->authorize('view', $customer);
 
         return ApiResponse::data(
             $customer->contacts()
@@ -366,10 +366,10 @@ class CustomerController extends Controller
 
     public function storeContact(StoreCustomerContactRequest $request, Customer $customer): JsonResponse
     {
-        $this->authorize('update', $customer);
         if ($deny = $this->ensureTenantOwnership($customer, 'Cliente')) {
             return $deny;
         }
+        $this->authorize('update', $customer);
 
         $contact = $customer->contacts()->create([
             ...$request->validated(),
@@ -381,10 +381,10 @@ class CustomerController extends Controller
 
     public function workOrders(Request $request, Customer $customer): JsonResponse
     {
-        $this->authorize('view', $customer);
         if ($deny = $this->ensureTenantOwnership($customer, 'Cliente')) {
             return $deny;
         }
+        $this->authorize('view', $customer);
 
         $items = WorkOrder::query()
             ->where('tenant_id', $this->tenantId())
@@ -397,10 +397,10 @@ class CustomerController extends Controller
 
     public function equipments(Request $request, Customer $customer): JsonResponse
     {
-        $this->authorize('view', $customer);
         if ($deny = $this->ensureTenantOwnership($customer, 'Cliente')) {
             return $deny;
         }
+        $this->authorize('view', $customer);
 
         $items = Equipment::query()
             ->where('tenant_id', $this->tenantId())
@@ -413,10 +413,10 @@ class CustomerController extends Controller
 
     public function quotes(Request $request, Customer $customer): JsonResponse
     {
-        $this->authorize('view', $customer);
         if ($deny = $this->ensureTenantOwnership($customer, 'Cliente')) {
             return $deny;
         }
+        $this->authorize('view', $customer);
 
         $items = Quote::query()
             ->with(['customer:id,name', 'seller:id,name', 'tags:id,name,color'])
@@ -476,10 +476,10 @@ class CustomerController extends Controller
 
     public function stats(Customer $customer): JsonResponse
     {
-        $this->authorize('view', $customer);
         if ($deny = $this->ensureTenantOwnership($customer, 'Cliente')) {
             return $deny;
         }
+        $this->authorize('view', $customer);
 
         return ApiResponse::data([
             'customer_id' => $customer->id,
@@ -501,10 +501,10 @@ class CustomerController extends Controller
 
     public function documents(Customer $customer): JsonResponse
     {
-        $this->authorize('view', $customer);
         if ($deny = $this->ensureTenantOwnership($customer, 'Cliente')) {
             return $deny;
         }
+        $this->authorize('view', $customer);
 
         return ApiResponse::data(
             $customer->documents()
@@ -516,10 +516,10 @@ class CustomerController extends Controller
 
     public function storeDocument(StoreCustomerDocumentRequest $request, Customer $customer): JsonResponse
     {
-        $this->authorize('update', $customer);
         if ($deny = $this->ensureTenantOwnership($customer, 'Cliente')) {
             return $deny;
         }
+        $this->authorize('update', $customer);
 
         $validated = $request->validated();
 

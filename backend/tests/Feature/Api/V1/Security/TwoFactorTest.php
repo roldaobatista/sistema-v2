@@ -73,7 +73,7 @@ class TwoFactorTest extends TestCase
 
     public function test_status_returns_real_contract_fields(): void
     {
-        $twoFa = TwoFactorAuth::create([
+        $twoFa = TwoFactorAuth::forceCreate([
             'user_id' => $this->user->id,
             'secret' => encrypt('test-secret'),
             'method' => 'email',
@@ -169,7 +169,7 @@ class TwoFactorTest extends TestCase
 
     public function test_verify_with_correct_code_activates_2fa(): void
     {
-        $twoFa = TwoFactorAuth::create([
+        $twoFa = TwoFactorAuth::forceCreate([
             'user_id' => $this->user->id,
             'secret' => encrypt('test-secret'),
             'method' => 'email',
@@ -200,7 +200,7 @@ class TwoFactorTest extends TestCase
 
     public function test_verify_with_wrong_code_fails(): void
     {
-        TwoFactorAuth::create([
+        TwoFactorAuth::forceCreate([
             'user_id' => $this->user->id,
             'secret' => encrypt('test-secret'),
             'method' => 'email',
@@ -242,7 +242,7 @@ class TwoFactorTest extends TestCase
 
     public function test_disable_with_correct_password_deactivates_2fa(): void
     {
-        TwoFactorAuth::create([
+        TwoFactorAuth::forceCreate([
             'user_id' => $this->user->id,
             'secret' => encrypt('test-secret'),
             'method' => 'email',
@@ -267,7 +267,7 @@ class TwoFactorTest extends TestCase
 
     public function test_disable_with_wrong_password_fails(): void
     {
-        TwoFactorAuth::create([
+        TwoFactorAuth::forceCreate([
             'user_id' => $this->user->id,
             'secret' => encrypt('test-secret'),
             'method' => 'email',
@@ -291,7 +291,7 @@ class TwoFactorTest extends TestCase
 
     public function test_verify_clears_cache_code_after_success(): void
     {
-        TwoFactorAuth::create([
+        TwoFactorAuth::forceCreate([
             'user_id' => $this->user->id,
             'secret' => encrypt('test-secret'),
             'method' => 'email',

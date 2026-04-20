@@ -32,14 +32,14 @@ class SecurityController extends Controller
             $user = auth()->user();
             $secret = Str::random(32);
 
-            TwoFactorAuth::updateOrCreate(
-                ['user_id' => $user->id],
-                [
-                    'secret' => $secret,
-                    'is_enabled' => false,
-                    'tenant_id' => $user->current_tenant_id ?? $user->tenant_id,
-                ]
-            );
+            $twoFactor = TwoFactorAuth::firstOrNew(['user_id' => $user->id]);
+            $twoFactor->fill([
+                'secret' => $secret,
+                'is_enabled' => false,
+            ]);
+            $twoFactor->forceFill([
+                'tenant_id' => $user->current_tenant_id ?? $user->tenant_id,
+            ])->save();
 
             return ApiResponse::data([
                 'secret' => $secret,

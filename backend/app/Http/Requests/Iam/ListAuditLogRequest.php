@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Iam;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ListAuditLogRequest extends FormRequest
 {
@@ -15,7 +16,11 @@ class ListAuditLogRequest extends FormRequest
     {
         return [
             'action' => ['nullable', 'string'],
-            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'user_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->where('tenant_id', $this->user()->current_tenant_id),
+            ],
             'auditable_type' => ['nullable', 'string'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],

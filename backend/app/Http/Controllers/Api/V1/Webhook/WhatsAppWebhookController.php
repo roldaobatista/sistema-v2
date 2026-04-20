@@ -138,14 +138,14 @@ class WhatsAppWebhookController extends Controller
             return;
         }
 
-        // Webhook não tem contexto de usuário autenticado, então o global scope
-        // BelongsToTenant adicionaria WHERE tenant_id IS NULL (nunca encontrando nada).
-        // Buscar por external_id (único por provider) sem o scope de tenant.
+        // LEI 4 JUSTIFICATIVA: webhook autenticado por assinatura nao tem usuario/current_tenant_id;
+        // external_id e unico globalmente e permite escapar apenas do tenant scope.
         $log = WhatsappMessageLog::withoutGlobalScope('tenant')
             ->where('external_id', $externalId)
             ->first();
 
-        // Sempre busca CrmMessage também — pode existir sem log correspondente.
+        // LEI 4 JUSTIFICATIVA: mesmo callback pode atualizar CrmMessage sem log;
+        // external_id e unico globalmente e channel restringe o tipo de mensagem.
         $crmMessage = CrmMessage::withoutGlobalScope('tenant')
             ->where('external_id', $externalId)
             ->where('channel', CrmMessage::CHANNEL_WHATSAPP)

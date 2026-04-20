@@ -163,7 +163,7 @@ class WorkOrderCommunicationAndAuditTest extends TestCase
 
         $workOrder = $this->makeWorkOrder();
 
-        $log = AuditLog::create([
+        $log = AuditLog::forceCreate([
             'tenant_id' => $this->tenant->id,
             'user_id' => $this->user->id,
             'action' => AuditAction::CREATED,

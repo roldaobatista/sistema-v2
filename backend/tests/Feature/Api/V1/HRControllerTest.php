@@ -56,7 +56,7 @@ class HRControllerTest extends TestCase
     {
         WorkSchedule::create([
             'tenant_id' => $this->tenant->id,
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-10',
             'shift_type' => 'normal',
             'start_time' => '08:00',
@@ -69,34 +69,34 @@ class HRControllerTest extends TestCase
             ->assertJsonStructure(['data', 'meta']);
     }
 
-    public function test_index_schedules_filters_by_user_id(): void
+    public function test_index_schedules_filters_by_technician_id(): void
     {
         $other = User::factory()->create(['tenant_id' => $this->tenant->id, 'current_tenant_id' => $this->tenant->id]);
 
         WorkSchedule::create([
             'tenant_id' => $this->tenant->id,
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-10',
         ]);
         WorkSchedule::create([
             'tenant_id' => $this->tenant->id,
-            'user_id' => $other->id,
+            'technician_id' => $other->id,
             'date' => '2026-03-10',
         ]);
 
-        $response = $this->getJson('/api/v1/hr/schedules?user_id='.$this->user->id);
+        $response = $this->getJson('/api/v1/hr/schedules?technician_id='.$this->user->id);
 
         $response->assertStatus(200);
         $data = $response->json('data');
         foreach ($data as $item) {
-            $this->assertEquals($this->user->id, $item['user_id']);
+            $this->assertEquals($this->user->id, $item['technician_id']);
         }
     }
 
     public function test_store_schedule_creates_entry(): void
     {
         $response = $this->postJson('/api/v1/hr/schedules', [
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-15',
             'shift_type' => 'normal',
             'start_time' => '08:00',
@@ -107,25 +107,25 @@ class HRControllerTest extends TestCase
             ->assertJsonPath('message', 'Escala salva com sucesso');
 
         $this->assertDatabaseHas('work_schedules', [
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'shift_type' => 'normal',
         ]);
     }
 
-    public function test_store_schedule_validation_requires_user_id(): void
+    public function test_store_schedule_validation_requires_technician_id(): void
     {
         $response = $this->postJson('/api/v1/hr/schedules', [
             'date' => '2026-03-15',
         ]);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['user_id']);
+            ->assertJsonValidationErrors(['technician_id']);
     }
 
     public function test_store_schedule_upserts_on_same_user_date(): void
     {
         $payload = [
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-20',
             'shift_type' => 'normal',
             'start_time' => '08:00',
@@ -139,13 +139,13 @@ class HRControllerTest extends TestCase
         $second->assertStatus(201);
 
         // updateOrCreate should result in just 1 row
-        $count = WorkSchedule::where('user_id', $this->user->id)
+        $count = WorkSchedule::where('technician_id', $this->user->id)
             ->whereRaw('date = ?', ['2026-03-20'])
             ->count();
         $this->assertEquals(1, $count);
 
         // Verify the shift_type was updated
-        $schedule = WorkSchedule::where('user_id', $this->user->id)->first();
+        $schedule = WorkSchedule::where('technician_id', $this->user->id)->first();
         $this->assertEquals('overtime', $schedule->shift_type);
     }
 
@@ -155,8 +155,8 @@ class HRControllerTest extends TestCase
 
         $response = $this->postJson('/api/v1/hr/schedules/batch', [
             'schedules' => [
-                ['user_id' => $this->user->id, 'date' => '2026-03-21', 'shift_type' => 'normal', 'start_time' => '08:00', 'end_time' => '17:00'],
-                ['user_id' => $other->id, 'date' => '2026-03-21', 'shift_type' => 'normal', 'start_time' => '08:00', 'end_time' => '17:00'],
+                ['technician_id' => $this->user->id, 'date' => '2026-03-21', 'shift_type' => 'normal', 'start_time' => '08:00', 'end_time' => '17:00'],
+                ['technician_id' => $other->id, 'date' => '2026-03-21', 'shift_type' => 'normal', 'start_time' => '08:00', 'end_time' => '17:00'],
             ],
         ]);
 
@@ -168,12 +168,12 @@ class HRControllerTest extends TestCase
     {
         WorkSchedule::create([
             'tenant_id' => $this->tenant->id,
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-01',
         ]);
         WorkSchedule::create([
             'tenant_id' => $this->tenant->id,
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-04-01',
         ]);
 
@@ -432,13 +432,13 @@ class HRControllerTest extends TestCase
 
         WorkSchedule::create([
             'tenant_id' => $otherTenant->id,
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-10',
         ]);
 
         WorkSchedule::create([
             'tenant_id' => $this->tenant->id,
-            'user_id' => $this->user->id,
+            'technician_id' => $this->user->id,
             'date' => '2026-03-11',
         ]);
 

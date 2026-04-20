@@ -51,7 +51,7 @@ it('TwoFactorAuth.secret é encrypted-at-rest, 1x, reversível via cast', functi
 
     $plain = 'TOTP_SECRET_ABCDEFGHIJ1234567890';
 
-    $twoFa = TwoFactorAuth::create([
+    $twoFa = TwoFactorAuth::forceCreate([
         'user_id' => $user->id,
         'tenant_id' => $this->tenant->id,
         'secret' => $plain,
@@ -73,7 +73,7 @@ it('TwoFactorAuth.backup_codes é hash-at-rest (bcrypt), irreversível, verific�
     $plainCodes = ['CODE1', 'CODE2', 'CODE3', 'CODE4'];
     $hashedCodes = array_map(fn (string $c) => Hash::make($c), $plainCodes);
 
-    $twoFa = TwoFactorAuth::create([
+    $twoFa = TwoFactorAuth::forceCreate([
         'user_id' => $user->id,
         'tenant_id' => $this->tenant->id,
         'secret' => 'any',
@@ -158,7 +158,7 @@ it('raw DB row de user_2fa não é decriptável duas vezes (regressão dupla cri
         'current_tenant_id' => $this->tenant->id,
     ]);
 
-    TwoFactorAuth::create([
+    TwoFactorAuth::forceCreate([
         'user_id' => $user->id,
         'tenant_id' => $this->tenant->id,
         'secret' => 'TOTP_SECRET_32_CHARS_XXXXXXXXXXXX',
@@ -190,7 +190,7 @@ it('TwoFactorAuth::toArray não vaza secret nem backup_codes (qa-07)', function 
         'current_tenant_id' => $this->tenant->id,
     ]);
 
-    $twoFa = TwoFactorAuth::create([
+    $twoFa = TwoFactorAuth::forceCreate([
         'user_id' => $user->id,
         'tenant_id' => $this->tenant->id,
         'secret' => 'TOTP_SECRET_HIDDEN_CHECK_XXXXXXXX',

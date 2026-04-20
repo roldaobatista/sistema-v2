@@ -40,8 +40,9 @@ class AuthController extends Controller
 
             if ($attempts >= 5) {
                 $ttl = (int) Cache::get($throttleKey.':ttl', 0);
-                $remainingMinutes = ($ttl > 0 && $ttl > now()->timestamp)
-                    ? (int) ceil(($ttl - now()->timestamp) / 60)
+                $nowTimestamp = time();
+                $remainingMinutes = ($ttl > 0 && $ttl > $nowTimestamp)
+                    ? (int) ceil(($ttl - $nowTimestamp) / 60)
                     : 15;
 
                 return ApiResponse::message(

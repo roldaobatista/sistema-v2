@@ -123,7 +123,7 @@ class Customer extends Model
      * domínio enumerável (~10^11). Ocultar de toArray()/toJson() preserva o
      * benefício de busca interna sem vazamento da prova de existência do PII.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $hidden = [
         'document_hash',

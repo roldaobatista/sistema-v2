@@ -159,9 +159,17 @@ class AppServiceProvider extends ServiceProvider
         Model::shouldBeStrict(! $this->app->isProduction());
         // Tenant-aware rate limiters — composite key tenant_id:user_id garante
         // isolamento entre tenants e granularidade por usuário.
-        $tenantKey = fn (Request $request): string => $request->user()
-            ? (($request->user()->current_tenant_id ?? 'no-tenant').':'.$request->user()->id)
-            : $request->ip();
+        $tenantKey = function (Request $request): string {
+            $user = $request->user();
+            if (! $user) {
+                return (string) $request->ip();
+            }
+
+            $attributes = $user->getAttributes();
+            $tenantId = $attributes['current_tenant_id'] ?? $attributes['tenant_id'] ?? 'no-tenant';
+
+            return $tenantId.':'.$user->id;
+        };
 
         RateLimiter::for('api', function (Request $request) use ($tenantKey) {
             return Limit::perMinute(120)->by($tenantKey($request));

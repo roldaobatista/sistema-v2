@@ -23,14 +23,17 @@ class ReconciliationExportTest extends TestCase
         Gate::before(fn () => true);
 
         $this->user = User::factory()->create();
-        $this->actingAs($this->user);
 
         // Ensure user has tenant
         if (! $this->user->tenant_id) {
             $tenantId = Tenant::first()->id ?? Tenant::factory()->create()->id;
-            $this->user->tenant_id = $tenantId;
-            $this->user->save();
+            $this->user->forceFill([
+                'tenant_id' => $tenantId,
+                'current_tenant_id' => $tenantId,
+            ])->save();
         }
+
+        $this->actingAs($this->user->refresh());
 
         $this->bankAccount = BankAccount::factory()->create(['tenant_id' => $this->user->tenant_id]);
     }

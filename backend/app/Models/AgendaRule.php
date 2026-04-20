@@ -9,6 +9,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @property bool|null $ativo
  * @property array<int|string, mixed>|null $acao_config
+ * @property string|null $min_priority
+ * @property string|null $action_type
+ * @property int|null $assignee_user_id
+ * @property string|null $target_role
  */
 class AgendaRule extends Model
 {
@@ -32,11 +36,17 @@ class AgendaRule extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function assignee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assignee_user_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

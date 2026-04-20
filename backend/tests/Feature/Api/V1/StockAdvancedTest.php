@@ -181,6 +181,7 @@ class StockAdvancedTest extends TestCase
             'updated_at' => now(),
         ]);
         DB::table('purchase_quotation_items')->insert([
+            'tenant_id' => $this->tenant->id,
             'purchase_quotation_id' => $pqId,
             'product_id' => $product->id,
             'quantity' => 20,

@@ -17,13 +17,30 @@ use Tests\TestCase;
  */
 class SessionCookieDefaultsTest extends TestCase
 {
-    public function test_production_defaults_secure_true_and_samesite_strict(): void
+    protected function tearDown(): void
     {
-        putenv('APP_ENV=production');
+        putenv('APP_ENV');
         putenv('SESSION_SECURE_COOKIE');
         putenv('SESSION_SAME_SITE');
-        $_ENV['APP_ENV'] = 'production';
-        unset($_ENV['SESSION_SECURE_COOKIE'], $_ENV['SESSION_SAME_SITE']);
+        unset(
+            $_ENV['APP_ENV'],
+            $_ENV['SESSION_SECURE_COOKIE'],
+            $_ENV['SESSION_SAME_SITE'],
+            $_SERVER['APP_ENV'],
+            $_SERVER['SESSION_SECURE_COOKIE'],
+            $_SERVER['SESSION_SAME_SITE'],
+        );
+
+        parent::tearDown();
+    }
+
+    public function test_production_defaults_secure_true_and_samesite_strict(): void
+    {
+        $this->setEnvironment([
+            'APP_ENV' => 'production',
+            'SESSION_SECURE_COOKIE' => null,
+            'SESSION_SAME_SITE' => null,
+        ]);
 
         $config = require base_path('config/session.php');
 
@@ -33,11 +50,11 @@ class SessionCookieDefaultsTest extends TestCase
 
     public function test_non_production_defaults_secure_null_and_samesite_lax(): void
     {
-        putenv('APP_ENV=local');
-        putenv('SESSION_SECURE_COOKIE');
-        putenv('SESSION_SAME_SITE');
-        $_ENV['APP_ENV'] = 'local';
-        unset($_ENV['SESSION_SECURE_COOKIE'], $_ENV['SESSION_SAME_SITE']);
+        $this->setEnvironment([
+            'APP_ENV' => 'local',
+            'SESSION_SECURE_COOKIE' => null,
+            'SESSION_SAME_SITE' => null,
+        ]);
 
         $config = require base_path('config/session.php');
 
@@ -47,10 +64,10 @@ class SessionCookieDefaultsTest extends TestCase
 
     public function test_env_override_secure_false_in_production(): void
     {
-        putenv('APP_ENV=production');
-        putenv('SESSION_SECURE_COOKIE=false');
-        $_ENV['APP_ENV'] = 'production';
-        $_ENV['SESSION_SECURE_COOKIE'] = 'false';
+        $this->setEnvironment([
+            'APP_ENV' => 'production',
+            'SESSION_SECURE_COOKIE' => 'false',
+        ]);
 
         $config = require base_path('config/session.php');
 
@@ -59,13 +76,32 @@ class SessionCookieDefaultsTest extends TestCase
 
     public function test_env_override_samesite_lax_in_production(): void
     {
-        putenv('APP_ENV=production');
-        putenv('SESSION_SAME_SITE=lax');
-        $_ENV['APP_ENV'] = 'production';
-        $_ENV['SESSION_SAME_SITE'] = 'lax';
+        $this->setEnvironment([
+            'APP_ENV' => 'production',
+            'SESSION_SAME_SITE' => 'lax',
+        ]);
 
         $config = require base_path('config/session.php');
 
         $this->assertSame('lax', $config['same_site'], 'env explícito lax deve sobrescrever default prod');
+    }
+
+    /**
+     * @param  array<string, string|null>  $values
+     */
+    private function setEnvironment(array $values): void
+    {
+        foreach ($values as $key => $value) {
+            if ($value === null) {
+                putenv($key);
+                unset($_ENV[$key], $_SERVER[$key]);
+
+                continue;
+            }
+
+            putenv("{$key}={$value}");
+            $_ENV[$key] = $value;
+            $_SERVER[$key] = $value;
+        }
     }
 }

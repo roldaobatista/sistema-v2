@@ -41,7 +41,7 @@ class PortalWorkOrderTest extends TestCase
         $this->tenant = Tenant::factory()->create();
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
 
-        $this->portalUser = ClientPortalUser::create([
+        $this->portalUser = ClientPortalUser::forceCreate([
             'tenant_id' => $this->tenant->id,
             'customer_id' => $this->customer->id,
             'name' => 'Portal User',

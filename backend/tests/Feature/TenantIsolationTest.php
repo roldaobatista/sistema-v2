@@ -79,7 +79,7 @@ class TenantIsolationTest extends TestCase
 
         $response = $this->getJson("/api/v1/customers/{$this->customerB->id}");
 
-        $this->assertContains($response->getStatusCode(), [403, 404]);
+        $response->assertNotFound();
     }
 
     public function test_body_tenant_id_cannot_override_token_tenant_on_create(): void
@@ -111,7 +111,7 @@ class TenantIsolationTest extends TestCase
             'name' => 'Cross Tenant Mutation',
         ]);
 
-        $this->assertContains($response->getStatusCode(), [403, 404]);
+        $response->assertNotFound();
         $this->assertDatabaseMissing('customers', ['name' => 'Cross Tenant Mutation']);
     }
 
@@ -121,7 +121,7 @@ class TenantIsolationTest extends TestCase
 
         $response = $this->deleteJson("/api/v1/customers/{$this->customerB->id}");
 
-        $this->assertContains($response->getStatusCode(), [403, 404]);
+        $response->assertNotFound();
         $this->assertDatabaseHas('customers', ['id' => $this->customerB->id]);
     }
 
@@ -240,6 +240,49 @@ class TenantIsolationTest extends TestCase
             'external_id' => 'pay-existing-cross-tenant-attempt',
             'status' => 'pending',
         ]);
+    }
+
+    public function test_payment_webhook_does_not_process_soft_deleted_payment_by_external_id(): void
+    {
+        config(['services.payment.webhook_secret' => 'tenant-webhook-secret']);
+
+        $receivableA = AccountReceivable::factory()->create([
+            'tenant_id' => $this->tenantA->id,
+            'customer_id' => $this->customerA->id,
+            'created_by' => $this->userA->id,
+            'amount' => 125,
+            'amount_paid' => 0,
+        ]);
+
+        $payment = Payment::create([
+            'tenant_id' => $this->tenantA->id,
+            'payable_type' => AccountReceivable::class,
+            'payable_id' => $receivableA->id,
+            'received_by' => $this->userA->id,
+            'amount' => 125,
+            'payment_method' => 'pix',
+            'payment_date' => now(),
+            'external_id' => 'pay-soft-deleted',
+            'status' => 'pending',
+        ]);
+        $payment->delete();
+
+        $payload = [
+            'event' => 'PAYMENT_CONFIRMED',
+            'payment' => [
+                'id' => 'pay-soft-deleted',
+                'tenant_id' => $this->tenantA->id,
+                'value' => 125,
+                'billingType' => 'PIX',
+            ],
+        ];
+
+        $this->postJson('/api/v1/webhooks/payment', $payload, [
+            'X-Webhook-Secret' => 'tenant-webhook-secret',
+        ])->assertNotFound();
+
+        $this->assertSame('pending', Payment::withoutGlobalScopes()->withTrashed()->findOrFail($payment->id)->status);
+        $this->assertEquals('0.00', AccountReceivable::withoutGlobalScopes()->findOrFail($receivableA->id)->amount_paid);
     }
 
     public function test_storage_path_from_other_tenant_is_not_reachable_through_work_order_route(): void

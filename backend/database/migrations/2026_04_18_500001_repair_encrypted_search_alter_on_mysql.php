@@ -30,6 +30,9 @@ use Illuminate\Support\Facades\Schema;
  */
 return new class extends Migration
 {
+    /**
+     * @var array<string, array{source: string, hash: string, hash_index: string, legacy_index: string|null}>
+     */
     private array $targets = [
         'customers' => [
             'source' => 'document',
@@ -108,7 +111,7 @@ return new class extends Migration
                 ->getSchemaBuilder()
                 ->getIndexes($table));
 
-            return $indexes->contains(fn ($idx) => ($idx['name'] ?? null) === $index);
+            return $indexes->contains(fn ($idx) => $idx['name'] === $index);
         } catch (Throwable) {
             return false;
         }

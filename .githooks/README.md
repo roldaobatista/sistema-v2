@@ -24,18 +24,9 @@ Roda **antes** de qualquer `git commit`. Valida apenas o que está **staged**:
 
 **Bypass é proibido** (violação da Lei 2 do `AGENTS.md`). `--no-verify` nunca deve ser usado. Se o gate está bloqueando legitimamente, é porque o código tem problema real.
 
-## Desativar temporariamente (emergência real)
+## Emergência real
 
-Se houver **incidente em produção** e o commit precisa ir independente de gates quebrados (cenário raro, ex: fix de CI quebrado que impede rodar os próprios gates):
-
-```bash
-# 1. documentar razão em docs/handoffs/latest.md
-# 2. pedir aprovação explícita ao usuário
-# 3. só depois:
-git -c core.hooksPath='' commit ...
-```
-
-Nunca use `--no-verify` — é explicitamente proibido pelo `AGENTS.md`.
+Se houver incidente em produção e algum gate estiver bloqueado por falha de infraestrutura, trate como bloqueio B6 do modo autônomo: documente logs completos, pare o loop e peça decisão explícita. Não desative hooks localmente e nunca use `--no-verify` — é explicitamente proibido pelo `AGENTS.md`.
 
 ## Manutenção
 

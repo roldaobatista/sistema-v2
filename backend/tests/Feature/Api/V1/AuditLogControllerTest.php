@@ -75,12 +75,6 @@ class AuditLogControllerTest extends TestCase
 
     public function test_index_filter_user_id_does_not_leak_other_tenant_users(): void
     {
-        // AUDIT FINDING P0: ListAuditLogRequest.user_id = 'exists:users,id' sem tenant scope
-        // -> User enumeration: atacante pode iterar user_ids e ver quais existem globalmente.
-        //
-        // Comportamento esperado CORRETO: filtro por user_id de OUTRO tenant deve retornar
-        // lista vazia (nao vazar existencia nem conteudo).
-
         $otherTenant = Tenant::factory()->create();
         $otherUser = User::factory()->create([
             'tenant_id' => $otherTenant->id,
@@ -94,11 +88,12 @@ class AuditLogControllerTest extends TestCase
 
         $response = $this->getJson('/api/v1/audit-logs?user_id='.$otherUser->id);
 
-        // Contrato fixado: global scope BelongsToTenant filtra; filtro por user
-        // de outro tenant retorna 200 com lista vazia (nao vaza existencia nem dados).
-        $response->assertStatus(200);
-        $data = $response->json('data') ?? [];
-        $this->assertCount(0, $data, 'Logs de user de outro tenant vazaram via filtro user_id');
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['user_id']);
+
+        $nonExistentResponse = $this->getJson('/api/v1/audit-logs?user_id=999999999');
+        $nonExistentResponse->assertStatus(422)
+            ->assertJsonValidationErrors(['user_id']);
     }
 
     public function test_actions_endpoint_returns_distinct_actions_of_tenant(): void

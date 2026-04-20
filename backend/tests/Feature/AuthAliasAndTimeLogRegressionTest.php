@@ -88,7 +88,7 @@ class AuthAliasAndTimeLogRegressionTest extends TestCase
     {
         $token = $this->user->createToken('api', ['*'])->plainTextToken;
 
-        $twoFactor = TwoFactorAuth::create([
+        $twoFactor = TwoFactorAuth::forceCreate([
             'user_id' => $this->user->id,
             'tenant_id' => $this->primaryTenant->id,
             'method' => 'email',

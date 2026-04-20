@@ -46,10 +46,10 @@ use Illuminate\Support\Str;
  * @property int|null $closed_by
  * @property string|null $ref_type
  * @property int|null $ref_id
- * @property array|null $context
- * @property array|null $tags
- * @property array|null $visibility_users
- * @property array|null $visibility_departments
+ * @property array<int|string, mixed>|null $context
+ * @property array<int|string, mixed>|null $tags
+ * @property array<int|string, mixed>|null $visibility_users
+ * @property array<int|string, mixed>|null $visibility_departments
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -100,6 +100,9 @@ class AgendaItem extends Model
         return parent::fill($this->normalizeLegacyAliases($attributes));
     }
 
+    /**
+     * @return Attribute<AgendaItemType|null, AgendaItemType|string|null>
+     */
     protected function type(): Attribute
     {
         return Attribute::make(
@@ -112,6 +115,9 @@ class AgendaItem extends Model
         );
     }
 
+    /**
+     * @return Attribute<AgendaItemStatus|null, AgendaItemStatus|string|null>
+     */
     protected function status(): Attribute
     {
         return Attribute::make(
@@ -120,6 +126,9 @@ class AgendaItem extends Model
         );
     }
 
+    /**
+     * @return Attribute<AgendaItemPriority|null, AgendaItemPriority|string|null>
+     */
     protected function priority(): Attribute
     {
         return Attribute::make(
@@ -128,6 +137,9 @@ class AgendaItem extends Model
         );
     }
 
+    /**
+     * @return Attribute<AgendaItemOrigin|null, AgendaItemOrigin|string|null>
+     */
     protected function origin(): Attribute
     {
         return Attribute::make(
@@ -136,6 +148,9 @@ class AgendaItem extends Model
         );
     }
 
+    /**
+     * @return Attribute<AgendaItemVisibility|null, AgendaItemVisibility|string|null>
+     */
     protected function visibility(): Attribute
     {
         return Attribute::make(
@@ -144,6 +159,9 @@ class AgendaItem extends Model
         );
     }
 
+    /**
+     * @return Attribute<bool, never>
+     */
     protected function completed(): Attribute
     {
         return Attribute::make(
@@ -164,6 +182,9 @@ class AgendaItem extends Model
         );
     }
 
+    /**
+     * @return Attribute<Carbon|null, never>
+     */
     protected function completedAt(): Attribute
     {
         return Attribute::make(
@@ -214,11 +235,17 @@ class AgendaItem extends Model
         return $this->resolveAgendaEnumCase(AgendaItemVisibility::class, $this->attributes['visibility'] ?? null);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function assignee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assignee_user_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_user_id');

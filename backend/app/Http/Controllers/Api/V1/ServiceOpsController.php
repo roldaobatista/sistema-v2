@@ -20,14 +20,21 @@ class ServiceOpsController extends Controller
 
     public function slaDashboard(Request $request): JsonResponse
     {
-        $tenantId = (int) ($request->user()->current_tenant_id ?? $request->user()->tenant_id);
+        $tenantId = $this->currentTenantId($request);
+        if ($tenantId === null) {
+            return ApiResponse::message('Empresa atual não selecionada.', 403);
+        }
 
         return ApiResponse::data($this->slaService->getDashboard($tenantId));
     }
 
     public function runSlaChecks(Request $request): JsonResponse
     {
-        $tenantId = (int) ($request->user()->current_tenant_id ?? $request->user()->tenant_id);
+        $tenantId = $this->currentTenantId($request);
+        if ($tenantId === null) {
+            return ApiResponse::message('Empresa atual não selecionada.', 403);
+        }
+
         $results = $this->slaService->runSlaChecks($tenantId);
 
         return ApiResponse::data($results, 200, ['message' => 'Verificações de SLA concluídas.']);
@@ -46,7 +53,11 @@ class ServiceOpsController extends Controller
         $template = $validated['template'] ?? [];
         $equipmentIds = $validated['equipment_ids'];
         $user = $request->user();
-        $tenantId = (int) ($user->current_tenant_id ?? $user->tenant_id);
+        $tenantId = $this->currentTenantId($request);
+        if ($tenantId === null) {
+            return ApiResponse::message('Empresa atual não selecionada.', 403);
+        }
+
         $created = [];
 
         unset($template['tenant_id'], $template['created_by'], $template['status'], $template['equipment_id']);
@@ -79,5 +90,12 @@ class ServiceOpsController extends Controller
             201,
             ['message' => count($created).' OS criada(s) com sucesso.']
         );
+    }
+
+    private function currentTenantId(Request $request): ?int
+    {
+        $tenantId = (int) ($request->user()->current_tenant_id ?? 0);
+
+        return $tenantId > 0 ? $tenantId : null;
     }
 }

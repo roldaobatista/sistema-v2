@@ -55,8 +55,8 @@ class Flow003RecuperacaoSenhaTest extends TestCase
         $resetResponse = $this->postJson('/api/v1/reset-password', [
             'token' => $token,
             'email' => 'user@test.com',
-            'password' => 'NewPassword123',
-            'password_confirmation' => 'NewPassword123',
+            'password' => 'NewPassword123!',
+            'password_confirmation' => 'NewPassword123!',
         ]);
 
         $resetResponse->assertOk();
@@ -64,7 +64,7 @@ class Flow003RecuperacaoSenhaTest extends TestCase
 
         $loginResponse = $this->postJson('/api/v1/login', [
             'email' => 'user@test.com',
-            'password' => 'NewPassword123',
+            'password' => 'NewPassword123!',
         ]);
 
         $loginResponse->assertOk();

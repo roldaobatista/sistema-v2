@@ -9,6 +9,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
+ * @property int $tenant_id
+ * @property string $name
+ * @property string $type
+ * @property string|null $description
+ * @property string $priority
+ * @property string $visibility
  * @property array<int|string, mixed>|null $subtasks
  * @property array<int|string, mixed>|null $default_watchers
  * @property array<int|string, mixed>|null $tags
@@ -35,6 +41,9 @@ class AgendaTemplate extends Model
 
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

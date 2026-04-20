@@ -246,7 +246,7 @@ test('user WITH hr.schedule.manage can store schedule', function () {
     Sanctum::actingAs($user, ['*']);
 
     $this->postJson('/api/v1/hr/schedules', [
-        'user_id' => $user->id,
+        'technician_id' => $user->id,
         'date' => now()->addDay()->toDateString(),
         'shift_type' => 'normal',
         'start_time' => '08:00',
@@ -259,7 +259,7 @@ test('user WITHOUT hr.schedule.manage gets 403 on store schedule', function () {
     Sanctum::actingAs($user, ['*']);
 
     $this->postJson('/api/v1/hr/schedules', [
-        'user_id' => $user->id,
+        'technician_id' => $user->id,
     ])->assertForbidden();
 });
 

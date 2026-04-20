@@ -30,10 +30,10 @@ class HRController extends Controller
     public function indexSchedules(Request $request): JsonResponse
     {
         $query = WorkSchedule::where('tenant_id', $this->tenantId())
-            ->with('user:id,name');
+            ->with('technician:id,name');
 
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->user_id);
+        if ($request->filled('technician_id')) {
+            $query->where('technician_id', $request->integer('technician_id'));
         }
         if ($request->filled('date_from')) {
             $query->where('date', '>=', $request->date_from);
@@ -55,7 +55,7 @@ class HRController extends Controller
 
                 $schedule = WorkSchedule::query()
                     ->where('tenant_id', $tenantId)
-                    ->where('user_id', $validated['user_id'])
+                    ->where('technician_id', $validated['technician_id'])
                     ->whereDate('date', $validated['date'])
                     ->first();
 
@@ -88,7 +88,7 @@ class HRController extends Controller
                 foreach ($validated['schedules'] as $data) {
                     $schedule = WorkSchedule::query()
                         ->where('tenant_id', $tenantId)
-                        ->where('user_id', $data['user_id'])
+                        ->where('technician_id', $data['technician_id'])
                         ->whereDate('date', $data['date'])
                         ->first();
 
