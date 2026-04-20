@@ -66,3 +66,14 @@ composer analyse
 ## Veredito
 
 FECHADA no perímetro auditado: zero findings S1..S4.
+
+## Evidência complementar do commit final
+
+```text
+Commit: 99750c5 fix(camada-1): fecha reauditoria r2
+Hook: pint --test, composer analyse, pest --dirty --parallel
+Result: commit permitido
+Tests: 9918 passed (32560 assertions)
+Duration: 295.78s
+Parallel: 16 processes
+```

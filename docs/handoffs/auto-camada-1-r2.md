@@ -3,49 +3,82 @@
 **Data:** 2026-04-20  
 **Worktree:** `C:\PROJETOS\sistema\.worktrees\camada-1-auto-2026-04-20`  
 **Branch:** `auto/camada-1-2026-04-20`  
-**Status:** gates backend verdes, alterações ainda não commitadas, Camada 1 em andamento.
+**Status:** Camada 1 fechada no perímetro auditado. Reauditoria r2 com zero findings S1..S4.
 
-## Correções aplicadas na retomada
+## Commits
 
-- `EnsurePortalAccess`: tolera atributos opcionais de hardening não hidratados no model em memória, evitando 500 em rotas do portal sob `Model::shouldBeStrict()`.
-- Fixtures de 2FA: `TwoFactorControllerTest` cria registros com `forceCreate()` e `user_id` explícito, preservando `tenant_id` fora do `$fillable`.
-- Inventário: `InventoryController`, `InventoryPwaController` e `InventoryReferenceSeeder` persistem `tenant_id` em `inventory_items`.
-- Portal contrato: teste ajustado para usuário com e-mail verificado e mensagem genérica de autenticação sem contrato ativo.
-- `UserFactory`: quando `tenant_id` é informado em testes e `current_tenant_id` não é, hidrata `current_tenant_id` com o mesmo tenant; testes de ausência de tenant atual continuam usando `current_tenant_id => null` explicitamente.
-- `ReconciliationExportTest`: autenticação ocorre depois de selecionar `tenant_id/current_tenant_id`.
+- `b12e0f6 fix(camada-1): resolve auditoria r1`
+- `99750c5 fix(camada-1): fecha reauditoria r2`
 
-## Evidência
+## Correções aplicadas na rodada r2
+
+- `WorkScheduleController` e FormRequests de HR schedules deixaram de usar fallback para `user()->tenant_id`; o tenant corrente passa a ser obrigatório via `current_tenant_id`.
+- A migration `2026_04_20_100100_rename_work_schedules_user_id_to_technician_id.php` passou a ser idempotente em schema parcialmente migrado.
+- `CrmMessageController`, `WhatsAppWebhookController` e `TenantService` receberam comentários locais `LEI 4 JUSTIFICATIVA` nos acessos sem global scope de tenant.
+- `tests/TestCase.php` passou a executar `Model::reguard()` no `tearDown()` para impedir vazamento de `Model::unguard()` entre testes paralelos.
+- Testes de regressão cobrem ausência de `current_tenant_id` em HR schedules e a imutabilidade/mass-assignment de `AuditLog` após testes que desguardam models.
+
+## Reauditoria
+
+Relatório consolidado: `docs/audits/reaudit-camada-1-2026-04-20-auto-r2.md`
+
+Experts:
+
+- `docs/audits/reaudit-camada-1-2026-04-20-auto-r2/security.md`
+- `docs/audits/reaudit-camada-1-2026-04-20-auto-r2/data.md`
+- `docs/audits/reaudit-camada-1-2026-04-20-auto-r2/qa.md`
+- `docs/audits/reaudit-camada-1-2026-04-20-auto-r2/governance.md`
+- `docs/audits/reaudit-camada-1-2026-04-20-auto-r2/architecture.md`
+- `docs/audits/reaudit-camada-1-2026-04-20-auto-r2/integration.md`
+
+Veredito: zero findings S1..S4.
+
+## Evidência de testes e gates
 
 ```powershell
 cd backend
-php vendor\bin\pest tests\Feature\Api\V1\Portal\PortalTicketControllerTest.php tests\Feature\Api\V1\Security\TwoFactorControllerTest.php tests\Feature\DatabaseSeederServiceCallPermissionsTest.php tests\Feature\PortalContractRestrictionTest.php tests\Feature\PortalTest.php --no-coverage
-# Tests: 24 passed (79 assertions)
-# Duration: 16.80s
+php vendor\bin\pest tests\Feature\Api\V1\Hr\WorkScheduleControllerTest.php --no-coverage
+# Tests: 14 passed (27 assertions)
+# Duration: 3.95s
 
-php vendor\bin\pest tests\Feature\Api\V1\ClientPortalControllerTest.php tests\Feature\Api\V1\PortalTicketTest.php tests\Feature\Api\V1\Portal\PortalTicketControllerTest.php tests\Feature\Api\V1\Portal\PortalWorkOrderTest.php tests\Feature\Api\V1\Security\TwoFactorControllerTest.php tests\Feature\Api\V1\Security\TwoFactorTest.php tests\Feature\Api\V1\StockAdvancedTest.php tests\Feature\Api\V1\TechSyncControllerTest.php tests\Feature\AuthAliasAndTimeLogRegressionTest.php tests\Feature\ConfigSystemDeepAuditTest.php tests\Feature\CrossModuleFlowProfessionalTest.php tests\Feature\CrossModuleFlowTest.php tests\Feature\DatabaseSeederServiceCallPermissionsTest.php tests\Feature\Flows\SupportTicketFlowTest.php tests\Feature\PortalContractRestrictionTest.php tests\Feature\PortalTest.php tests\Feature\QuoteTest.php tests\Feature\ServiceCallProfessionalTest.php tests\Feature\StandardWeightTest.php tests\Feature\WorkOrderCommunicationAndAuditTest.php tests\Unit\Models\WorkOrderRealLogicTest.php tests\Unit\Models\WorkOrderRelationshipsTest.php --no-coverage --log-junit=storage\logs\pest-targeted.xml
-# Tests: 383 passed (1121 assertions)
-# Duration: 86.71s
+php vendor\bin\pest tests\Feature\Api\V1\HRControllerTest.php --filter="schedule" --no-coverage
+# Tests: 9 passed (22 assertions)
+# Duration: 3.21s
 
-php vendor\bin\pest tests\Feature\ReconciliationExportTest.php tests\Feature\Api\V1\ContinuousFeedbackTest.php tests\Feature\Api\V1\Operational\ChecklistTest.php tests\Feature\Flows\CriticalPathFlowTest.php tests\Feature\ExternalApiTest.php tests\Feature\TechnicianUnifiedAgendaTest.php tests\Feature\Api\V1\ServiceOpsTenantContextTest.php --no-coverage
-# Tests: 23 passed (77 assertions)
-# Duration: 7.80s
+php vendor\bin\pest tests\Feature\Rbac\HrRbacTest.php --filter="schedule" --no-coverage
+# Tests: 6 passed (6 assertions)
+# Duration: 2.65s
+
+php vendor\bin\pest tests\Feature\Security\AuditLogImmutabilityTest.php --filter="mass-assignment via create" --no-coverage
+# Tests: 1 passed (1 assertions)
+# Duration: 1.83s
+
+php vendor\bin\pest tests\Unit\Services\WorkOrderServiceTest.php tests\Feature\Security\AuditLogImmutabilityTest.php --no-coverage
+# Tests: 29 passed (47 assertions)
+# Duration: 5.95s
 
 .\vendor\bin\pint --test
 # {"result":"pass"}
 
 composer analyse
-# Configuration cache cleared successfully.
 # [OK] No errors
 
-.\vendor\bin\pest --dirty --parallel --no-coverage --log-junit=storage\logs\pest-dirty.xml
-# Tests: 8509 passed (22491 assertions)
-# Duration: 268.14s
-# Parallel: 16 processes
+.\vendor\bin\pest --dirty --parallel --no-coverage --log-junit=storage\logs\pest-dirty-r2.xml
+# Tests: 8509 passed (22484 assertions)
+# Duration: 253.72s
+```
+
+## Evidência do commit final
+
+```text
+Commit: 99750c5 fix(camada-1): fecha reauditoria r2
+Hook: pint --test, composer analyse, pest --dirty --parallel
+Result: commit permitido
+Tests: 9918 passed (32560 assertions)
+Duration: 295.78s
+Parallel: 16 processes
 ```
 
 ## Próximo passo
 
-1. Revisar diff da worktree inteira.
-2. Criar commit(s) atômico(s) sem `--no-verify`.
-3. Executar reauditoria neutra r2 conforme `.claude/skills/audit-prompt.md` e `.claude/agents/*` relevantes.
-4. Só declarar Camada 1 fechada se a reauditoria r2 retornar zero findings S1..S4.
+Escolher integração da branch `auto/camada-1-2026-04-20`: merge local, push/PR, manter como está ou descartar com confirmação explícita.
