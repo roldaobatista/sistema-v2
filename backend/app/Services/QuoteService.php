@@ -481,7 +481,7 @@ class QuoteService
                 'internal_approved_at' => now(),
             ]);
 
-            AuditLog::log('internal_approved', "Orçamento {$quote->quote_number} aprovado internamente por {$user->name}", $quote);
+            AuditLog::log('internal_approved', "Orçamento {$quote->quote_number} aprovado internamente", $quote);
         });
 
         return $quote->fresh();

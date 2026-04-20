@@ -71,7 +71,8 @@ class PasswordResetController extends Controller
                 if ($tenantId) {
                     app()->instance('current_tenant_id', $tenantId);
                 }
-                AuditLog::log('password_reset', "Senha redefinida via 'Esqueci minha senha' para {$user->email}", $user);
+                // sec-10 (LGPD Art. 46): description sem PII; ator em user_id (FK).
+                AuditLog::log('password_reset', 'Senha redefinida via fluxo de recuperação', $user);
             }
         );
 

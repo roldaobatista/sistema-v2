@@ -173,7 +173,7 @@ class TenantService
                 $this->sendPasswordReset($user);
             }
 
-            AuditLog::log('created', "Usuário {$user->name} convidado para {$tenant->name}", $user);
+            AuditLog::log('created', "Usuário convidado para tenant #{$tenant->id}", $user);
 
             return [
                 'user' => $user,
@@ -211,7 +211,7 @@ class TenantService
                 ])->save();
             }
 
-            AuditLog::log('deleted', "Usuário {$user->name} removido de {$tenant->name}", $user);
+            AuditLog::log('deleted', "Usuário removido de tenant #{$tenant->id}", $user);
         });
     }
 

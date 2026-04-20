@@ -115,7 +115,7 @@ class UserController extends Controller
 
             $user->load('roles:id,name,display_name');
 
-            AuditLog::log('created', "Usuário {$user->name} criado", $user);
+            AuditLog::log('created', 'Usuário criado', $user);
 
             return ApiResponse::data($user, 201);
         } catch (\Exception $e) {
@@ -166,7 +166,7 @@ class UserController extends Controller
 
             $user->load('roles:id,name,display_name');
 
-            AuditLog::log('updated', "Usuário {$user->name} atualizado", $user);
+            AuditLog::log('updated', 'Usuário atualizado', $user);
 
             return ApiResponse::data($user);
         } catch (\Exception $e) {
@@ -228,7 +228,7 @@ class UserController extends Controller
                 $user->forceDelete();
             });
 
-            AuditLog::log('deleted', "Usuário {$user->name} excluído", $user);
+            AuditLog::log('deleted', 'Usuário excluído', $user);
 
             return ApiResponse::noContent();
         } catch (\Exception $e) {
@@ -256,7 +256,7 @@ class UserController extends Controller
                 }
             });
 
-            AuditLog::log('status_changed', "Usuário {$user->name} ".($user->is_active ? 'ativado' : 'desativado'), $user);
+            AuditLog::log('status_changed', 'Usuário '.($user->is_active ? 'ativado' : 'desativado'), $user);
 
             return ApiResponse::data(['is_active' => $user->is_active]);
         } catch (\Exception $e) {
@@ -283,7 +283,7 @@ class UserController extends Controller
                 $user->tokens()->delete();
             });
 
-            AuditLog::log('updated', "Senha do usuário {$user->name} resetada", $user);
+            AuditLog::log('updated', 'Senha do usuário resetada', $user);
 
             return ApiResponse::message('Senha atualizada.');
         } catch (\Exception $e) {
@@ -311,7 +311,7 @@ class UserController extends Controller
 
             $user->load('roles:id,name,display_name');
 
-            AuditLog::log('updated', "Roles do usuário {$user->name} atualizadas", $user);
+            AuditLog::log('updated', 'Roles do usuário atualizadas', $user);
 
             return ApiResponse::data($user);
         } catch (\Exception $e) {
@@ -449,8 +449,7 @@ class UserController extends Controller
             DB::commit();
 
             $action = $validated['is_active'] ? 'ativados' : 'desativados';
-            $names = $affectedUsers->pluck('name')->implode(', ');
-            AuditLog::log('status_changed', "{$affected} usuário(s) {$action} em lote: {$names}");
+            AuditLog::log('status_changed', "{$affected} usuário(s) {$action} em lote");
 
             return ApiResponse::data(
                 ['affected' => $affected],
@@ -480,7 +479,7 @@ class UserController extends Controller
             $count = $user->tokens()->count();
             $user->tokens()->delete();
 
-            AuditLog::log('logout', "Forçado logout do usuário {$user->name} ({$count} sessões)", $user);
+            AuditLog::log('logout', "Forçado logout do usuário ({$count} sessões)", $user);
 
             return response()->json([
                 'data' => ['revoked' => $count],
@@ -617,7 +616,7 @@ class UserController extends Controller
         try {
             $user->givePermissionTo($validated['permissions']);
 
-            AuditLog::log('updated', "Permissões diretas concedidas ao usuário {$user->name}: ".implode(', ', $validated['permissions']), $user);
+            AuditLog::log('updated', 'Permissões diretas concedidas: '.implode(', ', $validated['permissions']), $user);
 
             return ApiResponse::data(
                 ['direct_permissions' => $user->getDirectPermissions()->pluck('name')],
@@ -646,7 +645,7 @@ class UserController extends Controller
                 $user->revokePermissionTo($perm);
             }
 
-            AuditLog::log('updated', "Permissões diretas revogadas do usuário {$user->name}: ".implode(', ', $validated['permissions']), $user);
+            AuditLog::log('updated', 'Permissões diretas revogadas: '.implode(', ', $validated['permissions']), $user);
 
             return ApiResponse::data(
                 ['direct_permissions' => $user->getDirectPermissions()->pluck('name')],
@@ -673,7 +672,7 @@ class UserController extends Controller
         try {
             $user->syncPermissions($validated['permissions']);
 
-            AuditLog::log('updated', "Permissões diretas do usuário {$user->name} sincronizadas", $user);
+            AuditLog::log('updated', 'Permissões diretas sincronizadas', $user);
 
             return ApiResponse::data(
                 ['direct_permissions' => $user->getDirectPermissions()->pluck('name')],
@@ -715,7 +714,7 @@ class UserController extends Controller
 
             AuditLog::log(
                 'updated',
-                "Permissões negadas do usuário {$user->name} atualizadas: ".(empty($validated['denied_permissions']) ? 'nenhuma' : implode(', ', $validated['denied_permissions'])),
+                'Permissões negadas atualizadas: '.(empty($validated['denied_permissions']) ? 'nenhuma' : implode(', ', $validated['denied_permissions'])),
                 $user
             );
 

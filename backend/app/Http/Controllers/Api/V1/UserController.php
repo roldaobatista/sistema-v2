@@ -56,7 +56,7 @@ class UserController extends Controller
                 $user->update($validated);
             });
 
-            AuditLog::log('updated', "Perfil do usuário {$user->name} atualizado", $user);
+            AuditLog::log('updated', 'Perfil do usuário atualizado', $user);
 
             return ApiResponse::message('Perfil atualizado.', 200, [
                 'user' => [

@@ -97,8 +97,13 @@ class AuthController extends Controller
                 setPermissionsTeamId(0);
             }
 
+            // Sanctum não popula auth() na request de login (só emite token).
+            // Setamos o usuário aqui para que AuditLog::log registre user_id correto.
+            Auth::setUser($user);
+
             try {
-                AuditLog::log('login', "Login realizado por {$user->name} ({$user->email})", $user);
+                // sec-10 (LGPD Art. 46): description sem PII. Ator fica em user_id (FK).
+                AuditLog::log('login', 'Login realizado', $user);
             } catch (\Throwable $e) {
                 Log::warning('AuditLog::log login failed', ['message' => $e->getMessage()]);
             }
@@ -280,9 +285,10 @@ class AuthController extends Controller
             setPermissionsTeamId($tenant->id);
             app(PermissionRegistrar::class)->forgetCachedPermissions();
 
+            // sec-10 (LGPD Art. 46): description sem PII; ator em user_id, alvo em auditable.
             AuditLog::log(
                 'tenant_switch',
-                "Usuário {$user->name} trocou de empresa: #{$previousTenantId} → #{$tenant->id} ({$tenant->name})",
+                "Tenant switch efetuado: #{$previousTenantId} → #{$tenant->id}",
                 $tenant
             );
 
