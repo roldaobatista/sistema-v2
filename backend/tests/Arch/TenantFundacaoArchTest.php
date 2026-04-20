@@ -135,9 +135,11 @@ test('factories com tenant_id nao reutilizam tenants existentes', function (): v
         .'database'.DIRECTORY_SEPARATOR
         .'factories';
 
-    if (! is_dir($factoriesDir)) {
-        test()->markTestSkipped('Factories dir missing');
-    }
+    // qa-03 (Re-auditoria Camada 1 r3): falha explícita se a dir sumir —
+    // skip silencioso em Arch test mascara degradação estrutural.
+    expect(is_dir($factoriesDir))->toBeTrue(
+        "database/factories/ não existe em {$factoriesDir} — fundação de tenant-safety comprometida."
+    );
 
     $iterator = new RecursiveIteratorIterator(
         new RecursiveDirectoryIterator($factoriesDir, FilesystemIterator::SKIP_DOTS)

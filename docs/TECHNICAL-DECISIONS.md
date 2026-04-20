@@ -877,3 +877,30 @@ Aplicado a toda `Rule::Password::defaults()` em FormRequests de cadastro, reset,
 
 ---
 
+### 14.26 Factory coverage backlog — 40 models (qa-05, 2026-04-19)
+
+**Decisão:** 40 models com `use HasFactory` mas sem classe `Factory` correspondente em `database/factories/` são aceitos como **limitação documentada**, whitelisted em `tests/Arch/FactoryCoverageSmokeTest.php`. Criação de factories retrospectiva é backlog de baixa prioridade — models listados não são exercitados em testes hoje, e criar factory vazia apenas para "passar" o arch test seria teatro (sem ganho real de cobertura).
+
+**Lista whitelisted (40 models):**
+
+```
+AccountPayablePayment, AccountPlan, AccountPlanAction, Admission, AgendaItemComment,
+AgendaItemHistory, CalibrationDecisionLog, ClientPortalUser, Commitment, ContactPolicy,
+ContinuousFeedback, CrmDealStageHistory, CrmFunnelAutomation, CustomerRfmScore,
+EmailActivity, EmailNote, EmailSignature, EmailTag, EmailTemplate, EmployeeDependent,
+ESocialRubric, EspelhoConfirmation, FuelingLog, GamificationBadge, GamificationScore,
+ImportantDate, MarketingIntegration, NpsResponse, PaymentGatewayConfig, PortalGuestLink,
+QuickNote, QuotePhoto, ReconciliationRule, SealApplication, SkillRequirement,
+TechnicianFeedback, VisitReport, WorkOrderRecurrence, WorkOrderSignature, WorkOrderTimeLog
+```
+
+**Regra para frente:**
+
+- **NOVO model** com `HasFactory` DEVE ter factory declarada — o arch test falha sem whitelist.
+- Reduções na whitelist são bem-vindas: criar factory + remover do array em `FactoryCoverageSmokeTest.php` no mesmo commit.
+- Acréscimos à whitelist (model legado ganhando `HasFactory` sem factory) exigem atualização desta §14.26 no mesmo commit + justificativa técnica.
+
+**Implicação para auditoria:** `qa-expert` agent file não deve reportar os 40 models listados como finding qa-05 ou equivalente.
+
+---
+
