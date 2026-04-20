@@ -22,12 +22,18 @@ class AuthSmokeTest extends SmokeTestCase
 
     public function test_unauthenticated_request_returns_401(): void
     {
-        // Sem Sanctum::actingAs
-        $this->app->forgetInstance('sanctum.guard');
+        // qa-02 (Re-auditoria Camada 1 r4): o nome do teste promete 401.
+        // Removido `withoutMiddleware()` que zerava a stack e tornava a
+        // asserção inútil. Sem token Sanctum, rota autenticada DEVE 401.
+        //
+        // Observação: SmokeTestCase::setUp() chama Sanctum::actingAs() para os
+        // demais testes. Aqui precisamos desfazer isso — forgetGuards() zera
+        // o usuário resolvido em todos os guards (incluindo sanctum), forçando
+        // o AuthenticateMiddleware a re-resolver sem credenciais → 401.
+        $this->app['auth']->forgetGuards();
 
-        $response = $this->withoutMiddleware()->getJson('/api/v1/customers');
+        $response = $this->getJson('/api/v1/customers');
 
-        // Deve retornar 200 (middleware desativado no setup) ou 401
-        $this->assertTrue(in_array($response->status(), [200, 401]));
+        $response->assertUnauthorized();
     }
 }

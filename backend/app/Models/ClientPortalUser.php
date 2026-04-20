@@ -18,20 +18,22 @@ class ClientPortalUser extends Authenticatable
 {
     use BelongsToTenant, HasApiTokens, HasFactory, Notifiable;
 
-    // sec-18 (Re-auditoria Camada 1 r3): $fillable restrito a campos de
-    // perfil do usuário do portal. Campos de hardening (lockout, 2FA,
-    // password_history) saem fora — são atribuídos exclusivamente via
-    // forceFill() por controllers/jobs internos de autenticação, nunca
-    // por payload HTTP. Fecha vetor de forjar locked_until/confirmed_at.
+    // sec-18 + data-02 (Re-auditoria Camada 1 r3/r4): $fillable restrito a
+    // campos de perfil do usuário do portal. Fora do $fillable por regra:
+    //  - tenant_id (BelongsToTenant injeta via `creating`)
+    //  - is_active (atribuído por lifecycle de ativação/desativação interno)
+    //  - two_factor_enabled (virado apenas pelo fluxo de confirmação 2FA)
+    //  - last_login_at (stamp automático pós-login bem-sucedido)
+    //  - campos de hardening (lockout, 2FA secrets, password_history) —
+    //    atribuídos exclusivamente via forceFill() por controllers/jobs
+    //    internos de autenticação, nunca por payload HTTP. Fecha vetores
+    //    de forjar locked_until/confirmed_at, reativar conta bloqueada,
+    //    bypass 2FA e cross-tenant via mass assignment.
     protected $fillable = [
-        'tenant_id',
         'customer_id',
         'name',
         'email',
         'password',
-        'is_active',
-        'last_login_at',
-        'two_factor_enabled',
     ];
 
     protected $hidden = [

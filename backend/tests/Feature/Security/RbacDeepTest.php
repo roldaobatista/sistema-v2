@@ -63,19 +63,23 @@ class RbacDeepTest extends TestCase
 
     public function test_admin_can_create_work_order(): void
     {
+        // qa-02 (Re-auditoria Camada 1 r4): assertSuccessful() bloqueia 4xx/5xx
+        // sem amarrar ao código exato 200 vs 201 — elimina disjunção tolerante.
         $response = $this->actingAs($this->admin)->postJson('/api/v1/work-orders', [
             'customer_id' => $this->customer->id,
             'title' => 'Admin WO',
             'priority' => 'medium',
         ]);
-        $this->assertTrue(in_array($response->status(), [201, 200]));
+        $response->assertSuccessful();
     }
 
     public function test_admin_can_delete_customer(): void
     {
+        // qa-02 (Re-auditoria Camada 1 r4): assertSuccessful() valida 2xx real,
+        // não disjunção. Delete pode retornar 200 (ApiResponse) ou 204 (noContent).
         $c = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $response = $this->actingAs($this->admin)->deleteJson("/api/v1/customers/{$c->id}");
-        $this->assertTrue(in_array($response->status(), [200, 204]));
+        $response->assertSuccessful();
     }
 
     public function test_admin_can_manage_users(): void
@@ -97,20 +101,22 @@ class RbacDeepTest extends TestCase
 
     public function test_manager_can_create_customer(): void
     {
+        // qa-02 (Re-auditoria Camada 1 r4): valida 2xx concreto.
         $response = $this->actingAs($this->manager)->postJson('/api/v1/customers', [
             'name' => 'Manager Customer',
             'type' => 'PJ',
         ]);
-        $this->assertTrue(in_array($response->status(), [201, 200]));
+        $response->assertSuccessful();
     }
 
     public function test_manager_can_create_quote(): void
     {
+        // qa-02 (Re-auditoria Camada 1 r4): QuoteController::store retorna 201.
         $response = $this->actingAs($this->manager)->postJson('/api/v1/quotes', [
             'customer_id' => $this->customer->id,
             'title' => 'Manager Quote',
         ]);
-        $this->assertTrue(in_array($response->status(), [201, 200]));
+        $response->assertStatus(201);
     }
 
     // ── Technician Permissions ──
@@ -122,6 +128,10 @@ class RbacDeepTest extends TestCase
 
     public function test_technician_can_update_work_order(): void
     {
+        // qa-02 (Re-auditoria Camada 1 r4): técnico atribuído DEVE conseguir
+        // atualizar (200). Disjunção [200, 403] mascarava regressão de RBAC.
+        // Se o técnico for bloqueado, teste DEVE falhar — é literalmente o
+        // "técnico CAN update work order" em nome do método.
         $wo = WorkOrder::factory()->create([
             'tenant_id' => $this->tenant->id,
             'customer_id' => $this->customer->id,
@@ -130,7 +140,7 @@ class RbacDeepTest extends TestCase
         $response = $this->actingAs($this->technician)->putJson("/api/v1/work-orders/{$wo->id}", [
             'status' => WorkOrder::STATUS_IN_PROGRESS,
         ]);
-        $this->assertTrue(in_array($response->status(), [200, 403]));
+        $response->assertOk();
     }
 
     public function test_technician_cannot_delete_customer(): void
@@ -142,8 +152,10 @@ class RbacDeepTest extends TestCase
 
     public function test_technician_cannot_access_settings(): void
     {
+        // qa-02 (Re-auditoria Camada 1 r4): nome do método é "CANNOT" — logo
+        // DEVE ser 403. Aceitar 200 contradiz o próprio contrato do teste.
         $response = $this->actingAs($this->technician)->getJson('/api/v1/settings');
-        $this->assertTrue(in_array($response->status(), [200, 403]));
+        $response->assertForbidden();
     }
 
     // ── Viewer Permissions ──

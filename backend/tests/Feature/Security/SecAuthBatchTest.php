@@ -131,13 +131,21 @@ class SecAuthBatchTest extends TestCase
         // Pode falhar em 'uncompromised' se a política incluir (HaveIBeenPwned),
         // mas a senha sintética deve ser estruturalmente válida. Verificamos
         // que se falhar, é apenas pelo check uncompromised (network).
+        // qa-01 (Re-auditoria Camada 1 r4): substituído assertTrue(true) por
+        // assertion real sobre o campo `password`. Regra: se passou, o array
+        // de erros não deve conter `password` (estrutura válida).
         if ($validator->fails()) {
             $errors = $validator->errors()->get('password');
             foreach ($errors as $error) {
                 $this->assertStringContainsStringIgnoringCase('compromised', $error, "erro inesperado: {$error}");
             }
         } else {
-            $this->assertTrue(true);
+            $this->assertArrayNotHasKey(
+                'password',
+                $validator->errors()->toArray(),
+                'senha estruturalmente forte não deve gerar erros em password',
+            );
+            $this->assertSame([], $validator->errors()->get('password'));
         }
     }
 

@@ -255,6 +255,18 @@ class AuthController extends Controller
 
     public function switchTenant(SwitchTenantRequest $request): JsonResponse
     {
+        // gov-05 (Re-auditoria Camada 1 r4) — EXCEÇÃO JUSTIFICADA à Lei 4.
+        // Lei 4: "Tenant ID sempre $request->user()->current_tenant_id.
+        // Jamais do body." — REGRA GERAL para evitar cross-tenant.
+        //
+        // Exceção aqui: o PROPÓSITO deste endpoint é TROCAR o tenant ativo.
+        // O tenant-alvo, por definição, NÃO é o `current_tenant_id` atual
+        // (senão não haveria o que trocar). O ID precisa vir do body.
+        //
+        // A segurança é garantida por `hasTenantAccess($tenantId)` abaixo,
+        // que verifica membership do user no tenant-alvo via pivot
+        // `user_tenants`. Sem membership → 403. Request é autenticado
+        // por Sanctum antes de chegar aqui.
         $tenantId = (int) $request->validated()['tenant_id'];
         $user = $request->user();
 

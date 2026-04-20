@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Auth;
 
-use App\Http\Middleware\CheckPermission;
 use App\Models\Tenant;
 use App\Models\User;
+use Database\Seeders\PermissionsSeeder;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /**
@@ -23,8 +23,10 @@ class AuthenticationRealTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Gate::before(fn () => true);
-        $this->withoutMiddleware([CheckPermission::class]);
+        // qa-16 (Re-auditoria Camada 1 r4): removido `Gate::before(fn() => true)`
+        // e `withoutMiddleware([CheckPermission::class])`. Alinhado com
+        // SecAuthBatchTest — testes validam permissão REAL (role admin +
+        // PermissionsSeeder) em vez de kernel "lite" diferente de produção.
         Event::fake();
 
         $this->tenant = Tenant::factory()->create(['status' => Tenant::STATUS_ACTIVE]);
@@ -33,12 +35,14 @@ class AuthenticationRealTest extends TestCase
             'current_tenant_id' => $this->tenant->id,
             'email' => 'auth-test@kalibrium.com',
             'password' => Hash::make('TestSenha123!'),
+            'email_verified_at' => now(),
         ]);
         $this->user->tenants()->attach($this->tenant->id, ['is_default' => true]);
         app()->instance('current_tenant_id', $this->tenant->id);
         setPermissionsTeamId($this->tenant->id);
+        $this->seed(PermissionsSeeder::class);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
         $this->user->assignRole('admin');
-
     }
 
     // ── Login ──
@@ -108,8 +112,10 @@ class AuthenticationRealTest extends TestCase
 
     public function test_logout_revokes_token(): void
     {
+        // qa-02 (Re-auditoria Camada 1 r4): assertion específica.
+        // Contrato do endpoint /logout: 200 OK (AuthController::logout).
         $response = $this->actingAs($this->user)->postJson('/api/v1/logout');
-        $this->assertTrue(in_array($response->status(), [200, 204]));
+        $response->assertOk();
     }
 
     // ── My Tenants ──
@@ -124,6 +130,13 @@ class AuthenticationRealTest extends TestCase
 
     public function test_switch_to_valid_tenant(): void
     {
+        // qa-16 (Re-auditoria Camada 1 r4): sem `Gate::before(fn() => true)`,
+        // `SwitchTenantRequest::authorize()` exige `platform.tenant.switch` —
+        // permissão concedida apenas a `super_admin` (admin é filtrado em
+        // PermissionsSeeder::$rolePermissionFilters). Usar super_admin aqui.
+        $this->user->syncRoles(['super_admin']);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         $response = $this->actingAs($this->user)->postJson('/api/v1/switch-tenant', [
             'tenant_id' => $this->tenant->id,
         ]);
@@ -132,11 +145,18 @@ class AuthenticationRealTest extends TestCase
 
     public function test_switch_to_unauthorized_tenant(): void
     {
+        // qa-02 (Re-auditoria Camada 1 r4): assertion específica.
+        // Contrato: hasTenantAccess() retorna false → 403 "Acesso negado".
+        // Usa super_admin para passar pelo authorize() (platform.tenant.switch)
+        // e exercitar o guard real do controller, não o do FormRequest.
+        $this->user->syncRoles(['super_admin']);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         $other = Tenant::factory()->create();
         $response = $this->actingAs($this->user)->postJson('/api/v1/switch-tenant', [
             'tenant_id' => $other->id,
         ]);
-        $this->assertTrue(in_array($response->status(), [403, 422]));
+        $response->assertForbidden();
     }
 
     // ── Protected routes without auth ──

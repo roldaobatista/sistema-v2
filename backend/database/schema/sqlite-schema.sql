@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (converted from MySQL)
--- Generated: 2026-04-20 03:30:51
+-- Generated: 2026-04-20 04:14:56
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -836,7 +836,7 @@ CREATE TABLE "biometric_consents" (
  "consented_at" date NOT NULL,
  "expires_at" date DEFAULT NULL,
  "revoked_at" date DEFAULT NULL,
- "alternative_method" varchar(255) DEFAULT NULL,
+ "alternative_method" text,
  "retention_days" int NOT NULL DEFAULT '365',
  "is_active" tinyint NOT NULL DEFAULT '1',
  "created_at" datetime NULL DEFAULT NULL,
@@ -943,7 +943,7 @@ CREATE TABLE "calibration_standard_weight" (
  "standard_weight_id" integer NOT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL,
- "tenant_id" integer DEFAULT NULL
+ "tenant_id" integer NOT NULL
 );
 CREATE UNIQUE INDEX "cal_sw_unique" ON "calibration_standard_weight" ("equipment_calibration_id","standard_weight_id");
 CREATE INDEX "calibration_standard_weight_standard_weight_id_foreign" ON "calibration_standard_weight" ("standard_weight_id");
@@ -3092,7 +3092,7 @@ CREATE TABLE "email_email_tag" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
  "email_id" integer NOT NULL,
  "email_tag_id" integer NOT NULL,
- "tenant_id" integer DEFAULT NULL
+ "tenant_id" integer NOT NULL
 );
 CREATE INDEX "email_email_tag_email_id_foreign" ON "email_email_tag" ("email_id");
 CREATE INDEX "email_email_tag_email_tag_id_foreign" ON "email_email_tag" ("email_tag_id");
@@ -3515,7 +3515,7 @@ CREATE INDEX "equipment_maintenances_tenant_id_idx" ON "equipment_maintenances" 
 CREATE TABLE "equipment_model_product" (
  "equipment_model_id" integer NOT NULL,
  "product_id" integer NOT NULL,
- "tenant_id" integer DEFAULT NULL,
+ "tenant_id" integer NOT NULL,
  PRIMARY KEY ("equipment_model_id","product_id")
 );
 CREATE INDEX "equipment_model_product_product_id_foreign" ON "equipment_model_product" ("product_id");
@@ -5107,7 +5107,7 @@ CREATE TABLE "inventory_items" (
  "notes" text,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL,
- "tenant_id" integer DEFAULT NULL
+ "tenant_id" integer NOT NULL
 );
 CREATE INDEX "inventory_items_inventory_id_foreign" ON "inventory_items" ("inventory_id");
 CREATE INDEX "inventory_items_product_id_foreign" ON "inventory_items" ("product_id");
@@ -6437,7 +6437,8 @@ CREATE TABLE "payments" (
  "gateway_response" text DEFAULT NULL,
  "gateway_provider" varchar(255) DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
- "updated_at" datetime NULL DEFAULT NULL
+ "updated_at" datetime NULL DEFAULT NULL,
+ "deleted_at" datetime NULL DEFAULT NULL
 );
 CREATE INDEX "payments_payable_type_payable_id_index" ON "payments" ("payable_type","payable_id");
 CREATE INDEX "payments_pay_tenant_payable" ON "payments" ("tenant_id","payable_type","payable_id");
@@ -6447,6 +6448,7 @@ CREATE INDEX "payments_tid_idx" ON "payments" ("tenant_id");
 CREATE INDEX "payments_pay_tid_pdate_idx" ON "payments" ("tenant_id","payment_date");
 CREATE INDEX "payments_idx_payments_external_id" ON "payments" ("external_id");
 CREATE INDEX "payments_tenant_id_idx" ON "payments" ("tenant_id");
+CREATE INDEX "payments_deleted_at_index" ON "payments" ("deleted_at");
 
 CREATE TABLE "payroll_lines" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -7051,7 +7053,7 @@ CREATE TABLE "purchase_quotation_items" (
  "total" numeric NOT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL,
- "tenant_id" integer DEFAULT NULL
+ "tenant_id" integer NOT NULL
 );
 CREATE INDEX "purchase_quotation_items_purchase_quotation_id_foreign" ON "purchase_quotation_items" ("purchase_quotation_id");
 CREATE INDEX "purchase_quotation_items_product_id_foreign" ON "purchase_quotation_items" ("product_id");
@@ -7388,7 +7390,7 @@ CREATE INDEX "quote_photos_tenant_id_idx" ON "quote_photos" ("tenant_id");
 CREATE TABLE "quote_quote_tag" (
  "quote_id" integer NOT NULL,
  "quote_tag_id" integer NOT NULL,
- "tenant_id" integer DEFAULT NULL,
+ "tenant_id" integer NOT NULL,
  PRIMARY KEY ("quote_id","quote_tag_id")
 );
 CREATE INDEX "quote_quote_tag_quote_tag_id_foreign" ON "quote_quote_tag" ("quote_tag_id");
@@ -8226,7 +8228,7 @@ CREATE TABLE "service_call_equipments" (
  "observations" text,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL,
- "tenant_id" integer DEFAULT NULL
+ "tenant_id" integer NOT NULL
 );
 CREATE INDEX "service_call_equipments_equipment_id_foreign" ON "service_call_equipments" ("equipment_id");
 CREATE INDEX "service_call_equipments_service_call_equip_tenant_idx" ON "service_call_equipments" ("tenant_id");
@@ -8373,7 +8375,7 @@ CREATE TABLE "service_skills" (
  "required_level" int NOT NULL DEFAULT '1',
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL,
- "tenant_id" integer DEFAULT NULL
+ "tenant_id" integer NOT NULL
 );
 CREATE UNIQUE INDEX "service_skills_service_id_skill_id_unique" ON "service_skills" ("service_id","skill_id");
 CREATE INDEX "service_skills_skill_id_foreign" ON "service_skills" ("skill_id");
@@ -9725,6 +9727,7 @@ CREATE TABLE "users" (
  "email" varchar(255) NOT NULL,
  "email_verified_at" datetime NULL DEFAULT NULL,
  "password" varchar(255) NOT NULL,
+ "password_changed_at" datetime NULL DEFAULT NULL,
  "remember_token" varchar(100) DEFAULT NULL,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL,
@@ -10404,7 +10407,7 @@ CREATE TABLE "work_order_equipments" (
  "observations" text,
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL,
- "tenant_id" integer DEFAULT NULL
+ "tenant_id" integer NOT NULL
 );
 CREATE INDEX "work_order_equipments_work_order_equipment_tenant_idx" ON "work_order_equipments" ("tenant_id");
 CREATE INDEX "work_order_equipments_work_order_id_fk_idx" ON "work_order_equipments" ("work_order_id");
@@ -10543,7 +10546,7 @@ CREATE TABLE "work_order_technicians" (
  "role" varchar(20) NOT NULL DEFAULT 'tecnico',
  "created_at" datetime NULL DEFAULT NULL,
  "updated_at" datetime NULL DEFAULT NULL,
- "tenant_id" integer DEFAULT NULL
+ "tenant_id" integer NOT NULL
 );
 CREATE UNIQUE INDEX "work_order_technicians_work_order_id_user_id_unique" ON "work_order_technicians" ("work_order_id","user_id");
 CREATE INDEX "work_order_technicians_user_id_foreign" ON "work_order_technicians" ("user_id");
@@ -11247,3 +11250,9 @@ INSERT INTO "migrations" ("id", "migration", "batch") VALUES (477, '2026_04_18_5
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (478, '2026_04_18_500004_add_unique_constraints_to_tenants', 12);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (479, '2026_04_18_500005_add_polymorphic_and_hot_log_indexes', 13);
 INSERT INTO "migrations" ("id", "migration", "batch") VALUES (480, '2026_04_18_500006_audit_logs_tenant_id_not_null', 14);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (481, '2026_04_19_500001_encrypt_biometric_consent_sensitive_fields', 15);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (482, '2026_04_19_500002_add_soft_deletes_to_payments', 15);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (483, '2026_04_19_500003_restore_tenant_id_not_null_on_pivots', 15);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (484, '2026_04_19_500004_add_password_changed_at_to_users', 15);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (485, '2026_04_19_500005_backfill_email_verified_at_on_legacy_users', 15);
+INSERT INTO "migrations" ("id", "migration", "batch") VALUES (486, '2026_04_20_000001_force_not_null_on_wo_pivots_sqlite', 15);

@@ -20,9 +20,12 @@ class TwoFactorAuth extends Model
 
     public const UPDATED_AT = null;
 
+    // data-01 (Re-auditoria Camada 1 r4): tenant_id NÃO entra em $fillable.
+    // Trait BelongsToTenant injeta automaticamente no evento `creating`.
+    // Expor tenant_id em mass assignment permite create/update cross-tenant.
     protected $fillable = [
         'user_id', 'secret', 'method', 'is_enabled', 'verified_at',
-        'backup_codes', 'tenant_id',
+        'backup_codes',
     ];
 
     protected function casts(): array
