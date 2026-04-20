@@ -1,9 +1,57 @@
-# Handoff — Camada 1 fechada por `/camada-auto`
+# Handoff — Encerramento de sessão 2026-04-20 — Camada 1 integrada no `main`
 
 **Data:** 2026-04-20  
 **Worktree:** `C:\PROJETOS\sistema\.worktrees\camada-1-auto-2026-04-20`  
-**Branch:** `auto/camada-1-2026-04-20`  
-**Status:** Camada 1 fechada no perímetro auditado. Reauditoria r2 retornou zero findings S1..S4.
+**Branch de trabalho:** `auto/camada-1-2026-04-20`  
+**Checkout original:** `C:\PROJETOS\sistema` em `main`  
+**Status:** Camada 1 fechada no perímetro auditado e integrada por fast-forward no `main` original. Verificação pós-merge completa no checkout original ficou pendente porque a sessão foi encerrada a pedido do usuário.
+
+## Estado do `main` original
+
+```powershell
+cd C:\PROJETOS\sistema
+git status --short --branch
+# ## main...sistema-v2/main [ahead 124]
+
+git log --oneline -6
+# fb115fc docs(handoff): registra fechamento camada 1
+# 99750c5 fix(camada-1): fecha reauditoria r2
+# b12e0f6 fix(camada-1): resolve auditoria r1
+# 13663c8 docs(handoff): checkpoint final 2026-04-20 — harness dual-agent + modo autônomo
+# 033ec82 feat(harness): modo autônomo /camada-auto — loop sem confirmação em tudo
+# aff9edb feat(harness): pre-commit hook agnóstico ao agente — enforça Leis 1/2
+```
+
+O ponteiro emergencial antigo de `docs/handoffs/latest.md` que estava não commitado no `main` foi preservado em stash antes do fast-forward:
+
+```powershell
+git stash list --max-count=5
+# stash@{0}: On main: pre-merge ponteiro emergencial camada 1
+```
+
+## Verificação pós-merge no `main`
+
+Executado no checkout original:
+
+```powershell
+cd backend
+.\vendor\bin\pint --test
+# exit code 0, sem output textual
+
+$env:APP_ENV='local'; $env:APP_URL='http://127.0.0.1:8000'; $env:REVERB_ALLOWED_ORIGINS='http://127.0.0.1:5173'; composer analyse
+# command timed out after 304046 milliseconds
+```
+
+Observação: o `.env` do checkout original está configurado como `APP_ENV=production`; por isso `composer analyse` sem variáveis locais falhou antes com a guarda de `REVERB_ALLOWED_ORIGINS`/`APP_URL`. Não editei o `.env` do usuário.
+
+Pendência para amanhã: repetir os gates no `main` original com ambiente local explícito ou ajustar `.env` localmente:
+
+```powershell
+cd C:\PROJETOS\sistema\backend
+$env:APP_ENV='local'; $env:APP_URL='http://127.0.0.1:8000'; $env:REVERB_ALLOWED_ORIGINS='http://127.0.0.1:5173'; composer analyse
+php vendor\bin\pest tests\Feature\Api\V1\Hr\WorkScheduleControllerTest.php tests\Feature\Api\V1\HRControllerTest.php tests\Feature\Rbac\HrRbacTest.php tests\Feature\Security\AuditLogImmutabilityTest.php tests\Unit\Services\WorkOrderServiceTest.php --no-coverage
+.\vendor\bin\pest --parallel --processes=16 --no-coverage
+```
 
 ## Commits da rodada
 
