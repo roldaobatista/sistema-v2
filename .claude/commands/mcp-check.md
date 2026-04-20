@@ -50,3 +50,8 @@ Ajustar conforme necessidade do projeto.
 ## Agentes
 
 Nenhum. Executada pelo orquestrador.
+
+## Referências
+
+- `.claude/allowed-mcps.txt` — allowlist canônica (gov-01).
+- `CLAUDE.md` §MCPs — regras de autorização.

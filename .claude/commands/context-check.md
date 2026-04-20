@@ -86,3 +86,9 @@ Acao imediata:
 - Contexto saudavel -> continuar trabalho normal.
 - Contexto degradado -> `/checkpoint` e sugerir nova sessao.
 - Contexto critico -> `/checkpoint` automatico.
+
+## Referências
+
+- `.claude/commands/checkpoint.md` — salva estado.
+- `.claude/commands/resume.md` — retoma estado.
+- `docs/handoffs/` — handoffs persistidos.

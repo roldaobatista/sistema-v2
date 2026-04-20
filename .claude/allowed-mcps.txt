@@ -1,0 +1,17 @@
+# .claude/allowed-mcps.txt — MCPs autorizados (gov-01 Camada 1 r4)
+#
+# Lista canônica de MCP servers autorizados para este projeto.
+# Um por linha. Linhas iniciadas com `#` são comentários.
+# O comando /mcp-check valida a sessão ativa contra esta lista.
+#
+# Para adicionar/remover um MCP: atualizar este arquivo E documentar
+# a decisão em docs/TECHNICAL-DECISIONS.md com justificativa.
+
+context-mode
+context7
+github
+playwright
+vitest
+claude_ai_Gmail
+claude_ai_Google_Calendar
+claude_ai_Google_Drive

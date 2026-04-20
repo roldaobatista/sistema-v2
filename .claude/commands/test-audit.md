@@ -95,3 +95,10 @@ Acao: /fix <TEST-id> -> re-rodar /test-audit.
 
 - `approved` -> proximo gate (`/functional-review`).
 - `rejected` -> `/fix <TEST-id>` -> re-rodar `/test-audit`.
+
+## Referências
+
+- `CLAUDE.md` — padrão obrigatório de testes (5 cenários, cross-tenant).
+- `backend/tests/README.md` — templates Pest.
+- `backend/TESTING_GUIDE.md` — guia completo.
+- `.claude/agents/qa-expert.md` — checklist de cobertura e flakiness.

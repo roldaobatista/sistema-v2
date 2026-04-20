@@ -93,3 +93,12 @@ Escalar pirâmide so se o teste especifico passar.
 
 - Fix aplicado e teste verde -> sugerir re-rodar a revisao que apontou (`/security-review`, `/test-audit` etc).
 - Fix nao convergiu -> reportar e pedir orientacao ao usuario.
+
+## Referências
+
+- `CLAUDE.md` — 5 leis invioláveis, formato Harness 6+1, pirâmide de testes.
+- `.agent/rules/iron-protocol.md` — regras H1/H2/H3/H7/H8 (tenant safety, migrations fósseis, zero tolerância).
+- `.agent/rules/harness-engineering.md` — 7 passos operacionais.
+- `.claude/agents/builder.md` — agente que executa o fix.
+- `.claude/agents/qa-expert.md` — validação de cobertura regressiva.
+- `backend/tests/README.md` — padrão de testes (5 cenários).

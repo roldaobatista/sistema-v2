@@ -44,3 +44,12 @@ user_invocable: true
 
 - `approved` -> partir para implementacao seguindo as 5 leis do CLAUDE.md.
 - `needs-revision` -> corrigir o spec e rodar `/audit-spec` novamente.
+
+## Referências
+
+- `CLAUDE.md` — regras invioláveis do projeto (5 leis + padrões Controller/FormRequest).
+- `docs/PRD-KALIBRIUM.md` — RFs e ACs canônicos.
+- `docs/TECHNICAL-DECISIONS.md` — decisões arquiteturais.
+- `docs/audits/RELATORIO-AUDITORIA-SISTEMA.md` — Deep Audit OS/Calibração/Financeiro.
+- `.claude/agents/governance.md` — checklist de conformidade.
+- `.claude/agents/architecture-expert.md` — violações de camadas.

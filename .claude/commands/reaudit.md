@@ -125,3 +125,17 @@ Match por `arquivo:linha + palavra-chave`. Ambiguidade → mantém em "não reso
 - FECHADA → atualizar handoff da camada com link ao relatório de re-auditoria.
 - REABERTA → etapa volta ao `builder`. Re-rodar `/reaudit` após correção.
 - CONDICIONAL → registrar dívida em `TECHNICAL-DECISIONS.md`, decidir se bloqueia avanço.
+
+## Referências
+
+- `CLAUDE.md` §Fechamento de Camada/Wave/Etapa — critério binário de fechamento.
+- `.claude/skills/audit-prompt.md` — template neutro obrigatório para prompts de agente.
+- `.claude/agents/governance.md` — conformidade sempre obrigatória.
+- `.claude/agents/qa-expert.md` — cobertura sempre obrigatória.
+- `.claude/agents/data-expert.md` — quando toca DB/schema.
+- `.claude/agents/security-expert.md` — quando toca auth/PII.
+- `.claude/agents/architecture-expert.md` — quando toca contract/API.
+- `.claude/agents/integration-expert.md` — quando toca integração externa.
+- `.claude/agents/ux-designer.md` / `.claude/agents/product-expert.md` — quando toca frontend.
+- `docs/audits/findings-<camada>.md` — baseline canônica da camada.
+- `docs/TECHNICAL-DECISIONS.md` — dívidas aceitas permanentes.

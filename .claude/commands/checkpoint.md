@@ -71,3 +71,8 @@ Para retomar na proxima sessao: /resume
 
 - Usuario quer encerrar -> confirmar checkpoint salvo.
 - Usuario quer continuar -> checkpoint salvo, prosseguir normalmente.
+
+## Referências
+
+- `docs/handoffs/latest.md` — último estado conhecido.
+- `.claude/commands/resume.md` — comando pareado para retomar.

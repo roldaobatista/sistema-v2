@@ -101,3 +101,11 @@ Nenhum. Executada pelo orquestrador.
 - Usuario quer continuar -> retomar a partir da proxima acao do handoff.
 - Usuario quer fazer outra coisa -> ajustar e sugerir comando adequado.
 - Inconsistencia detectada -> alertar e pedir decisao.
+
+## Referências
+
+- `CLAUDE.md` — contexto obrigatório em toda sessão.
+- `.agent/rules/iron-protocol.md` — regras H1/H2/H3/H7/H8.
+- `.agent/rules/harness-engineering.md` — 7 passos operacionais.
+- `docs/handoffs/latest.md` — handoff mais recente.
+- `.claude/commands/checkpoint.md` — comando pareado para salvar estado.

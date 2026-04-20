@@ -13,6 +13,8 @@ use Laravel\Sanctum\HasApiTokens;
  * @property Carbon|null $email_verified_at
  * @property Carbon|null $last_login_at
  * @property bool|null $is_active
+ * @property int $failed_login_attempts
+ * @property Carbon|null $locked_until
  */
 class ClientPortalUser extends Authenticatable
 {

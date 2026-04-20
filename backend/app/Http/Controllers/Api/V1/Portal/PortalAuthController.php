@@ -17,6 +17,17 @@ use Illuminate\Validation\ValidationException;
 
 class PortalAuthController extends Controller
 {
+    /**
+     * Número de falhas de senha consecutivas antes de travar a conta.
+     * Alinhado com `AuthController` do painel interno.
+     */
+    private const LOCKOUT_THRESHOLD = 5;
+
+    /**
+     * Duração do lockout persistente (em minutos) após atingir o threshold.
+     */
+    private const LOCKOUT_DURATION_MINUTES = 30;
+
     private function portalUser(Request $request): ClientPortalUser
     {
         $user = $request->user();
@@ -39,7 +50,7 @@ class PortalAuthController extends Controller
             );
 
             $attempts = (int) Cache::get($throttleKey, 0);
-            if ($attempts >= 5) {
+            if ($attempts >= self::LOCKOUT_THRESHOLD) {
                 $ttl = Cache::get($throttleKey.':ttl', 0);
                 $remainingMinutes = ($ttl > 0 && $ttl > now()->timestamp)
                     ? (int) ceil(($ttl - now()->timestamp) / 60)
@@ -61,9 +72,34 @@ class PortalAuthController extends Controller
 
             $user = $users->count() === 1 ? $users->first() : null;
 
+            // sec-portal-lockout-not-enforced-on-login (Camada 1 r4 Batch B):
+            // Enforçar lockout PERSISTENTE em banco antes de validar senha.
+            // Bypass via rotação de IP era possível porque só havia throttle
+            // de cache por IP+email. `locked_until`/`failed_login_attempts`
+            // já existiam no schema mas eram inertes.
+            if ($user && $user->locked_until && $user->locked_until->isFuture()) {
+                return ApiResponse::message(
+                    'Conta temporariamente bloqueada por excesso de tentativas. Tente novamente mais tarde.',
+                    423
+                );
+            }
+
             if (! $user || ! Hash::check($request->password, $user->password)) {
                 Cache::put($throttleKey, $attempts + 1, now()->addMinutes(15));
                 Cache::put($throttleKey.':ttl', now()->addMinutes(15)->timestamp, now()->addMinutes(15));
+
+                // Incrementa contador persistente e trava conta se ultrapassar threshold.
+                if ($user) {
+                    $persistedAttempts = ((int) $user->failed_login_attempts) + 1;
+                    $update = ['failed_login_attempts' => $persistedAttempts];
+
+                    if ($persistedAttempts >= self::LOCKOUT_THRESHOLD) {
+                        $update['locked_until'] = now()->addMinutes(self::LOCKOUT_DURATION_MINUTES);
+                    }
+
+                    // forceFill: hardening fields não estão em $fillable por design.
+                    $user->forceFill($update)->save();
+                }
 
                 throw ValidationException::withMessages([
                     'email' => ['As credenciais fornecidas estao incorretas.'],
@@ -90,7 +126,12 @@ class PortalAuthController extends Controller
             Cache::forget($throttleKey);
             Cache::forget($throttleKey.':ttl');
 
-            $user->update(['last_login_at' => now()]);
+            // Reset dos contadores persistentes em login bem-sucedido.
+            $user->forceFill([
+                'failed_login_attempts' => 0,
+                'locked_until' => null,
+                'last_login_at' => now(),
+            ])->save();
 
             $token = $user->createToken('portal-token', ['portal:access'])->plainTextToken;
 

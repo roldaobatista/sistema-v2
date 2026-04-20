@@ -29,7 +29,14 @@ class PortalAuthControllerTest extends TestCase
 
     private function createPortalUser(string $email = 'portal@cliente.com', string $password = 'PortalPass!123', bool $active = true): ClientPortalUser
     {
-        return ClientPortalUser::create([
+        // forceCreate: $fillable de ClientPortalUser não aceita tenant_id/is_active
+        // por segurança (sec-18 + data-02). Em strict mode (Model::shouldBeStrict)
+        // um create() simples lança MassAssignmentException.
+        // refresh(): força SELECT * para hidratar todas as colunas (locked_until,
+        // failed_login_attempts, etc) — middleware EnsurePortalAccess acessa
+        // esses campos e strict mode lança MissingAttributeException se não
+        // forem hidratados.
+        $user = ClientPortalUser::forceCreate([
             'tenant_id' => $this->tenant->id,
             'customer_id' => $this->customer->id,
             'name' => 'Portal User',
@@ -37,6 +44,8 @@ class PortalAuthControllerTest extends TestCase
             'password' => Hash::make($password),
             'is_active' => $active,
         ]);
+
+        return $user->refresh();
     }
 
     private function createActiveContract(): Contract
@@ -150,5 +159,143 @@ class PortalAuthControllerTest extends TestCase
         ]);
 
         $response->assertStatus(422); // "Sua conta esta inativa"
+    }
+
+    // ---------------------------------------------------------------------
+    // sec-portal-lockout-not-enforced-on-login — Camada 1 r4 Batch B
+    // Lockout persistente em DB (locked_until / failed_login_attempts) DEVE
+    // ser enforçado no login do portal. Antes de r4 só havia throttle por
+    // IP+email em cache — bypassável via rotação de IP.
+    // ---------------------------------------------------------------------
+
+    public function test_login_rejected_when_client_portal_user_locked_until_is_in_future(): void
+    {
+        $user = $this->createPortalUser('locked@test.com', 'CorrectPass!1');
+        $this->createActiveContract();
+
+        $user->forceFill([
+            'locked_until' => now()->addMinutes(30),
+            'failed_login_attempts' => 5,
+        ])->save();
+
+        $response = $this->postJson('/api/v1/portal/login', [
+            'email' => 'locked@test.com',
+            'password' => 'CorrectPass!1', // senha correta — ainda assim negar
+        ]);
+
+        $response->assertStatus(423)
+            ->assertJsonStructure(['message']);
+    }
+
+    public function test_login_allows_access_when_locked_until_already_expired(): void
+    {
+        $user = $this->createPortalUser('unlocked@test.com', 'CorrectPass!1');
+        $this->createActiveContract();
+
+        $user->forceFill([
+            'locked_until' => now()->subMinutes(5), // expirado
+            'failed_login_attempts' => 5,
+        ])->save();
+
+        $response = $this->postJson('/api/v1/portal/login', [
+            'email' => 'unlocked@test.com',
+            'password' => 'CorrectPass!1',
+        ]);
+
+        $response->assertOk();
+    }
+
+    public function test_login_increments_failed_attempts_on_wrong_password(): void
+    {
+        $user = $this->createPortalUser('fail1@test.com', 'CorrectPass!1');
+        $this->createActiveContract();
+
+        $this->postJson('/api/v1/portal/login', [
+            'email' => 'fail1@test.com',
+            'password' => 'WrongPass!',
+        ]);
+
+        $user->refresh();
+        $this->assertSame(1, (int) $user->failed_login_attempts);
+        $this->assertNull($user->locked_until);
+    }
+
+    public function test_login_locks_account_after_five_consecutive_failures(): void
+    {
+        $user = $this->createPortalUser('fail5@test.com', 'CorrectPass!1');
+        $this->createActiveContract();
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/v1/portal/login', [
+                'email' => 'fail5@test.com',
+                'password' => 'WrongPass!',
+            ]);
+        }
+
+        $user->refresh();
+        $this->assertSame(5, (int) $user->failed_login_attempts);
+        $this->assertNotNull($user->locked_until);
+        $this->assertTrue($user->locked_until->isFuture());
+    }
+
+    public function test_login_resets_failed_attempts_and_locked_until_on_success(): void
+    {
+        $user = $this->createPortalUser('reset@test.com', 'CorrectPass!1');
+        $this->createActiveContract();
+
+        $user->forceFill([
+            'failed_login_attempts' => 3,
+            'locked_until' => null,
+        ])->save();
+
+        $response = $this->postJson('/api/v1/portal/login', [
+            'email' => 'reset@test.com',
+            'password' => 'CorrectPass!1',
+        ]);
+
+        $response->assertOk();
+        $user->refresh();
+        $this->assertSame(0, (int) $user->failed_login_attempts);
+        $this->assertNull($user->locked_until);
+    }
+
+    public function test_login_lockout_is_isolated_per_tenant(): void
+    {
+        // Usuário do tenant A bloqueado não interfere em usuário de tenant B com mesmo email
+        $otherTenant = Tenant::factory()->create();
+        $otherCustomer = Customer::factory()->create(['tenant_id' => $otherTenant->id]);
+
+        // Usuário A (tenant principal) bloqueado
+        $userA = $this->createPortalUser('shared@test.com', 'CorrectPass!1');
+        $this->createActiveContract();
+        $userA->forceFill([
+            'locked_until' => now()->addHours(1),
+            'failed_login_attempts' => 5,
+        ])->save();
+
+        // Usuário B em outro tenant com mesmo email + contrato ativo.
+        // forceCreate porque $fillable de ClientPortalUser não aceita tenant_id/is_active
+        // por segurança (sec-18 + data-02).
+        $userB = ClientPortalUser::forceCreate([
+            'tenant_id' => $otherTenant->id,
+            'customer_id' => $otherCustomer->id,
+            'name' => 'Portal B',
+            'email' => 'unique_b@test.com',
+            'password' => Hash::make('CorrectPass!1'),
+            'is_active' => true,
+        ])->refresh();
+        Contract::factory()->create([
+            'tenant_id' => $otherTenant->id,
+            'customer_id' => $otherCustomer->id,
+            'status' => 'active',
+        ]);
+
+        // Login do B deve funcionar normalmente (lockout do A não vaza)
+        $response = $this->postJson('/api/v1/portal/login', [
+            'email' => 'unique_b@test.com',
+            'password' => 'CorrectPass!1',
+        ]);
+
+        $response->assertOk();
     }
 }

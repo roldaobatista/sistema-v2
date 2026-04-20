@@ -97,3 +97,11 @@ Acao: /fix <SEC-001> -> re-rodar /security-review.
 
 - `approved` -> proximo gate (`/test-audit` se nao foi rodado, ou `/functional-review`).
 - `rejected` -> `/fix <SEC-id>` -> re-rodar `/security-review`.
+
+## Referências
+
+- `CLAUDE.md` — Lei 4 (tenant safety), proibições absolutas, padrões obrigatórios.
+- `.agent/rules/iron-protocol.md` — H1/H2 (tenant_id), H3 (migrations fósseis).
+- `.claude/agents/security-expert.md` — checklist completo OWASP/LGPD.
+- `.claude/skills/audit-prompt.md` — template neutro para invocar o expert.
+- `docs/TECHNICAL-DECISIONS.md` — decisões de criptografia/auth aceitas.

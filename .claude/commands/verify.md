@@ -115,3 +115,10 @@ Sugestao: /fix "<sintoma da falha>"
 
 - Tudo verde -> proximas revisoes (security/test-audit/functional/review-pr).
 - Falha -> `/fix` -> re-rodar `/verify`.
+
+## Referências
+
+- `CLAUDE.md` — quality gates, pirâmide de testes (H8).
+- `backend/TESTING_GUIDE.md` — como rodar a suite.
+- `backend/tests/README.md` — padrão de testes.
+- `backend/phpunit.xml` — configuração dos testsuites.

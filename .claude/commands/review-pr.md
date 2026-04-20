@@ -89,3 +89,10 @@ Revisao de codigo: REPROVADO
 
 - `approved` -> mergear PR.
 - `needs-changes` -> `/fix <finding>` -> re-rodar `/review-pr`.
+
+## Referências
+
+- `CLAUDE.md` — 5 leis invioláveis, padrões Controller/FormRequest, proibições absolutas.
+- `.agent/rules/iron-protocol.md` — regras H1/H2/H3/H7/H8.
+- `.claude/agents/governance.md` — conformidade com padrões.
+- `.claude/agents/architecture-expert.md` — acoplamento/camadas.

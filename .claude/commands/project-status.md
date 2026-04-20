@@ -85,3 +85,9 @@ Nenhum. Executada pelo orquestrador.
 - Usuario quer avancar -> sugerir proxima acao baseada no estado.
 - Usuario quer detalhes -> sugerir `/where-am-i` para visao por arquivo.
 - Usuario quer retomar sessao anterior -> sugerir `/resume`.
+
+## Referências
+
+- `.claude/commands/where-am-i.md` — detalhamento por arquivo (comando irmão).
+- `.claude/commands/resume.md` — restauração de sessão anterior.
+- `CLAUDE.md` §Documentação — hierarquia de verdade (planos, auditorias, handoffs).
