@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 /**
@@ -57,7 +58,7 @@ class UserFactory extends Factory
      * o método create() do factory aplica o array via forceFill explícito.
      *
      * @param  array<string, mixed>  $attributes
-     * @param  \Illuminate\Database\Eloquent\Model|null  $parent
+     * @param  Model|null  $parent
      */
     public function newModel(array $attributes = [])
     {

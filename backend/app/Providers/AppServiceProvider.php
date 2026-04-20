@@ -45,7 +45,6 @@ use App\Services\Payment\AsaasPaymentProvider;
 use App\Services\Payment\Contracts\PaymentGatewayInterface;
 use App\Services\TwilioSmsProvider;
 use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -53,6 +52,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 use Laravel\Horizon\Horizon;
 use Laravel\Sentinel\Sentinel;
 

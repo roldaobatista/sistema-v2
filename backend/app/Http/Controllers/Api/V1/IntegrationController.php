@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\MarketingIntegration;
-use App\Models\SsoConfig;
 use App\Http\Requests\Integration\CalculateShippingRequest;
 use App\Http\Requests\Integration\EmailPluginWebhookRequest;
 use App\Http\Requests\Integration\PowerBiDataExportRequest;
@@ -14,6 +12,8 @@ use App\Http\Requests\Integration\StoreWebhookRequest;
 use App\Http\Requests\Integration\TriggerErpSyncRequest;
 use App\Http\Requests\Integration\UpdateMarketingConfigRequest;
 use App\Http\Requests\Integration\UpdateSsoConfigRequest;
+use App\Models\MarketingIntegration;
+use App\Models\SsoConfig;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;

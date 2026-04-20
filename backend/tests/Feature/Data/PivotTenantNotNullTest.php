@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Data;
 
+use App\Models\Customer;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\WorkOrder;
@@ -52,7 +53,7 @@ class PivotTenantNotNullTest extends TestCase
         app()->instance('current_tenant_id', $tenant->id);
 
         $user = User::factory()->create(['tenant_id' => $tenant->id]);
-        $customer = \App\Models\Customer::factory()->create(['tenant_id' => $tenant->id]);
+        $customer = Customer::factory()->create(['tenant_id' => $tenant->id]);
         $workOrder = WorkOrder::factory()->create([
             'tenant_id' => $tenant->id,
             'customer_id' => $customer->id,
@@ -76,7 +77,7 @@ class PivotTenantNotNullTest extends TestCase
         app()->instance('current_tenant_id', $tenant->id);
 
         $user = User::factory()->create(['tenant_id' => $tenant->id]);
-        $customer = \App\Models\Customer::factory()->create(['tenant_id' => $tenant->id]);
+        $customer = Customer::factory()->create(['tenant_id' => $tenant->id]);
         $workOrder = WorkOrder::factory()->create([
             'tenant_id' => $tenant->id,
             'customer_id' => $customer->id,

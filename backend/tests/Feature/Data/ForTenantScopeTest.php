@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Customer;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\WorkOrder;
@@ -31,7 +32,7 @@ describe('BelongsToTenant::scopeForTenant', function () {
         app()->instance('current_tenant_id', $tenantA->id);
         $woA = WorkOrder::factory()->create([
             'tenant_id' => $tenantA->id,
-            'customer_id' => \App\Models\Customer::factory()->create(['tenant_id' => $tenantA->id])->id,
+            'customer_id' => Customer::factory()->create(['tenant_id' => $tenantA->id])->id,
             'created_by' => $userA->id,
         ]);
 
@@ -39,7 +40,7 @@ describe('BelongsToTenant::scopeForTenant', function () {
         app()->instance('current_tenant_id', $tenantB->id);
         $woB = WorkOrder::factory()->create([
             'tenant_id' => $tenantB->id,
-            'customer_id' => \App\Models\Customer::factory()->create(['tenant_id' => $tenantB->id])->id,
+            'customer_id' => Customer::factory()->create(['tenant_id' => $tenantB->id])->id,
             'created_by' => $userB->id,
         ]);
 
@@ -56,7 +57,7 @@ describe('BelongsToTenant::scopeForTenant', function () {
     it('compoe com wheres adicionais normalmente', function () {
         $tenantA = Tenant::factory()->create();
         $userA = User::factory()->create(['tenant_id' => $tenantA->id]);
-        $customerA = \App\Models\Customer::factory()->create(['tenant_id' => $tenantA->id]);
+        $customerA = Customer::factory()->create(['tenant_id' => $tenantA->id]);
 
         app()->instance('current_tenant_id', $tenantA->id);
         WorkOrder::factory()->count(3)->create([
@@ -95,8 +96,8 @@ describe('BelongsToTenant::scopeForTenant', function () {
         $tenantB = Tenant::factory()->create();
         $userA = User::factory()->create(['tenant_id' => $tenantA->id]);
         $userB = User::factory()->create(['tenant_id' => $tenantB->id]);
-        $customerA = \App\Models\Customer::factory()->create(['tenant_id' => $tenantA->id]);
-        $customerB = \App\Models\Customer::factory()->create(['tenant_id' => $tenantB->id]);
+        $customerA = Customer::factory()->create(['tenant_id' => $tenantA->id]);
+        $customerB = Customer::factory()->create(['tenant_id' => $tenantB->id]);
 
         app()->instance('current_tenant_id', $tenantA->id);
         WorkOrder::factory()->count(2)->create([

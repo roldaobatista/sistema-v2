@@ -66,8 +66,8 @@ class TenantFillableSafetyTest extends TestCase
             "FormRequests abaixo validam 'tenant_id' no body fora da whitelist sec-11:\n".
                 implode("\n", array_map(fn ($c) => "  - $c", $violations)).
                 "\n\nLei 4 (CLAUDE.md): tenant_id jamais vem do body. Ler via ".
-                "\$request->user()->current_tenant_id. Se o caso for legítimo (auth switch, ".
-                "cross-tenant reporting), adicionar à whitelist deste teste com justificativa."
+                '$request->user()->current_tenant_id. Se o caso for legítimo (auth switch, '.
+                'cross-tenant reporting), adicionar à whitelist deste teste com justificativa.'
         );
     }
 

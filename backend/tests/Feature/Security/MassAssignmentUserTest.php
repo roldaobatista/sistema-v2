@@ -157,7 +157,7 @@ class MassAssignmentUserTest extends TestCase
         );
     }
 
-    public function test_toggle_active_still_works_via_forceFill(): void
+    public function test_toggle_active_still_works_via_force_fill(): void
     {
         // Path administrativo legítimo: o endpoint toggleActive DEVE continuar
         // funcional mesmo com is_active fora de $fillable, porque o controller
@@ -177,7 +177,7 @@ class MassAssignmentUserTest extends TestCase
         );
     }
 
-    public function test_sync_denied_permissions_still_works_via_forceFill(): void
+    public function test_sync_denied_permissions_still_works_via_force_fill(): void
     {
         $target = User::factory()->create([
             'tenant_id' => $this->tenant->id,

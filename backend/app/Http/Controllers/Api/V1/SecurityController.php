@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\TwoFactorAuth;
 use App\Http\Requests\Security\StoreAccessRestrictionRequest;
 use App\Http\Requests\Security\StoreConsentRequest;
 use App\Http\Requests\Security\StoreDataMaskingRuleRequest;
@@ -12,6 +11,7 @@ use App\Http\Requests\Security\TriggerVulnerabilityScanRequest;
 use App\Http\Requests\Security\UpdatePasswordPolicyRequest;
 use App\Http\Requests\Security\UpdateWatermarkConfigRequest;
 use App\Http\Requests\Security\Verify2faRequest;
+use App\Models\TwoFactorAuth;
 use App\Support\ApiResponse;
 use App\Traits\ResolvesCurrentTenant;
 use Illuminate\Http\JsonResponse;

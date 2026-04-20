@@ -4,6 +4,7 @@ namespace Tests\Feature\Security;
 
 use App\Models\Tenant;
 use App\Models\User;
+use Illuminate\Cache\Repository;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -148,7 +149,7 @@ class LoginRateLimitAtomicTest extends TestCase
             return false;
         });
 
-        Cache::swap(new \Illuminate\Cache\Repository($spy));
+        Cache::swap(new Repository($spy));
 
         // 1 requisição falha.
         $this->postJson('/api/v1/login', [
@@ -206,7 +207,7 @@ class LoginRateLimitAtomicTest extends TestCase
             return $realStore->get($key);
         });
 
-        Cache::swap(new \Illuminate\Cache\Repository($spy));
+        Cache::swap(new Repository($spy));
 
         // 5 falhas. Se o controller usar get+put → grava 1, 1, 1, 1, 1
         //  (cada uma lê 0 stale, grava 0+1=1) → valor real no storage = 1.
@@ -225,7 +226,7 @@ class LoginRateLimitAtomicTest extends TestCase
         $this->assertSame(
             5,
             $realCount,
-            "Contador real no storage deveria ser 5 após 5 falhas concorrentes com leituras stale. ".
+            'Contador real no storage deveria ser 5 após 5 falhas concorrentes com leituras stale. '.
             "Obtido: {$realCount}. Valor <5 indica bug TOCTOU (get+put) — atacante pode exceder o limite sob carga."
         );
     }
