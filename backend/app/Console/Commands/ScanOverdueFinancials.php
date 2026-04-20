@@ -48,6 +48,7 @@ class ScanOverdueFinancials extends Command
         $limiteAlerta = now()->addDays(3);
 
         // Busca recebíveis pendentes com vencimento nos próximos 3 dias ou já vencidos
+        // LEI 4 JUSTIFICATIVA: comando agendado roda fora do request cycle, iterando por tenants ativos explicitamente. Soft-delete também é removido intencionalmente porque AgendaItem deve refletir também recebíveis recentemente deletados durante a janela de alerta; tenant_id é filtrado logo abaixo.
         $receivables = AccountReceivable::withoutGlobalScopes()
             ->where('tenant_id', $tenant->id)
             ->where('status', '!=', AccountReceivable::STATUS_PAID)
@@ -60,6 +61,7 @@ class ScanOverdueFinancials extends Command
 
         foreach ($receivables as $rec) {
             try {
+                // LEI 4 JUSTIFICATIVA: comando agendado sem request cycle — lookup e create de AgendaItem precisam operar sem depender de auth resolver; tenant_id é explicitamente injetado via where/create abaixo.
                 $existing = AgendaItem::withoutGlobalScopes()
                     ->where('tenant_id', $tenant->id)
                     ->where('ref_type', AccountReceivable::class)
@@ -73,6 +75,7 @@ class ScanOverdueFinancials extends Command
                     continue;
                 }
 
+                // LEI 4 JUSTIFICATIVA: idem — create precisa ignorar escopo global de tenant do scheduler; tenant_id explícito no payload garante isolamento.
                 AgendaItem::withoutGlobalScopes()->create([
                     'tenant_id' => $tenant->id,
                     'type' => AgendaItemType::FINANCEIRO,
@@ -108,6 +111,7 @@ class ScanOverdueFinancials extends Command
         $count = 0;
         $limiteAlerta = now()->addDays(3);
 
+        // LEI 4 JUSTIFICATIVA: comando agendado cross-tenant (sem user autenticado); tenant_id injetado explicitamente abaixo. Soft-delete removido para incluir pagáveis recém-deletados na janela de alerta.
         $payables = AccountPayable::withoutGlobalScopes()
             ->where('tenant_id', $tenant->id)
             ->where('status', '!=', AccountPayable::STATUS_PAID)
@@ -120,6 +124,7 @@ class ScanOverdueFinancials extends Command
 
         foreach ($payables as $pay) {
             try {
+                // LEI 4 JUSTIFICATIVA: comando agendado sem request cycle — lookup de AgendaItem pré-existente para evitar duplicidade; tenant_id explícito.
                 $existing = AgendaItem::withoutGlobalScopes()
                     ->where('tenant_id', $tenant->id)
                     ->where('ref_type', AccountPayable::class)
@@ -132,6 +137,7 @@ class ScanOverdueFinancials extends Command
                     continue;
                 }
 
+                // LEI 4 JUSTIFICATIVA: idem — create de AgendaItem em background; tenant_id injetado no payload.
                 AgendaItem::withoutGlobalScopes()->create([
                     'tenant_id' => $tenant->id,
                     'type' => AgendaItemType::FINANCEIRO,

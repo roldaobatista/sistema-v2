@@ -15,6 +15,7 @@ class AutoEmitNFeOnInvoice
         $invoice = $event->invoice;
         $tenantId = $invoice->tenant_id;
 
+        // LEI 4 JUSTIFICATIVA: listener executa fora do request cycle (sem usuário autenticado nem tenant no contexto); tenant_id vem da invoice e é filtrado explicitamente.
         $autoEmit = SystemSetting::withoutGlobalScopes()
             ->where('tenant_id', $tenantId)
             ->where('key', 'auto_emit_nfe')

@@ -114,6 +114,7 @@ class HandleWorkOrderInvoicing implements ShouldQueue
 
         } catch (\Throwable $e) {
             // Tenta resgatar a Invoice gerada/existente antes ou durante a tentativa falha
+            // LEI 4 JUSTIFICATIVA: listener executa em handler de evento sem tenant no contexto; busca por work_order_id (que já é tenant-scoped) garante isolamento.
             $invoice = Invoice::withoutGlobalScopes()
                 ->where('work_order_id', $wo->id)
                 ->where('status', '!=', Invoice::STATUS_CANCELLED)
@@ -335,6 +336,7 @@ class HandleWorkOrderInvoicing implements ShouldQueue
         string $type,
         ?string $reference = null,
     ): float {
+        // LEI 4 JUSTIFICATIVA: listener roda fora do request cycle; tenant_id do workOrder filtrado explicitamente abaixo.
         return (float) StockMovement::withoutGlobalScopes()
             ->where('tenant_id', $workOrder->tenant_id)
             ->where('work_order_id', $workOrder->id)
@@ -354,6 +356,7 @@ class HandleWorkOrderInvoicing implements ShouldQueue
                 'fiscal_error' => "Baixa de estoque obrigatoria falhou: {$exception->getMessage()}",
             ]);
 
+            // LEI 4 JUSTIFICATIVA: listener sem tenant no contexto; invoice_id já é tenant-scoped e whereNull('deleted_at') preserva semântica do soft-delete.
             AccountReceivable::withoutGlobalScopes()
                 ->where('invoice_id', $invoice->id)
                 ->whereNull('deleted_at')

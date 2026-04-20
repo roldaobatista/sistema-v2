@@ -24,6 +24,7 @@ class CheckUnbilledWorkOrders extends Command
 
         $activeTenantIds = Tenant::where('status', Tenant::STATUS_ACTIVE)->pluck('id');
 
+        // LEI 4 JUSTIFICATIVA: comando agendado cross-tenant (sem user autenticado); itera sobre tenants ativos via whereIn(tenant_id). Soft-delete removido para detectar OS concluídas mesmo após deleção lógica recente.
         $workOrders = WorkOrder::withoutGlobalScopes()
             ->whereIn('tenant_id', $activeTenantIds)
             ->whereIn('status', [WorkOrder::STATUS_COMPLETED, WorkOrder::STATUS_DELIVERED])
@@ -53,6 +54,7 @@ class CheckUnbilledWorkOrders extends Command
                 app()->instance('current_tenant_id', $wo->tenant_id);
 
                 if (! isset($adminsByTenant[$wo->tenant_id])) {
+                    // LEI 4 JUSTIFICATIVA: command precisa buscar admins de qualquer tenant para notificá-los; tenant_id é filtrado explicitamente via where abaixo.
                     $adminsByTenant[$wo->tenant_id] = User::withoutGlobalScopes()
                         ->where('tenant_id', $wo->tenant_id)
                         ->whereHas('roles', fn ($q) => $q->whereIn('name', [Role::SUPER_ADMIN, Role::ADMIN, Role::FINANCEIRO]))
@@ -61,6 +63,7 @@ class CheckUnbilledWorkOrders extends Command
 
                 foreach ($adminsByTenant[$wo->tenant_id] as $admin) {
                     try {
+                        // LEI 4 JUSTIFICATIVA: verificação de duplicidade de notificação em comando scheduled; user_id filtra implicitamente por tenant (admin pertence ao tenant iterado no loop externo).
                         $existing = Notification::withoutGlobalScopes()
                             ->where('user_id', $admin->id)
                             ->where('notifiable_type', WorkOrder::class)

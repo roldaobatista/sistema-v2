@@ -14,7 +14,7 @@ trait AppliesTenantScope
     {
         $tenantId = app()->bound('current_tenant_id')
             ? (int) app('current_tenant_id')
-            : (int) ($request->user()->current_tenant_id ?? $request->user()->tenant_id);
+            : (int) $request->user()->current_tenant_id;
 
         setPermissionsTeamId($tenantId);
     }

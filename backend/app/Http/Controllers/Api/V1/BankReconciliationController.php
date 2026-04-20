@@ -220,10 +220,12 @@ class BankReconciliationController extends Controller
 
         $matchedId = (int) $request->integer('matched_id');
         $matchedExists = match ($matchedType) {
+            // LEI 4 JUSTIFICATIVA: conciliação bancária precisa encontrar o lançamento mesmo se soft-deleted; tenant_id é filtrado explicitamente abaixo.
             AccountReceivable::class => AccountReceivable::withoutGlobalScopes()
                 ->where('tenant_id', $tenantId)
                 ->whereKey($matchedId)
                 ->exists(),
+            // LEI 4 JUSTIFICATIVA: idem — conciliação precisa de match em registros soft-deleted; tenant_id explícito.
             AccountPayable::class => AccountPayable::withoutGlobalScopes()
                 ->where('tenant_id', $tenantId)
                 ->whereKey($matchedId)

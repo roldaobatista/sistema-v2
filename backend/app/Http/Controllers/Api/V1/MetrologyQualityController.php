@@ -246,7 +246,7 @@ class MetrologyQualityController extends Controller
     /** QA Alerts (anti-fraud) - listagem paginada. */
     public function qaAlerts(Request $request): JsonResponse
     {
-        $tenantId = app('current_tenant_id') ?? $request->user()->tenant_id;
+        $tenantId = (int) $request->user()->current_tenant_id;
         $items = DB::table('qa_alerts')
             ->where('tenant_id', $tenantId)
             ->orderByDesc('created_at')

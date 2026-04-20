@@ -18,7 +18,7 @@ class PortalQuickQuoteApprovalController extends Controller
 
     public function approve(OneClickApprovalRequest $request, int $quoteId): JsonResponse
     {
-        $tenantId = (int) ($request->user()?->current_tenant_id ?? $request->user()?->tenant_id);
+        $tenantId = (int) ($request->user()?->current_tenant_id ?? 0);
         $validated = $request->validated();
 
         try {

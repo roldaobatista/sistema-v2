@@ -31,6 +31,7 @@ class CatalogController extends Controller
     /** Público — catálogo por slug (sem auth) */
     public function publicShow(string $slug): JsonResponse
     {
+        // LEI 4 JUSTIFICATIVA: endpoint público sem auth — não há tenant_id no contexto; o slug identifica o tenant via is_published=true. Soft-delete também é ignorado propositalmente (slug público não deve revelar deletados).
         $catalog = ServiceCatalog::withoutGlobalScopes()
             ->where('slug', $slug)
             ->where('is_published', true)

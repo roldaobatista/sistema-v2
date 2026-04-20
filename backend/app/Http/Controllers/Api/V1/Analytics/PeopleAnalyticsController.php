@@ -17,7 +17,7 @@ class PeopleAnalyticsController extends Controller
     public function dashboard(Request $request): JsonResponse
     {
         try {
-            $tenantId = $request->user()->current_tenant_id ?? $request->user()->tenant_id;
+            $tenantId = (int) $request->user()->current_tenant_id;
 
             $totalEmployees = User::where('is_active', true)
                 ->where('tenant_id', $tenantId)
