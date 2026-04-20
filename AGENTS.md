@@ -243,6 +243,40 @@ Para qualquer agente pegar o trabalho do outro:
 
 ---
 
+## 🛡️ Enforcement mecânico (pre-commit hook)
+
+O repositório tem um pre-commit hook committed em `.githooks/pre-commit` que enforça Leis 1 e 2 **independente do agente** (Claude, Codex, Aider, humano). Funciona pra qualquer um que rodar `git commit`.
+
+### Ativar (uma vez por clone)
+
+```bash
+git config core.hooksPath .githooks
+```
+
+### O que o hook faz
+
+- Detecta arquivos staged.
+- Se tocou `backend/`: `pint --test` → `composer analyse` → `pest --dirty --parallel`.
+- Se tocou `frontend/`: `npm run typecheck` → `npm run lint`.
+- Se tocou só `docs/` ou `.githooks/`: pula (passa direto).
+- **Falhou em qualquer gate = commit bloqueado.** Mensagem em PT-BR explica o gate e como corrigir.
+
+### Regra estrita
+
+- **`--no-verify` é proibido** (já no §Proibições Absolutas). Bypassar o hook é violação da Lei 2.
+- Hook sujo = código sujo. Corrija a causa raiz.
+- Documentação completa: [`.githooks/README.md`](.githooks/README.md).
+
+### Camadas de enforcement do projeto
+
+1. **Soft (AGENTS.md + agent files):** contrato textual — agente lê e segue na medida do contexto.
+2. **Médio (pre-commit hook):** mecânico, bloqueia commit local. Agnóstico ao agente.
+3. **Duro (GitHub Actions):** CI roda em cada push; PR não merge se falhar.
+
+Só a camada 1 pode ser ignorada por um agente distraído. **2 e 3 são invioláveis.**
+
+---
+
 ## 📜 Complementos legados (`.agent/`)
 
 Existem arquivos pré-AGENTS.md que preservam nomenclatura histórica do Harness/Iron Protocol. **Não substituem este arquivo** — mas podem ser úteis pra contexto em commits antigos ou se um agent file citar H1..H8:

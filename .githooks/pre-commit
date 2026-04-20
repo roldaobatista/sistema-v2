@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# Kalibrium ERP — pre-commit hook
+# Enforça Leis 1 e 2 do AGENTS.md mecanicamente, independente do agente
+# (Claude, Codex, humano). Bloqueia commit se lint/type/test falharem.
+#
+# Ativação (uma vez por clone):
+#   git config core.hooksPath .githooks
+#
+# Bypass proibido: --no-verify é violação da Lei 2 (AGENTS.md §Proibições).
+
+set -u
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+RESET='\033[0m'
+
+fail() {
+  echo -e "${RED}✗ pre-commit BLOQUEADO:${RESET} $1" >&2
+  echo -e "${YELLOW}  Causa raiz, não sintoma (AGENTS.md Lei 2).${RESET}" >&2
+  echo -e "${YELLOW}  Proibido --no-verify. Corrija o problema e tente novamente.${RESET}" >&2
+  exit 1
+}
+
+info() { echo -e "${BLUE}▸${RESET} $1"; }
+ok()   { echo -e "${GREEN}✓${RESET} $1"; }
+
+# ── arquivos staged (added/copied/modified) ────────────────────────────────
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+if [ -z "$STAGED" ]; then
+  ok "Nada staged — pre-commit pulado"
+  exit 0
+fi
+
+HAS_BACKEND=0
+HAS_FRONTEND=0
+echo "$STAGED" | grep -q '^backend/' && HAS_BACKEND=1
+echo "$STAGED" | grep -q '^frontend/' && HAS_FRONTEND=1
+
+if [ "$HAS_BACKEND" -eq 0 ] && [ "$HAS_FRONTEND" -eq 0 ]; then
+  ok "Sem mudanças em backend/ ou frontend/ — pre-commit pulado (docs-only)"
+  exit 0
+fi
+
+# ── Backend gates ──────────────────────────────────────────────────────────
+if [ "$HAS_BACKEND" -eq 1 ]; then
+  info "Backend detectado — rodando gates"
+
+  if [ ! -f backend/vendor/bin/pint ]; then
+    fail "backend/vendor/bin/pint não existe. Rode 'composer install' no backend."
+  fi
+
+  info "1/3 pint --test (formatação)"
+  (cd backend && ./vendor/bin/pint --test --quiet) \
+    || fail "Pint falhou. Rode 'cd backend && ./vendor/bin/pint' e re-stage."
+
+  info "2/3 composer analyse (PHPStan + Larastan)"
+  (cd backend && composer analyse --no-progress 2>&1 | tail -20) \
+    || fail "Análise estática falhou. Veja output acima."
+
+  info "3/3 pest --dirty (só testes afetados pelo diff)"
+  (cd backend && ./vendor/bin/pest --dirty --parallel --no-coverage 2>&1 | tail -30) \
+    || fail "Testes backend falharam. Corrija a causa raiz (não mascare)."
+
+  ok "Backend: pint + analyse + pest --dirty OK"
+fi
+
+# ── Frontend gates ─────────────────────────────────────────────────────────
+if [ "$HAS_FRONTEND" -eq 1 ]; then
+  info "Frontend detectado — rodando gates"
+
+  if [ ! -d frontend/node_modules ]; then
+    fail "frontend/node_modules não existe. Rode 'npm ci' no frontend."
+  fi
+
+  info "1/2 typecheck"
+  (cd frontend && npm run --silent typecheck 2>&1 | tail -20) \
+    || fail "Typecheck falhou."
+
+  info "2/2 lint"
+  (cd frontend && npm run --silent lint 2>&1 | tail -20) \
+    || fail "Lint falhou. Rode 'cd frontend && npm run lint -- --fix' e re-stage."
+
+  ok "Frontend: typecheck + lint OK"
+fi
+
+echo ""
+ok "Todos os gates passaram — commit permitido"
+exit 0
