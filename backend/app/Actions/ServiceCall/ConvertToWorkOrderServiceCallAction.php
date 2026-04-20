@@ -94,19 +94,28 @@ class ConvertToWorkOrderServiceCallAction extends BaseServiceCallAction
 
                 if ($serviceCall->technician_id) {
                     $wo->technicians()->syncWithoutDetaching([
-                        $serviceCall->technician_id => ['role' => Role::TECNICO],
+                        $serviceCall->technician_id => [
+                            'role' => Role::TECNICO,
+                            'tenant_id' => $wo->tenant_id,
+                        ],
                     ]);
                 }
 
                 if ($serviceCall->driver_id) {
                     $wo->technicians()->syncWithoutDetaching([
-                        $serviceCall->driver_id => ['role' => Role::MOTORISTA],
+                        $serviceCall->driver_id => [
+                            'role' => Role::MOTORISTA,
+                            'tenant_id' => $wo->tenant_id,
+                        ],
                     ]);
                 }
 
                 foreach ($serviceCall->equipments as $equip) {
                     $wo->equipmentsList()->syncWithoutDetaching([
-                        $equip->id => ['observations' => $equip->pivot->observations ?? ''],
+                        $equip->id => [
+                            'observations' => $equip->pivot->observations ?? '',
+                            'tenant_id' => $wo->tenant_id,
+                        ],
                     ]);
                 }
 

@@ -96,13 +96,18 @@ class WorkOrderActionController extends Controller
             // Clone equipment links (using already eager-loaded relation)
             $equipIds = $workOrder->equipmentsList->pluck('id')->toArray();
             if (! empty($equipIds)) {
-                $newOrder->equipmentsList()->attach($equipIds);
+                $newOrder->equipmentsList()->attach(
+                    array_fill_keys($equipIds, ['tenant_id' => $newOrder->tenant_id])
+                );
             }
 
             // Clone technicians with pivot role (using already eager-loaded relation)
             $syncData = [];
             foreach ($workOrder->technicians as $tech) {
-                $syncData[$tech->id] = ['role' => $tech->pivot->role ?? 'tecnico'];
+                $syncData[$tech->id] = [
+                    'role' => $tech->pivot->role ?? 'tecnico',
+                    'tenant_id' => $newOrder->tenant_id,
+                ];
             }
             if (! empty($syncData)) {
                 $newOrder->technicians()->attach($syncData);

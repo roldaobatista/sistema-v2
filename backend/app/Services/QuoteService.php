@@ -788,8 +788,11 @@ class QuoteService
 
     public function syncTags(array $data, User $user, int $tenantId, Quote $quote)
     {
-
-        $quote->tags()->sync($data['tag_ids']);
+        $syncData = [];
+        foreach ($data['tag_ids'] as $tagId) {
+            $syncData[$tagId] = ['tenant_id' => $quote->tenant_id];
+        }
+        $quote->tags()->sync($syncData);
 
         return $quote->load('tags');
     }

@@ -31,7 +31,10 @@ class WorkOrderEquipmentController extends Controller
 
         try {
             DB::beginTransaction();
-            $workOrder->equipmentsList()->attach($validated['equipment_id']);
+            $workOrder->equipmentsList()->attach(
+                $validated['equipment_id'],
+                ['tenant_id' => $workOrder->tenant_id]
+            );
             DB::commit();
 
             return ApiResponse::data($workOrder->fresh()->load('equipmentsList:id,type,brand,model,serial_number')->equipmentsList, 201);

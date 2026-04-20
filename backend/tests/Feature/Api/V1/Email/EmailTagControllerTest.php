@@ -220,7 +220,7 @@ class EmailTagControllerTest extends TestCase
         $tag = $this->createTag();
 
         // Attach first
-        $email->tags()->attach($tag->id);
+        $email->tags()->attach($tag->id, ['tenant_id' => $email->tenant_id]);
 
         // Toggle should detach
         $response = $this->postJson("/api/v1/emails/{$email->id}/tags/{$tag->id}");

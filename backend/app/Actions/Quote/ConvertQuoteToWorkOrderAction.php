@@ -81,7 +81,9 @@ class ConvertQuoteToWorkOrderAction
 
             // Vincular o seller do orçamento como técnico da OS para visibilidade no PWA
             if ($quote->seller_id) {
-                $wo->technicians()->syncWithoutDetaching([$quote->seller_id]);
+                $wo->technicians()->syncWithoutDetaching([
+                    $quote->seller_id => ['tenant_id' => $wo->tenant_id],
+                ]);
             }
 
             $wo->statusHistory()->create([
@@ -117,7 +119,10 @@ class ConvertQuoteToWorkOrderAction
 
                 if ($eq->equipment_id) {
                     $wo->equipmentsList()->syncWithoutDetaching([
-                        $eq->equipment_id => ['observations' => $eq->description ?? ''],
+                        $eq->equipment_id => [
+                            'observations' => $eq->description ?? '',
+                            'tenant_id' => $wo->tenant_id,
+                        ],
                     ]);
                 }
             }

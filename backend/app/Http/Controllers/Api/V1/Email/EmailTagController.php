@@ -88,7 +88,9 @@ class EmailTagController extends Controller
         try {
             DB::beginTransaction();
             $this->authorize('view', $email);
-            $attached = $email->tags()->toggle($emailTag->id);
+            $attached = $email->tags()->toggle([
+                $emailTag->id => ['tenant_id' => $email->tenant_id],
+            ]);
             $action = count($attached['attached']) > 0 ? 'tag_added' : 'tag_removed';
             EmailActivity::create([
                 'tenant_id' => $email->tenant_id,

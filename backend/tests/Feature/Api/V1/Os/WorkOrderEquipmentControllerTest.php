@@ -91,7 +91,7 @@ class WorkOrderEquipmentControllerTest extends TestCase
     public function test_attach_equipment_rejects_duplicate_attach(): void
     {
         // Primeiro attach
-        $this->workOrder->equipmentsList()->attach($this->equipment->id);
+        $this->workOrder->equipmentsList()->attach($this->equipment->id, ['tenant_id' => $this->workOrder->tenant_id]);
 
         $response = $this->postJson("/api/v1/work-orders/{$this->workOrder->id}/equipments", [
             'equipment_id' => $this->equipment->id,
@@ -102,7 +102,7 @@ class WorkOrderEquipmentControllerTest extends TestCase
 
     public function test_detach_equipment_removes_pivot(): void
     {
-        $this->workOrder->equipmentsList()->attach($this->equipment->id);
+        $this->workOrder->equipmentsList()->attach($this->equipment->id, ['tenant_id' => $this->workOrder->tenant_id]);
 
         $response = $this->deleteJson(
             "/api/v1/work-orders/{$this->workOrder->id}/equipments/{$this->equipment->id}"

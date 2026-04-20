@@ -233,11 +233,19 @@ class WorkOrderService
 
             if (! empty($validated['technician_ids'])) {
                 foreach ($validated['technician_ids'] as $techId) {
-                    $order->technicians()->attach($techId, ['role' => Role::TECNICO]);
+                    $order->technicians()->attach($techId, [
+                        'role' => Role::TECNICO,
+                        'tenant_id' => $order->tenant_id,
+                    ]);
                 }
             }
             if (! empty($validated['driver_id'])) {
-                $order->technicians()->syncWithoutDetaching([$validated['driver_id'] => ['role' => Role::MOTORISTA]]);
+                $order->technicians()->syncWithoutDetaching([
+                    $validated['driver_id'] => [
+                        'role' => Role::MOTORISTA,
+                        'tenant_id' => $order->tenant_id,
+                    ],
+                ]);
 
                 try {
                     Notification::notify(
@@ -350,10 +358,16 @@ class WorkOrderService
             if ($technicianIds !== null) {
                 $syncData = [];
                 foreach ($technicianIds as $techId) {
-                    $syncData[$techId] = ['role' => Role::TECNICO];
+                    $syncData[$techId] = [
+                        'role' => Role::TECNICO,
+                        'tenant_id' => $workOrder->tenant_id,
+                    ];
                 }
                 if (! isset($validated['driver_id']) && $workOrder->driver_id) {
-                    $syncData[$workOrder->driver_id] = ['role' => Role::MOTORISTA];
+                    $syncData[$workOrder->driver_id] = [
+                        'role' => Role::MOTORISTA,
+                        'tenant_id' => $workOrder->tenant_id,
+                    ];
                 }
                 $workOrder->technicians()->sync($syncData);
             }
@@ -364,7 +378,12 @@ class WorkOrderService
 
                 $workOrder->technicians()->wherePivot('role', Role::MOTORISTA)->detach();
                 if ($driverId) {
-                    $workOrder->technicians()->syncWithoutDetaching([$driverId => ['role' => Role::MOTORISTA]]);
+                    $workOrder->technicians()->syncWithoutDetaching([
+                        $driverId => [
+                            'role' => Role::MOTORISTA,
+                            'tenant_id' => $workOrder->tenant_id,
+                        ],
+                    ]);
 
                     if ($driverId != $oldDriverId) {
                         try {

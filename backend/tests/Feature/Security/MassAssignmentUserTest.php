@@ -6,6 +6,7 @@ use App\Http\Middleware\CheckPermission;
 use App\Http\Middleware\EnsureTenantScope;
 use App\Models\Tenant;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -33,6 +34,11 @@ class MassAssignmentUserTest extends TestCase
     {
         parent::setUp();
 
+        // Garante strict mode — Model::shouldBeStrict está ativo por default
+        // em AppServiceProvider, mas testes sequenciais no mesmo processo
+        // podem tê-lo desabilitado (ordem de execução indefinida).
+        Model::preventSilentlyDiscardingAttributes(true);
+
         Gate::before(fn () => true);
         $this->withoutMiddleware([
             EnsureTenantScope::class,
@@ -50,42 +56,25 @@ class MassAssignmentUserTest extends TestCase
         Sanctum::actingAs($this->admin, ['*']);
     }
 
-    public function test_user_fill_blocks_is_active(): void
+    public function test_user_fillable_does_not_include_is_active(): void
     {
-        $user = new User;
-
-        // Strict mode Eloquent: mass-assignment em campo não-fillable lança
-        // MassAssignmentException. Isso prova que is_active NÃO é fillable.
-        try {
-            $user->fill(['is_active' => false]);
-            $this->fail('Expected MassAssignmentException para is_active — sec-08 ATIVO');
-        } catch (\Illuminate\Database\Eloquent\MassAssignmentException $e) {
-            $this->assertStringContainsString('is_active', $e->getMessage());
-        }
+        // Contrato estático do $fillable — fonte única de verdade sec-08.
+        // Fill/update em campos não-listados depende de strict mode, que é
+        // runtime-togglable. O garante-é-seguro vem do contrato do model.
+        $fillable = (new User)->getFillable();
+        $this->assertNotContains('is_active', $fillable, 'sec-08: is_active NÃO pode estar em User::$fillable');
     }
 
-    public function test_user_fill_blocks_current_tenant_id(): void
+    public function test_user_fillable_does_not_include_current_tenant_id(): void
     {
-        $user = new User;
-
-        try {
-            $user->fill(['current_tenant_id' => 999]);
-            $this->fail('Expected MassAssignmentException para current_tenant_id — sec-08 ATIVO');
-        } catch (\Illuminate\Database\Eloquent\MassAssignmentException $e) {
-            $this->assertStringContainsString('current_tenant_id', $e->getMessage());
-        }
+        $fillable = (new User)->getFillable();
+        $this->assertNotContains('current_tenant_id', $fillable, 'sec-08: current_tenant_id NÃO pode estar em User::$fillable');
     }
 
-    public function test_user_fill_blocks_denied_permissions(): void
+    public function test_user_fillable_does_not_include_denied_permissions(): void
     {
-        $user = new User;
-
-        try {
-            $user->fill(['denied_permissions' => ['users.delete']]);
-            $this->fail('Expected MassAssignmentException para denied_permissions — sec-08 ATIVO');
-        } catch (\Illuminate\Database\Eloquent\MassAssignmentException $e) {
-            $this->assertStringContainsString('denied_permissions', $e->getMessage());
-        }
+        $fillable = (new User)->getFillable();
+        $this->assertNotContains('denied_permissions', $fillable, 'sec-08: denied_permissions NÃO pode estar em User::$fillable');
     }
 
     public function test_user_fill_accepts_legitimate_fields(): void

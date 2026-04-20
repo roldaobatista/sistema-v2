@@ -123,7 +123,7 @@ class WorkOrderPermissionAlignmentTest extends TestCase
             'created_by' => $this->user->id,
             'assigned_to' => null,
         ]);
-        $linkedWorkOrder->technicians()->attach($this->user->id, ['role' => Role::TECNICO]);
+        $linkedWorkOrder->technicians()->attach($this->user->id, ['role' => Role::TECNICO, 'tenant_id' => $linkedWorkOrder->tenant_id]);
 
         $unlinkedWorkOrder = WorkOrder::factory()->create([
             'tenant_id' => $this->tenant->id,
