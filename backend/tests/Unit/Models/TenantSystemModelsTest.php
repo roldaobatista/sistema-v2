@@ -108,24 +108,26 @@ class TenantSystemModelsTest extends TestCase
 
     public function test_audit_log_belongs_to_user(): void
     {
-        $log = AuditLog::create([
-            'tenant_id' => $this->tenant->id,
-            'user_id' => $this->user->id,
-            'action' => 'created',
-            'auditable_type' => Customer::class,
-            'auditable_id' => 1,
-            'description' => 'Customer created',
-        ]);
+        // sec-16: tenant_id/user_id saíram de $fillable; uso legítimo via log().
+        $log = AuditLog::log(
+            'created',
+            'Customer created',
+            Customer::factory()->create(['tenant_id' => $this->tenant->id])
+        );
 
         $this->assertInstanceOf(User::class, $log->user);
+        $this->assertSame($this->user->id, $log->user_id);
     }
 
     public function test_audit_log_fillable_fields(): void
     {
-        $log = new AuditLog;
-        $fillable = $log->getFillable();
+        // sec-16: $fillable restrito a action/description/auditable/payload.
+        // tenant_id/user_id/ip_address/user_agent/created_at não são mass-assignable.
+        $fillable = (new AuditLog)->getFillable();
         $this->assertContains('action', $fillable);
-        $this->assertContains('user_id', $fillable);
+        $this->assertContains('description', $fillable);
+        $this->assertNotContains('user_id', $fillable, 'sec-16: user_id saiu de $fillable');
+        $this->assertNotContains('tenant_id', $fillable, 'sec-16: tenant_id saiu de $fillable');
     }
 
     // ── NumberingSequence ──

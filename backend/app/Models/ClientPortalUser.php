@@ -18,6 +18,11 @@ class ClientPortalUser extends Authenticatable
 {
     use BelongsToTenant, HasApiTokens, HasFactory, Notifiable;
 
+    // sec-18 (Re-auditoria Camada 1 r3): $fillable restrito a campos de
+    // perfil do usuário do portal. Campos de hardening (lockout, 2FA,
+    // password_history) saem fora — são atribuídos exclusivamente via
+    // forceFill() por controllers/jobs internos de autenticação, nunca
+    // por payload HTTP. Fecha vetor de forjar locked_until/confirmed_at.
     protected $fillable = [
         'tenant_id',
         'customer_id',
@@ -26,17 +31,7 @@ class ClientPortalUser extends Authenticatable
         'password',
         'is_active',
         'last_login_at',
-        // Hardening (estrutura pronta — lógica de lockout/2FA/password-history
-        // será ativada em sprint dedicada de portal security; ver
-        // docs/TECHNICAL-DECISIONS.md §14.6).
-        'failed_login_attempts',
-        'locked_until',
-        'password_changed_at',
-        'password_history',
         'two_factor_enabled',
-        'two_factor_secret',
-        'two_factor_recovery_codes',
-        'two_factor_confirmed_at',
     ];
 
     protected $hidden = [

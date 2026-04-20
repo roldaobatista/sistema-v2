@@ -69,6 +69,25 @@ trait BelongsToTenant
             $this->setAttribute('tenant_id', app('current_tenant_id'));
         }
 
+        // sec-15 (Re-auditoria Camada 1 r3): bloqueia reassign de tenant_id em
+        // model já persistido. Tentativa de mutar tenant_id de um record
+        // existente = vazamento cross-tenant intencional ou acidental.
+        // Imutabilidade é invariante: uma vez criado em tenant X, o record
+        // permanece em X até ser deletado.
+        if ($this->exists && $this->isDirty('tenant_id')) {
+            $original = (int) $this->getOriginal('tenant_id');
+            $new = (int) $this->getAttribute('tenant_id');
+            if ($original > 0 && $new > 0 && $original !== $new) {
+                throw new \RuntimeException(sprintf(
+                    'Cross-tenant write blocked: tenant_id imutável (%d → %d) em %s#%s',
+                    $original,
+                    $new,
+                    static::class,
+                    (string) $this->getKey(),
+                ));
+            }
+        }
+
         return parent::save($options);
     }
 
