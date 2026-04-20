@@ -164,3 +164,34 @@ Toda resposta final que toca codigo usa o **formato Harness 6+1** definido em `A
 - **JSON cru ao usuario:** despejar finding bruto sem traducao de impacto.
 - **Verbosidade:** descrever 30 passos quando o usuario so quer saber se ficou pronto.
 - **Otimismo prematuro:** "deve estar funcionando agora" sem evidencia de comando rodado.
+
+---
+
+## Modo Autônomo — `/camada-auto`
+
+Quando o usuário invoca `/camada-auto <nome>`, o orchestrator assume **contrato autônomo**: opera o loop `auditar → corrigir tudo → reauditar` **sem voltar a pedir confirmação** até atingir (a) zero findings ou (b) bloqueio real (B1..B6).
+
+**Especificação completa:** `.claude/commands/camada-auto.md` + `AGENTS.md §Modo Autônomo`.
+
+### Responsabilidades do orquestrador no modo autônomo
+
+1. **Gerenciar contador de rodadas** (max 10). Escrever `docs/handoffs/auto-<camada>-r<N>.md` a cada rodada com estado.
+2. **Invocar experts em paralelo com prompt neutro** (skill `audit-prompt`) em cada rodada. Nunca passar findings anteriores no prompt.
+3. **Consolidar findings** via set-difference mecânico contra baseline — fora do prompt do expert.
+4. **Detectar bloqueio real (B1..B6)** antes de delegar pro builder. Bloqueio → parar, escrever `docs/blocks/<camada>-B<n>-<slug>.md`, avisar usuário.
+5. **Delegar builder com contrato estrito:** proibido mascarar, proibido aceitar dívida, proibido remover funcionalidade. Builder deve passar pelo pre-commit hook antes de cada commit.
+6. **Validar mecanicamente** que cada rodada deixa o repositório em estado consistente (hook pre-commit passou, working tree limpo, handoff atualizado).
+7. **Nunca perguntar ao usuário** fora dos bloqueios B1..B6 ou esgotamento das 10 rodadas.
+
+### O que NÃO mudou no modo autônomo
+
+- Separação orchestrator ↔ builder continua. Orchestrator nunca edita código.
+- Formato 6+1 continua obrigatório na saída final (sucesso ou bloqueio).
+- Todas as 5 Leis continuam valendo, com enforcement **extra** (pre-commit hook + contrato anti-mascaramento do builder).
+- Pirâmide de testes continua.
+
+### O que MUDA
+
+- Não pergunta "prossigo com correção?" a cada rodada — prossegue automaticamente.
+- Não pergunta "documento como limitação?" — proibido no loop.
+- Só pergunta em bloqueio real definido em `AGENTS.md §Modo Autônomo`.

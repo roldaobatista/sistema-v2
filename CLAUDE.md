@@ -49,6 +49,7 @@ Use a `Agent` tool para invocar. Para auditoria multi-perspectiva, rodar em para
 | `/context-check` | Saúde do contexto, sugere checkpoint |
 | `/mcp-check` | Lista MCPs ativos, valida autorização |
 | `/reaudit <camada>` | Re-auditoria neutra multi-especialista após correção (ver `AGENTS.md` §Fechamento) |
+| `/camada-auto <camada>` | **Modo autônomo.** Loop auditar → corrigir tudo → reauditar até 0 findings ou bloqueio real (max 10 rodadas). Não pede confirmação no meio. Ver `AGENTS.md` §Modo Autônomo |
 
 **Codex equivalente:** leia `.claude/commands/<nome>.md` e execute o roteiro manualmente.
 

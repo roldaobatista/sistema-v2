@@ -243,6 +243,56 @@ Para qualquer agente pegar o trabalho do outro:
 
 ---
 
+## 🤖 Modo Autônomo — `/camada-auto`
+
+Modo de operação em que o usuário aprova **uma vez** o início de uma camada e o sistema (orchestrator + experts + builder) executa autonomamente o loop **auditar → corrigir tudo → reauditar** até **zero findings** ou **bloqueio real**.
+
+### Regras invioláveis durante o loop
+
+**PROIBIDO:**
+- Mascarar testes (skip, `markIncomplete`, `assertTrue(true)`, assertions relaxadas) — Lei 2.
+- Aceitar S3/S4 como dívida técnica documentada em `TECHNICAL-DECISIONS.md` durante o loop. Dívida só pode ser registrada **antes** do loop começar.
+- Remover ou diminuir funcionalidade — Lei 3 + §Proibições Absolutas.
+- Mudar escopo da camada silenciosamente.
+- Escalar testes antes de tentar nível menor — §Pirâmide de testes.
+- Usar `--no-verify`, `--skip-*`, `--ignore-*` (fora das 3 exceções Windows).
+
+**OBRIGATÓRIO:**
+- Veredito `FECHADA` só com 0 findings S1..S4.
+- Cada rodada = commit(s) atômico(s) + atualização de `docs/handoffs/auto-<camada>-r<N>.md`.
+- Re-auditoria sempre com prompt neutro (skill `audit-prompt`, §Regra anti-bias).
+- Pre-commit hook ativo (`.githooks/pre-commit`).
+
+### Bloqueios reais (param o loop antes das 10 rodadas)
+
+| Código | Gatilho | Ação |
+|---|---|---|
+| **B1** | Decisão produto/arquitetura que builder não pode tomar sozinho | Escrever `docs/blocks/<camada>-B1-<slug>.md` com 2-3 opções e parar |
+| **B2** | Migration destrutiva proposta (DROP, truncate, data loss irreversível) | Parar e perguntar — nunca executar sem OK |
+| **B3** | Remoção ou redução de funcionalidade | Parar, apresentar proposta |
+| **B4** | Cascata > 50 arquivos fora do escopo inicial | Parar e relatar explosão de escopo |
+| **B5** | Conflict entre 2+ experts em 2 rodadas seguidas sem convergência | Parar e apresentar impasse |
+| **B6** | Infra quebrada que builder não resolve em 2 tentativas | Parar com logs completos |
+
+### Limite de rodadas
+
+**Max 10 rodadas** por `/camada-auto`. Se na rodada 10 ainda houver findings, parar e trazer usuário — sinal de oscilação, escopo mal definido, ou limite do builder.
+
+### Códigos de saída
+
+- `0` — sucesso, zero findings
+- `1` — bloqueio real (B1..B6)
+- `2` — esgotou 10 rodadas sem zerar
+
+### Invocação
+
+- **Claude Code:** `/camada-auto "<nome>"` — ver `.claude/commands/camada-auto.md`.
+- **Codex / outro agente:** ler `.claude/commands/camada-auto.md` e executar o roteiro manualmente. O arquivo é auto-contido e agnóstico à ferramenta.
+
+**Decisão do usuário no contrato:** aprovou iniciar a camada = aprovou o ciclo completo. Orchestrator só volta a consultar em bloqueio real.
+
+---
+
 ## 🛡️ Enforcement mecânico (pre-commit hook)
 
 O repositório tem um pre-commit hook committed em `.githooks/pre-commit` que enforça Leis 1 e 2 **independente do agente** (Claude, Codex, Aider, humano). Funciona pra qualquer um que rodar `git commit`.
