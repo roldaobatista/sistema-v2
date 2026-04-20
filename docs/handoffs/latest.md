@@ -1,10 +1,10 @@
-# Handoff — Encerramento de sessão 2026-04-20 — Camada 1 integrada no `main`
+# Handoff — Encerramento de sessão 2026-04-20 — Camada 1 integrada e verificada no `main`
 
 **Data:** 2026-04-20  
 **Worktree:** `C:\PROJETOS\sistema\.worktrees\camada-1-auto-2026-04-20`  
 **Branch de trabalho:** `auto/camada-1-2026-04-20`  
 **Checkout original:** `C:\PROJETOS\sistema` em `main`  
-**Status:** Camada 1 fechada no perímetro auditado e integrada por fast-forward no `main` original. Verificação pós-merge completa no checkout original ficou pendente porque a sessão foi encerrada a pedido do usuário.
+**Status:** Camada 1 fechada no perímetro auditado, integrada por fast-forward no `main` original e verificada pós-merge no checkout original.
 
 ## Estado do `main` original
 
@@ -38,20 +38,29 @@ cd backend
 .\vendor\bin\pint --test
 # exit code 0, sem output textual
 
-$env:APP_ENV='local'; $env:APP_URL='http://127.0.0.1:8000'; $env:REVERB_ALLOWED_ORIGINS='http://127.0.0.1:5173'; composer analyse
-# command timed out after 304046 milliseconds
-```
+$env:APP_ENV='local'
+$env:APP_URL='http://127.0.0.1:8000'
+Remove-Item Env:\REVERB_ALLOWED_ORIGINS -ErrorAction SilentlyContinue
+composer analyse
+# [OK] No errors
 
-Observação: o `.env` do checkout original está configurado como `APP_ENV=production`; por isso `composer analyse` sem variáveis locais falhou antes com a guarda de `REVERB_ALLOWED_ORIGINS`/`APP_URL`. Não editei o `.env` do usuário.
-
-Pendência para amanhã: repetir os gates no `main` original com ambiente local explícito ou ajustar `.env` localmente:
-
-```powershell
-cd C:\PROJETOS\sistema\backend
-$env:APP_ENV='local'; $env:APP_URL='http://127.0.0.1:8000'; $env:REVERB_ALLOWED_ORIGINS='http://127.0.0.1:5173'; composer analyse
+$env:APP_ENV='local'
+$env:APP_URL='http://127.0.0.1:8000'
+Remove-Item Env:\REVERB_ALLOWED_ORIGINS -ErrorAction SilentlyContinue
 php vendor\bin\pest tests\Feature\Api\V1\Hr\WorkScheduleControllerTest.php tests\Feature\Api\V1\HRControllerTest.php tests\Feature\Rbac\HrRbacTest.php tests\Feature\Security\AuditLogImmutabilityTest.php tests\Unit\Services\WorkOrderServiceTest.php --no-coverage
-.\vendor\bin\pest --parallel --processes=16 --no-coverage
+# Tests: 113 passed (185 assertions)
+# Duration: 47.85s
+
+$env:APP_ENV='local'
+$env:APP_URL='http://127.0.0.1:8000'
+Remove-Item Env:\REVERB_ALLOWED_ORIGINS -ErrorAction SilentlyContinue
+composer test-fast
+# Tests: 9918 passed (32560 assertions)
+# Duration: 328.66s
+# Parallel: 16 processes
 ```
+
+Observação: o `.env` do checkout original está configurado como `APP_ENV=production`; por isso os gates foram executados com `APP_ENV=local` e `APP_URL` explícito, sem editar o `.env` do usuário. Não definir `REVERB_ALLOWED_ORIGINS` externamente durante a suite: `Tests\Feature\Security\ReverbCorsConfigTest` precisa controlar essa variável dentro do próprio processo para testar parsing e fail-closed.
 
 ## Commits da rodada
 
@@ -134,11 +143,12 @@ Parallel: 16 processes
 
 ## Estado atual
 
-Worktree limpa em `auto/camada-1-2026-04-20`.
+Checkout original `C:\PROJETOS\sistema` em `main`, à frente de `sistema-v2/main` por 125 commits no momento da verificação pós-merge.
 
-Próxima decisão de integração:
+Working tree após esta atualização: somente `docs/handoffs/latest.md` modificado para registrar a evidência pós-merge.
 
-1. Fazer merge local para `main`
-2. Fazer push e abrir PR
-3. Manter branch/worktree como está
-4. Descartar o trabalho
+Próxima decisão operacional:
+
+1. Revisar/commitar este checkpoint de handoff.
+2. Fazer push e abrir PR, ou empurrar o `main` conforme política do repositório.
+3. Depois da confirmação remota, remover a worktree antiga `C:\PROJETOS\sistema\.worktrees\camada-1-auto-2026-04-20` se ela não for mais necessária.
