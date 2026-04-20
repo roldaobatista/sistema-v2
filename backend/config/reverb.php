@@ -57,7 +57,10 @@ return [
                     'scheme' => env('REVERB_SCHEME', 'http'),
                     'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
                 ],
-                'allowed_origins' => array_filter(array_map('trim', explode(',', (string) env('REVERB_ALLOWED_ORIGINS', '*')))),
+                // sec-reverb-cors-wildcard (Camada 1 r4 Batch C — §14.33):
+                // Default fail-closed. Em produção, AppServiceProvider::boot()
+                // bloqueia o startup se array resultante ficar vazio.
+                'allowed_origins' => array_values(array_filter(array_map('trim', explode(',', (string) env('REVERB_ALLOWED_ORIGINS', ''))), static fn ($o) => $o !== '')),
                 'ping_interval' => (int) env('REVERB_APP_PING_INTERVAL', 60),
                 'activity_timeout' => (int) env('REVERB_APP_ACTIVITY_TIMEOUT', 30),
                 'max_message_size' => (int) env('REVERB_APP_MAX_MESSAGE_SIZE', 10_000),

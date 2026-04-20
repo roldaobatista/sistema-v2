@@ -904,3 +904,61 @@ TechnicianFeedback, VisitReport, WorkOrderRecurrence, WorkOrderSignature, WorkOr
 
 ---
 
+### 14.30 Portal — prevenção de tenant-enumeration via respostas uniformes (sec-portal-tenant-enumeration-bypass, 2026-04-20)
+
+**Decisão (2026-04-20):** `PortalAuthController::login()` adota **respostas uniformes** para qualquer falha de credencial (tenant inválido, email inexistente, senha errada, usuário inativo, sem contrato ativo). Todas retornam **o mesmo status (422) e a mesma mensagem genérica** (`"Credenciais invalidas."`). Distinções específicas ("sem contrato", "conta inativa") são **removidas do response** (migram para `AuditLog::log()` para forense/observabilidade).
+
+**Por que não resolver tenant por subdomain/host (alternativa canônica):**
+
+- Frontend atual (React 19 SPA) não usa `*.tenant.kalibrium.com.br`; todos os tenants compartilham o mesmo host com header `X-Tenant-ID` enviado pelo interceptor Axios.
+- Refator para subdomain-per-tenant exigiria: nginx config, certificados wildcard, DNS, CORS, interceptor Axios, build Vite por subdomain — escopo >10 arquivos e fora da Camada 1. Registrado como backlog em `docs/plans/`.
+
+**Mitigação aceita (S3 → residual):**
+
+- Header `X-Tenant-ID` continua sendo o seletor de tenant (resolvido via `app('current_tenant_id')` quando middleware upstream o bindar).
+- Login busca usuário com `->where('tenant_id', $tenantId)` quando `current_tenant_id` estiver bindado; sem binding, mantém filtro por email + `limit(2)` apenas para detectar colisão multi-tenant (retorna erro uniforme se >1 match).
+- Timing attack por medição de Hash::check: mitigado com **Hash::check dummy** executado quando usuário não é encontrado (tempo constante).
+- Tentativas de enumeração ficam registradas em `audit_logs` (sec-portal-audit-missing — §14.31 abaixo).
+
+**Implicação para auditoria:** `security-expert` agent file trata a ausência de subdomain-per-tenant como limitação conhecida (backlog) em vez de finding ativo. Respostas uniformes + audit log + Hash::check dummy é a mitigação aceita para S3.
+
+---
+
+### 14.31 Portal — audit trail em login/logout/failures (sec-portal-audit-missing, 2026-04-20)
+
+**Decisão (2026-04-20):** `PortalAuthController::login()` e `::logout()` invocam `AuditLog::log()` para todas as transições sensíveis: `portal_login_success`, `portal_login_failed`, `portal_login_locked`, `portal_logout`. `AuditAction` enum ganha os quatro valores. `tenant_id` é resolvido pelo próprio model `ClientPortalUser` autenticado (não do request).
+
+**Por que audit no portal:** portal é ponto de entrada externo (cliente final), obrigatório por LGPD Art. 37 (registro de operações de tratamento) e por forense de incidentes.
+
+**Padrão de invocação:** espelha `AuthController::login()` web — `AuditLog::log($action, $description, $user)` com `$user` sendo o `ClientPortalUser` resolvido (quando disponível) ou fallback sem model para falhas onde user não foi encontrado (nesse caso `tenant_id` cai no fallback 0 — §14.5).
+
+---
+
+### 14.32 Portal — password history não implementado (aceito como S4, 2026-04-20)
+
+**Decisão (2026-04-20):** `ClientPortalUser.password_history` (coluna JSON que existe no schema desde a migration `2026_04_17_200000_add_hardening_to_client_portal_users` — §14.6) permanece **inerte** por esta camada. Nenhum controller do portal consulta ou atualiza o histórico de senhas no fluxo de reset/troca de senha.
+
+**Justificativa (aceito como limitação S4):**
+
+- **Portal não tem fluxo de reset de senha via token hoje** (não existe `PortalPasswordResetController`; apenas o fluxo `web` do `PasswordResetController` — que trabalha sobre `App\Models\User`, não `ClientPortalUser`). Introduzir password-reuse check exige antes implementar o próprio fluxo de reset do portal.
+- Web (`App\Models\User`) também não tem password history ativo — seria incoerente cobrar do portal o que nem o painel interno faz.
+- Risco residual: cliente pode, ao trocar senha, escolher uma senha anterior. Probabilidade baixa e impacto local (não viraliza).
+
+**Backlog rastreado:** quando `PortalPasswordResetController` for criado, adicionar verificação `password_history` antes de `$user->password = ...`, atualizando histórico com array circular `[hash_current, hash_n-1, hash_n-2, ...]` (últimos 5 hashes). Até lá, `security-expert` agent file trata `sec-portal-password-reuse-not-enforced` como **backlog/limitação aceita**, não finding ativo.
+
+---
+
+### 14.33 Reverb — `allowed_origins` fail-closed em produção (sec-reverb-cors-wildcard, 2026-04-20)
+
+**Decisão (2026-04-20):** `config/reverb.php` muda o default de `allowed_origins` de `'*'` para **vazio** (`[]`). Valor é lido da env `REVERB_ALLOWED_ORIGINS` (CSV). Em `APP_ENV=production` com env vazia **e** sem `config('app.url')` configurado, a app **recusa-se a bootar** (`RuntimeException` no `AppServiceProvider::boot()`). Em dev/testing, `*` continua aceitável como fallback silencioso para não quebrar DX.
+
+**Ordem de resolução:**
+
+1. Se `REVERB_ALLOWED_ORIGINS` populada → split por vírgula, trim, filtra vazios.
+2. Senão, em prod: fallback para `[config('app.url')]` se populado, senão exceção.
+3. Senão, em dev/testing: fallback para `['*']` (permissivo, loopback-only esperado).
+
+**Por que fail-closed em prod:** default `*` abria CSWSH (Cross-Site WebSocket Hijacking) para qualquer domínio que soubesse o app_key público. Fail-closed força configuração explícita no deploy — melhor quebrar no boot do que silenciosamente aceitar tudo.
+
+---
+

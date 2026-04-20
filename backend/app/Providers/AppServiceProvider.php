@@ -123,6 +123,28 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // sec-reverb-cors-wildcard (Camada 1 r4 Batch C — §14.33):
+        // Em produção, allowed_origins VAZIO abre CSWSH para qualquer origem
+        // que conheça o app_key público. Fail-closed: fallback para APP_URL
+        // se existir, senão aborta o boot com mensagem clara. Em dev/testing
+        // o comportamento é permissivo para não atrapalhar DX.
+        $reverbOrigins = (array) config('reverb.apps.apps.0.allowed_origins', []);
+        if (empty($reverbOrigins)) {
+            if ($this->app->environment('production')) {
+                $appUrl = (string) config('app.url', '');
+                if ($appUrl !== '' && $appUrl !== 'http://localhost') {
+                    config(['reverb.apps.apps.0.allowed_origins' => [$appUrl]]);
+                } else {
+                    throw new \RuntimeException(
+                        'REVERB_ALLOWED_ORIGINS vazio em produção e APP_URL não configurada. '
+                        .'Configure REVERB_ALLOWED_ORIGINS (CSV) para evitar CSWSH.'
+                    );
+                }
+            }
+            // dev/testing: ausência de origins mantém config vazia.
+            // Não reintroduz '*' — quem precisar de wildcard em dev define env.
+        }
+
         Gate::policy(AssetRecord::class, AssetRecordPolicy::class);
 
         // SUPER_ADMIN bypass — Spatie recommended pattern.

@@ -20,6 +20,14 @@ enum AuditAction: string
     case EMAIL_FAILED = 'email_failed';
     case PUBLIC_VIEWED = 'public_viewed';
 
+    // sec-portal-audit-missing — Camada 1 r4 Batch C (§14.31).
+    // Eventos do Portal do Cliente (externo). Distintos de LOGIN/LOGOUT do
+    // painel interno para separar telemetria/forense por canal.
+    case PORTAL_LOGIN_SUCCESS = 'portal_login_success';
+    case PORTAL_LOGIN_FAILED = 'portal_login_failed';
+    case PORTAL_LOGIN_LOCKED = 'portal_login_locked';
+    case PORTAL_LOGOUT = 'portal_logout';
+
     public function label(): string
     {
         return match ($this) {
@@ -38,6 +46,10 @@ enum AuditAction: string
             self::EMAIL_SENT => 'E-mail Enviado',
             self::EMAIL_FAILED => 'Falha no E-mail',
             self::PUBLIC_VIEWED => 'Visualização Pública',
+            self::PORTAL_LOGIN_SUCCESS => 'Portal — Login',
+            self::PORTAL_LOGIN_FAILED => 'Portal — Falha de Login',
+            self::PORTAL_LOGIN_LOCKED => 'Portal — Conta Bloqueada',
+            self::PORTAL_LOGOUT => 'Portal — Logout',
         };
     }
 }

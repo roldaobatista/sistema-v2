@@ -27,7 +27,7 @@ class PortalAuthControllerTest extends TestCase
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
     }
 
-    private function createPortalUser(string $email = 'portal@cliente.com', string $password = 'PortalPass!123', bool $active = true): ClientPortalUser
+    private function createPortalUser(string $email = 'portal@cliente.com', string $password = 'PortalPass!123', bool $active = true, bool $verified = true): ClientPortalUser
     {
         // forceCreate: $fillable de ClientPortalUser não aceita tenant_id/is_active
         // por segurança (sec-18 + data-02). Em strict mode (Model::shouldBeStrict)
@@ -36,6 +36,10 @@ class PortalAuthControllerTest extends TestCase
         // failed_login_attempts, etc) — middleware EnsurePortalAccess acessa
         // esses campos e strict mode lança MissingAttributeException se não
         // forem hidratados.
+        //
+        // $verified: default true para não quebrar testes existentes após a
+        // introdução de sec-portal-login-no-email-verification (§14.32 ref).
+        // Testes específicos de verificação forçam null via forceFill.
         $user = ClientPortalUser::forceCreate([
             'tenant_id' => $this->tenant->id,
             'customer_id' => $this->customer->id,
@@ -43,6 +47,7 @@ class PortalAuthControllerTest extends TestCase
             'email' => $email,
             'password' => Hash::make($password),
             'is_active' => $active,
+            'email_verified_at' => $verified ? now() : null,
         ]);
 
         return $user->refresh();
@@ -259,6 +264,193 @@ class PortalAuthControllerTest extends TestCase
         $this->assertNull($user->locked_until);
     }
 
+    // ---------------------------------------------------------------------
+    // Batch C — Camada 1 r4
+    //
+    // sec-portal-throttle-toctou (S3): throttle deve ser atômico (Cache::add/
+    // increment). Testa que contador não pode ser sobrescrito.
+    // sec-portal-tenant-enumeration-bypass (S3): respostas uniformes (§14.30).
+    // sec-portal-audit-missing (S3): login/logout/falhas gravam audit (§14.31).
+    // sec-portal-login-no-email-verification (S3): bloquear login se email
+    // não verificado, com flag config('portal.require_email_verified').
+    // ---------------------------------------------------------------------
+
+    public function test_throttle_counter_is_atomic_not_overwritten_by_concurrent_requests(): void
+    {
+        // TOCTOU fix: migrar de Cache::get+put para Cache::add+increment.
+        // Se duas requisições lerem o mesmo $attempts=3, ambas gravam 4 — contador
+        // não avança. Com increment atômico, uma grava 4 e a próxima grava 5.
+        $this->createPortalUser('toctou@test.com', 'CorrectPass!1');
+        $this->createActiveContract();
+
+        // Envia 3 requisições com senha errada sequencialmente.
+        for ($i = 0; $i < 3; $i++) {
+            $this->postJson('/api/v1/portal/login', [
+                'email' => 'toctou@test.com',
+                'password' => 'WrongPass!',
+            ]);
+        }
+
+        // Contador em cache deve refletir exatamente 3 tentativas.
+        $key = sprintf('portal_login_attempts:%s:%s', '127.0.0.1', 'toctou@test.com');
+        $this->assertSame(3, (int) Cache::get($key));
+    }
+
+    public function test_tenant_enumeration_invalid_tenant_and_wrong_password_return_identical_response(): void
+    {
+        // sec-portal-tenant-enumeration-bypass: atacante não deve distinguir
+        // tenant inválido/inexistente de senha errada via status+body.
+        $this->createPortalUser('enum@test.com', 'CorrectPass!1');
+        $this->createActiveContract();
+
+        // (a) tenant válido + senha errada
+        $wrongPass = $this->postJson('/api/v1/portal/login', [
+            'email' => 'enum@test.com',
+            'password' => 'WrongPass!',
+        ]);
+
+        // (b) email inexistente em tenant válido
+        $noUser = $this->postJson('/api/v1/portal/login', [
+            'email' => 'inexistente@test.com',
+            'password' => 'AnyPass!1',
+        ]);
+
+        // Status + mensagem devem ser idênticos — sem distinguir o caso.
+        $this->assertSame($wrongPass->status(), $noUser->status());
+        $this->assertSame(
+            $wrongPass->json('message'),
+            $noUser->json('message'),
+            'Respostas precisam ser uniformes para mitigar enumeração.'
+        );
+    }
+
+    public function test_tenant_enumeration_inactive_user_and_no_contract_return_same_generic_message(): void
+    {
+        // Usuário inativo
+        $this->createPortalUser('inat@test.com', 'CorrectPass!1', active: false);
+        $this->createActiveContract();
+        $inactive = $this->postJson('/api/v1/portal/login', [
+            'email' => 'inat@test.com',
+            'password' => 'CorrectPass!1',
+        ]);
+
+        // Sem contrato ativo — limpa contratos para isolar o cenário.
+        Contract::query()->where('tenant_id', $this->tenant->id)->delete();
+        $this->createPortalUser('nocont@test.com', 'CorrectPass!1');
+        $noContract = $this->postJson('/api/v1/portal/login', [
+            'email' => 'nocont@test.com',
+            'password' => 'CorrectPass!1',
+        ]);
+
+        // Ambas devem cair em 422 com mesma mensagem genérica (sem vazar razão).
+        $this->assertSame(422, $inactive->status());
+        $this->assertSame(422, $noContract->status());
+        $this->assertSame(
+            $inactive->json('message'),
+            $noContract->json('message'),
+            'Respostas específicas (inativo vs sem contrato) vazam estado interno.'
+        );
+    }
+
+    public function test_login_success_records_audit_log(): void
+    {
+        $this->createPortalUser('audit_ok@test.com', 'CorrectPass!1');
+        $this->createActiveContract();
+
+        $this->postJson('/api/v1/portal/login', [
+            'email' => 'audit_ok@test.com',
+            'password' => 'CorrectPass!1',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'portal_login_success',
+            'tenant_id' => $this->tenant->id,
+        ]);
+    }
+
+    public function test_login_failure_records_audit_log_with_failed_action(): void
+    {
+        $this->createPortalUser('audit_fail@test.com', 'CorrectPass!1');
+        $this->createActiveContract();
+
+        $this->postJson('/api/v1/portal/login', [
+            'email' => 'audit_fail@test.com',
+            'password' => 'WrongPass!',
+        ]);
+
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'portal_login_failed',
+            'tenant_id' => $this->tenant->id,
+        ]);
+    }
+
+    public function test_login_locked_account_records_audit_log_with_locked_action(): void
+    {
+        $user = $this->createPortalUser('audit_locked@test.com', 'CorrectPass!1');
+        $this->createActiveContract();
+
+        $user->forceFill([
+            'locked_until' => now()->addMinutes(30),
+            'failed_login_attempts' => 5,
+        ])->save();
+
+        $this->postJson('/api/v1/portal/login', [
+            'email' => 'audit_locked@test.com',
+            'password' => 'CorrectPass!1',
+        ]);
+
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'portal_login_locked',
+            'tenant_id' => $this->tenant->id,
+        ]);
+    }
+
+    public function test_logout_records_audit_log(): void
+    {
+        $user = $this->createPortalUser('audit_logout@test.com', 'CorrectPass!1');
+        Sanctum::actingAs($user, ['portal:access']);
+
+        $this->postJson('/api/v1/portal/logout')->assertStatus(204);
+
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'portal_logout',
+            'tenant_id' => $this->tenant->id,
+            'user_id' => $user->id,
+        ]);
+    }
+
+    public function test_login_blocked_when_email_not_verified(): void
+    {
+        // sec-portal-login-no-email-verification: espelha AuthController web.
+        config(['portal.require_email_verified' => true]);
+
+        $user = $this->createPortalUser('unverified@test.com', 'CorrectPass!1');
+        $user->forceFill(['email_verified_at' => null])->save();
+        $this->createActiveContract();
+
+        $response = $this->postJson('/api/v1/portal/login', [
+            'email' => 'unverified@test.com',
+            'password' => 'CorrectPass!1',
+        ]);
+
+        $response->assertStatus(403)
+            ->assertJsonStructure(['message']);
+    }
+
+    public function test_login_allows_verified_email_when_flag_on(): void
+    {
+        config(['portal.require_email_verified' => true]);
+
+        $user = $this->createPortalUser('verified@test.com', 'CorrectPass!1');
+        $user->forceFill(['email_verified_at' => now()])->save();
+        $this->createActiveContract();
+
+        $this->postJson('/api/v1/portal/login', [
+            'email' => 'verified@test.com',
+            'password' => 'CorrectPass!1',
+        ])->assertOk();
+    }
+
     public function test_login_lockout_is_isolated_per_tenant(): void
     {
         // Usuário do tenant A bloqueado não interfere em usuário de tenant B com mesmo email
@@ -283,6 +475,7 @@ class PortalAuthControllerTest extends TestCase
             'email' => 'unique_b@test.com',
             'password' => Hash::make('CorrectPass!1'),
             'is_active' => true,
+            'email_verified_at' => now(),
         ])->refresh();
         Contract::factory()->create([
             'tenant_id' => $otherTenant->id,
