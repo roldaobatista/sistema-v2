@@ -129,6 +129,10 @@ class User extends Authenticatable
         'google_calendar_token',
         'google_calendar_refresh_token',
         'cpf_hash',
+        // sec-23 (Re-auditoria Camada 1 r3): denied_permissions NÃO deve
+        // vazar em respostas de API. Lista interna de bloqueios — expô-la
+        // facilita mapeamento de superfícies de ataque por usuário.
+        'denied_permissions',
     ];
 
     protected function casts(): array

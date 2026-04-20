@@ -56,7 +56,11 @@ class Tenant extends Model
         'fiscal_regime',
         'cnae_code',
         'fiscal_certificate_path',
-        'fiscal_certificate_password',
+        // sec-20 (Re-auditoria Camada 1 r3): fiscal_certificate_password SAIU
+        // de $fillable — secret da chave privada do certificado A1. Atribuição
+        // só via forceFill() em endpoint dedicado de upload de certificado com
+        // validação de permission. Evita exposição via qualquer endpoint de
+        // update de tenant que use mass-assign.
         'fiscal_certificate_expires_at',
         'fiscal_nfse_token',
         'fiscal_nfse_city',

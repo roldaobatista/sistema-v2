@@ -12,6 +12,16 @@ class ResetPasswordRequest extends FormRequest
         return true; // Public endpoint — no auth required
     }
 
+    // sec-21 (Re-auditoria Camada 1 r3): normaliza email em lowercase.
+    // Token de reset é emitido para email já normalizado; o reset precisa
+    // bater pela mesma normalização.
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('email') && is_string($this->input('email'))) {
+            $this->merge(['email' => strtolower(trim($this->input('email')))]);
+        }
+    }
+
     public function rules(): array
     {
         // sec-17 (Re-auditoria Camada 1 r3): delega para Password::defaults()
