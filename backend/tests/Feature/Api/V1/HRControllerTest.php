@@ -112,6 +112,21 @@ class HRControllerTest extends TestCase
         ]);
     }
 
+    public function test_store_schedule_requires_current_tenant_context(): void
+    {
+        $this->user->forceFill(['current_tenant_id' => null])->save();
+        app()->forgetInstance('current_tenant_id');
+        Sanctum::actingAs($this->user, ['*']);
+
+        $response = $this->postJson('/api/v1/hr/schedules', [
+            'technician_id' => $this->user->id,
+            'date' => '2026-03-15',
+            'shift_type' => 'normal',
+        ]);
+
+        $response->assertStatus(403);
+    }
+
     public function test_store_schedule_validation_requires_technician_id(): void
     {
         $response = $this->postJson('/api/v1/hr/schedules', [

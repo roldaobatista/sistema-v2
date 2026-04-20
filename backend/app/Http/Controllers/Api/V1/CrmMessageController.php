@@ -249,8 +249,8 @@ class CrmMessageController extends Controller
                         continue;
                     }
 
-                    // Webhook não tem contexto de tenant → global scope bloquearia a busca.
-                    // Buscar sem scope mas filtrar por tenant se disponível.
+                    // LEI 4 JUSTIFICATIVA: webhook assinado não tem usuário/current_tenant_id;
+                    // external_id é único globalmente e, quando possível, filtrado pelo tenant da instância.
                     $query = CrmMessage::withoutGlobalScope('tenant')
                         ->where('external_id', $externalId);
                     if ($webhookTenantId) {
@@ -299,7 +299,8 @@ class CrmMessageController extends Controller
                                 ->orWhere('phone2', 'like', "%{$phoneSafe}");
                         })->first();
                     } else {
-                        // Fallback: buscar última mensagem de saída (sem scope de tenant)
+                        // LEI 4 JUSTIFICATIVA: fallback legado de webhook assinado sem instância;
+                        // o tenant é derivado da última mensagem outbound, nunca do payload.
                         $lastOutbound = CrmMessage::withoutGlobalScope('tenant')
                             ->where('to_address', 'like', "%{$phoneSafe}")
                             ->where('direction', CrmMessage::DIRECTION_OUTBOUND)
@@ -309,7 +310,8 @@ class CrmMessageController extends Controller
                         $tenantId = $lastOutbound?->tenant_id;
 
                         if ($tenantId) {
-                            // Buscar cliente APENAS dentro do tenant encontrado
+                            // LEI 4 JUSTIFICATIVA: tenant foi inferido de conversa outbound;
+                            // a busca sem scope é restrita explicitamente ao tenant encontrado.
                             $customer = Customer::withoutGlobalScope('tenant')
                                 ->where('tenant_id', $tenantId)
                                 ->where(function ($q) use ($phoneSafe) {
@@ -323,6 +325,8 @@ class CrmMessageController extends Controller
                         continue;
                     }
 
+                    // LEI 4 JUSTIFICATIVA: contexto de tenant foi resolvido antes da criação;
+                    // busca sem scope é limitada ao tenant/cliente/canal para reaproveitar deal/user.
                     $lastOutbound = CrmMessage::withoutGlobalScope('tenant')
                         ->where('tenant_id', $tenantId)
                         ->where('customer_id', $customer->id)

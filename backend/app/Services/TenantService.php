@@ -112,6 +112,8 @@ class TenantService
             $dependencies['users'] = $usersCount;
         }
 
+        // LEI 4 JUSTIFICATIVA: serviço administrativo opera sobre um tenant específico durante
+        // ativação/inativação; o escopo é removido apenas para contar branches desse tenant.
         $branchesCount = Branch::withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)->count();
         if ($branchesCount > 0) {
             $dependencies['branches'] = $branchesCount;
@@ -126,6 +128,8 @@ class TenantService
 
         foreach ($dependentTables as $label => $modelClass) {
             if (class_exists($modelClass)) {
+                // LEI 4 JUSTIFICATIVA: serviço administrativo calcula uso de um tenant explícito;
+                // a consulta sem scope é sempre limitada pelo tenant_id do agregado recebido.
                 $count = $modelClass::withoutGlobalScope('tenant')
                     ->where('tenant_id', $tenant->id)
                     ->count();

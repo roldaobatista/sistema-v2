@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,13 @@ abstract class TestCase extends BaseTestCase
         Hash::driver('bcrypt')->setRounds(4);
 
         $this->seedRolesIfNeeded();
+    }
+
+    protected function tearDown(): void
+    {
+        Model::reguard();
+
+        parent::tearDown();
     }
 
     protected static bool $rolesSeeded = false;

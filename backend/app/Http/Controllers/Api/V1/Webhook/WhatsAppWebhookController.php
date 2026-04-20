@@ -246,6 +246,8 @@ class WhatsAppWebhookController extends Controller
             $normalizedPhone = preg_replace('/[^0-9]/', '', $phone);
             $lastNineDigits = substr($normalizedPhone, -9);
 
+            // LEI 4 JUSTIFICATIVA: fallback legado de webhook assinado sem usuário/current_tenant_id;
+            // o tenant é inferido por cliente com conversa outbound existente e nunca vem do payload.
             $candidate = Customer::withoutGlobalScope('tenant')
                 ->where(function ($q) use ($normalizedPhone, $lastNineDigits) {
                     $q->where('phone', $normalizedPhone)
@@ -297,6 +299,8 @@ class WhatsAppWebhookController extends Controller
         $normalizedPhone = preg_replace('/[^0-9]/', '', $phone);
         $lastNineDigits = substr($normalizedPhone, -9);
 
+        // LEI 4 JUSTIFICATIVA: webhook assinado já resolveu tenant_id; a busca sem scope é
+        // restrita explicitamente ao tenant resolvido para localizar o cliente por telefone.
         $customer = Customer::withoutGlobalScope('tenant')
             ->where('tenant_id', $tenantId)
             ->where(function ($q) use ($normalizedPhone, $lastNineDigits) {
@@ -309,6 +313,8 @@ class WhatsAppWebhookController extends Controller
 
         if ($customer) {
             // Carregar deal/user da última mensagem outbound para preservar contexto de conversa
+            // LEI 4 JUSTIFICATIVA: webhook assinado usa tenant_id resolvido acima; a busca sem
+            // scope é restrita ao mesmo tenant e cliente para recuperar contexto da conversa.
             $lastOutbound = CrmMessage::withoutGlobalScope('tenant')
                 ->where('tenant_id', $tenantId)
                 ->where('customer_id', $customer->id)

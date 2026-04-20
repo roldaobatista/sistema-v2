@@ -8,6 +8,7 @@ use App\Http\Requests\HR\UpdateWorkScheduleRequest;
 use App\Models\WorkSchedule;
 use App\Support\ApiResponse;
 use App\Support\SearchSanitizer;
+use App\Traits\ResolvesCurrentTenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,12 +16,7 @@ use Illuminate\Support\Facades\Log;
 
 class WorkScheduleController extends Controller
 {
-    private function tenantId(): int
-    {
-        $user = auth()->user();
-
-        return (int) ($user->current_tenant_id ?? $user->tenant_id);
-    }
+    use ResolvesCurrentTenant;
 
     public function index(Request $request): JsonResponse
     {

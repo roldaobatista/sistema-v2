@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\HR;
 
+use App\Support\CurrentTenantResolver;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -14,7 +15,7 @@ class BatchScheduleEntryRequest extends FormRequest
 
     public function rules(): array
     {
-        $tenantId = (int) ($this->user()->current_tenant_id ?? $this->user()->tenant_id);
+        $tenantId = CurrentTenantResolver::resolveForUser($this->user());
 
         return [
             'schedules' => 'required|array|min:1',

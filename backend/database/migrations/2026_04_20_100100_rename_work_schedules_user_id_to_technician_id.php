@@ -9,7 +9,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (! Schema::hasTable('work_schedules') || Schema::hasColumn('work_schedules', 'technician_id')) {
+        if (
+            ! Schema::hasTable('work_schedules')
+            || Schema::hasColumn('work_schedules', 'technician_id')
+            || ! Schema::hasColumn('work_schedules', 'user_id')
+        ) {
             return;
         }
 
@@ -42,7 +46,11 @@ return new class extends Migration
 
     public function down(): void
     {
-        if (! Schema::hasTable('work_schedules') || ! Schema::hasColumn('work_schedules', 'technician_id')) {
+        if (
+            ! Schema::hasTable('work_schedules')
+            || ! Schema::hasColumn('work_schedules', 'technician_id')
+            || Schema::hasColumn('work_schedules', 'user_id')
+        ) {
             return;
         }
 

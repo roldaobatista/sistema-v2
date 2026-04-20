@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\HR;
 
+use App\Support\CurrentTenantResolver;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -28,7 +29,7 @@ class UpdateWorkScheduleRequest extends FormRequest
 
     public function rules(): array
     {
-        $tenantId = (int) ($this->user()->current_tenant_id ?? $this->user()->tenant_id);
+        $tenantId = CurrentTenantResolver::resolveForUser($this->user());
 
         return [
             'technician_id' => ['sometimes', 'integer', Rule::exists('users', 'id')->where('tenant_id', $tenantId)],

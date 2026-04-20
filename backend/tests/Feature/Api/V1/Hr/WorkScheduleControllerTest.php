@@ -74,6 +74,21 @@ class WorkScheduleControllerTest extends TestCase
             ->assertJsonPath('data.technician_id', $this->user->id);
     }
 
+    public function test_store_requires_current_tenant_context(): void
+    {
+        $this->user->forceFill(['current_tenant_id' => null])->save();
+        app()->forgetInstance('current_tenant_id');
+        Sanctum::actingAs($this->user, ['*']);
+
+        $response = $this->postJson('/api/v1/work-schedules', [
+            'technician_id' => $this->user->id,
+            'date' => '2026-03-12',
+            'shift_type' => 'normal',
+        ]);
+
+        $response->assertStatus(403);
+    }
+
     public function test_store_validation_requires_technician_id(): void
     {
         $response = $this->postJson('/api/v1/work-schedules', [
