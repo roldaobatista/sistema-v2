@@ -82,7 +82,7 @@ Sempre incluir: **security-expert** + **qa-expert** (linhas de defesa minimas).
 
 Cada sub-agente recebe:
 - Diff dos arquivos da sua lente
-- CLAUDE.md (5 leis + Iron Protocol)
+- AGENTS.md (5 leis + Iron Protocol)
 - PRD + TECHNICAL-DECISIONS conforme escopo
 
 E emite:

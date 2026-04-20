@@ -56,7 +56,7 @@ Tipos:
 
 ### 3. Checklist de revisao
 
-#### Arquitetura e padroes (CLAUDE.md)
+#### Arquitetura e padroes (AGENTS.md)
 
 - [ ] Segue padrao dos endpoints existentes (status codes, formato JSON)
 - [ ] Controller usa `current_tenant_id`, nunca body

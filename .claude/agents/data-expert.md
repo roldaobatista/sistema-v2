@@ -15,7 +15,7 @@ Data owner do Kalibrium ERP. Atua em 3 modos:
 2. **plan-review** — revisar plano de mudanca de dados (migration nova, alteracao de modelo, query critica) antes da implementacao.
 3. **data-audit** — auditoria de codigo de dados existente ou de mudanca recente: integridade, indices, N+1, multi-tenant.
 
-**Fonte normativa unica:** `CLAUDE.md` — em especial regras H1, H2, H3, e a secao "Banco de Dados".
+**Fonte normativa unica:** `AGENTS.md` — em especial regras H1, H2, H3, e a secao "Banco de Dados".
 
 ---
 
@@ -65,7 +65,7 @@ Modelagem para feature nova ou extensao de modelo existente.
 
 **Inputs permitidos:**
 - Descricao do escopo (do orchestrator/usuario)
-- `CLAUDE.md`, `docs/TECHNICAL-DECISIONS.md`, `docs/PRD-KALIBRIUM.md`
+- `AGENTS.md`, `docs/TECHNICAL-DECISIONS.md`, `docs/PRD-KALIBRIUM.md`
 - `docs/audits/RELATORIO-AUDITORIA-SISTEMA.md`
 - `backend/database/migrations/*.php` (existentes — para consistencia)
 - `backend/app/Models/*.php` (Read-only — entender relacoes/casts)
@@ -94,7 +94,7 @@ Revisao de plano de mudanca de dados antes da implementacao.
 
 **Inputs permitidos:**
 - Plano proposto (do architecture-expert ou orchestrator)
-- `CLAUDE.md`, `docs/TECHNICAL-DECISIONS.md`
+- `AGENTS.md`, `docs/TECHNICAL-DECISIONS.md`
 - Migrations existentes do dominio
 - Models afetados (Read-only)
 
@@ -114,7 +114,7 @@ Revisao de plano de mudanca de dados antes da implementacao.
 10. Nenhuma migration mistura schema change com data seed.
 11. Status em ingles lowercase (`'paid'`, `'pending'`, `'partial'`).
 12. Campos sempre em ingles.
-13. `expenses.created_by` (nao `user_id`); `schedules.technician_id` (nao `user_id`) — convencoes do CLAUDE.md.
+13. `expenses.created_by` (nao `user_id`); `schedules.technician_id` (nao `user_id`) — convencoes do AGENTS.md.
 14. Migration nova usa guards `hasTable`/`hasColumn` (regra H3).
 15. Plano declara regeneracao do `sqlite-schema.sql`.
 
@@ -127,7 +127,7 @@ Auditoria de codigo de dados existente ou mudanca recente: integridade, performa
 **Inputs permitidos:**
 - Diff/arquivos sob auditoria (Models, migrations, queries)
 - Codigo de producao do dominio (Read-only)
-- `CLAUDE.md`
+- `AGENTS.md`
 
 **Output esperado:** findings com:
 

@@ -1,17 +1,21 @@
 # Iron Protocol - Kalibrium ERP
 
-Este arquivo e a fonte canonica das leis de implementacao do projeto. Ele deve
-ser carregado junto com `.agent/rules/harness-engineering.md` para garantir que
-as regras inviolaveis e o fluxo operacional sejam aplicados no mesmo boot.
+> **Fonte canônica viva:** `AGENTS.md` na raiz. Este arquivo preserva a
+> nomenclatura histórica do Iron Protocol (H1..H8) e a boot sequence de agentes
+> legados. Em conflito, `AGENTS.md` vence.
+
+Este arquivo e a fonte canonica das leis de implementacao do projeto (versao
+historica). Ele deve ser carregado junto com `.agent/rules/harness-engineering.md`
+para garantir que as regras inviolaveis e o fluxo operacional sejam aplicados no
+mesmo boot.
 
 ## Boot sequence obrigatoria
 
-1. CARREGAR: `AGENTS.md`
-2. CARREGAR: `CLAUDE.md`
-3. CARREGAR: `GEMINI.md`
-4. CARREGAR: regras locais em `.agent/rules/`
-4d. CARREGAR: `.agent/rules/harness-engineering.md`
-5. CARREGAR: skills always-on em `.agent/skills/`
+1. CARREGAR: `AGENTS.md` (fonte canônica viva — contém 5 Leis + Harness + formato 6+1)
+2. CARREGAR: `CLAUDE.md` (wrapper Claude-específico — só se agente for Claude Code)
+3. CARREGAR: regras locais em `.agent/rules/`
+3a. CARREGAR: `.agent/rules/harness-engineering.md`
+4. CARREGAR: skills always-on em `.agent/skills/`
 
 ## Leis inviolaveis
 

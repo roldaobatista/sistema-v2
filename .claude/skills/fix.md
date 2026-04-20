@@ -64,7 +64,7 @@ Perguntas obrigatorias:
 
 - Mudanca cirurgica — nao refatorar area inteira
 - Preservar 100% dos comportamentos existentes (Lei 8)
-- Se ao tocar o arquivo viu outro bug, corrigir tambem (CLAUDE.md regra)
+- Se ao tocar o arquivo viu outro bug, corrigir tambem (AGENTS.md regra)
 - **Guardrail:** se cascata >5 arquivos fora do escopo original, parar e reportar
 
 ### 4. Validar que o teste vermelho ficou verde

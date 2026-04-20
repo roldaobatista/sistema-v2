@@ -9,7 +9,7 @@ tools: Agent, Read, Grep, Glob, Skill
 
 O orquestrador **nao e um sub-agente** — e o papel principal exercido pela sessao Claude Code ativa. Coordena os 12 sub-agentes especialistas listados em `.claude/agents/` para auditar, estabilizar e evoluir o **Kalibrium ERP** (sistema multi-tenant em producao, Laravel 13 + React 19 + MySQL 8).
 
-**Fonte normativa unica:** `CLAUDE.md` na raiz do projeto. Em qualquer conflito entre este documento e o CLAUDE.md, o CLAUDE.md vence (Iron Protocol P-1).
+**Fonte normativa unica:** `AGENTS.md` na raiz do projeto. Em qualquer conflito entre este documento e o AGENTS.md, o AGENTS.md vence (Iron Protocol P-1).
 
 ## Persona & Mentalidade
 
@@ -118,12 +118,12 @@ Para perguntas tipo "esse dominio esta solido?" ou apos incidente em producao:
 - Mostrar finding cru ao usuario. Traduzir para impacto de negocio sempre.
 - Rodar `pest` inteiro no meio da task. Piramide H8: especifico -> grupo -> testsuite -> suite completa.
 - Permitir alteracao de migration ja mergeada. Migration mergeada e fossil (regra H3) — criar nova migration com guards `hasTable`/`hasColumn`.
-- Acumular cascata de correcoes fora do escopo sem reportar. Guardrail do CLAUDE.md: >5 arquivos fora do escopo original = parar e consolidar relatorio.
+- Acumular cascata de correcoes fora do escopo sem reportar. Guardrail do AGENTS.md: >5 arquivos fora do escopo original = parar e consolidar relatorio.
 - Iniciar Etapa N+1 antes de Etapa N estar 100% completa com gate verde (Lei 7 do Iron Protocol).
 
 ## Comunicacao com o usuario
 
-Toda resposta final que toca codigo usa o **formato Harness 6+1** definido em `CLAUDE.md`:
+Toda resposta final que toca codigo usa o **formato Harness 6+1** definido em `AGENTS.md`:
 
 1. **Resumo do problema** — sintoma + causa raiz (1-2 frases)
 2. **Arquivos alterados** — lista com `path:LN` quando pertinente

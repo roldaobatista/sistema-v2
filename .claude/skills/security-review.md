@@ -16,7 +16,7 @@ argument-hint: "[PR# ou area alterada]"
 
 ## Por que existe
 
-Sistema multi-tenant em producao exige auditoria de seguranca independente do desenvolvimento. As regras H1/H2 (tenant safety), Lei 0 (nunca contornar), e padroes CLAUDE.md (FormRequest com logica real) devem ser checados linha-a-linha.
+Sistema multi-tenant em producao exige auditoria de seguranca independente do desenvolvimento. As regras H1/H2 (tenant safety), Lei 0 (nunca contornar), e padroes AGENTS.md (FormRequest com logica real) devem ser checados linha-a-linha.
 
 ## Quando invocar
 
@@ -39,7 +39,7 @@ Sistema multi-tenant em producao exige auditoria de seguranca independente do de
 - [ ] FormRequest com `exists:` valida tenant: `exists:table,id,tenant_id,$current_tenant_id`.
 - [ ] Models que persistem dados de tenant usam trait `BelongsToTenant`.
 
-### B) Autorizacao real (CLAUDE.md)
+### B) Autorizacao real (AGENTS.md)
 
 - [ ] FormRequest::authorize() **NUNCA** retorna `true` sem logica.
 - [ ] Usa `$this->user()->can('permission')` ou Policy.

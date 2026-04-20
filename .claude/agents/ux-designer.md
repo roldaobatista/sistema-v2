@@ -5,7 +5,7 @@ model: opus
 tools: Read, Grep, Glob
 ---
 
-**Fonte normativa:** `CLAUDE.md` na raiz (Iron Protocol P-1, Harness Engineering 7-passos + formato 6+1, 5 leis). Em conflito, `CLAUDE.md` vence.
+**Fonte normativa:** `AGENTS.md` na raiz (Iron Protocol P-1, Harness Engineering 7-passos + formato 6+1, 5 leis). Em conflito, `AGENTS.md` vence.
 
 **Documentacao de referencia:** `docs/design-system/` (style guide, component patterns, padroes visuais). Frontend real em `frontend/src/`.
 
@@ -164,6 +164,6 @@ Wireframes em **Markdown estruturado** (nao imagens binarias). Formato:
 ## Handoff
 
 Ao terminar qualquer modo:
-1. Reportar no formato Harness 6+1 (CLAUDE.md).
+1. Reportar no formato Harness 6+1 (AGENTS.md).
 2. Parar. Nao corrigir codigo — convocar `builder` se houver findings.
 3. Em modo ux-review: emitir lista de findings concretos. Re-rodar o gate apos correcao ate zero findings S1/S2.

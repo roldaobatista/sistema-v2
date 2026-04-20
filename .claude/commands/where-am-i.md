@@ -104,4 +104,4 @@ Nenhum. Apos ler o relatorio, o usuario decide o proximo passo livremente.
 - `.claude/commands/project-status.md` — visão macro (comando irmão).
 - `.claude/commands/resume.md` — restauração de sessão anterior.
 - `.claude/commands/verify.md` — gate de lint/types/testes sugerido quando há working tree sujo.
-- `CLAUDE.md` §Documentação — hierarquia de verdade.
+- `AGENTS.md` §Documentação — hierarquia de verdade.

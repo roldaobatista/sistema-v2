@@ -39,7 +39,7 @@ Ler na seguinte ordem de prioridade:
 
 ### 2. Carregar arquivos relevantes
 
-- Sempre: `CLAUDE.md`, `.agent/rules/iron-protocol.md`, `.agent/rules/harness-engineering.md`.
+- Sempre: `AGENTS.md`, `.agent/rules/iron-protocol.md`, `.agent/rules/harness-engineering.md`.
 - Plano em andamento (se mencionado no handoff).
 - Codigo recem-alterado (se mencionado no handoff).
 
@@ -104,7 +104,7 @@ Nenhum. Executada pelo orquestrador.
 
 ## Referências
 
-- `CLAUDE.md` — contexto obrigatório em toda sessão.
+- `AGENTS.md` — contexto obrigatório em toda sessão.
 - `.agent/rules/iron-protocol.md` — regras H1/H2/H3/H7/H8.
 - `.agent/rules/harness-engineering.md` — 7 passos operacionais.
 - `docs/handoffs/latest.md` — handoff mais recente.

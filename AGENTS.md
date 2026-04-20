@@ -243,6 +243,21 @@ Para qualquer agente pegar o trabalho do outro:
 
 ---
 
+## 📜 Complementos legados (`.agent/`)
+
+Existem arquivos pré-AGENTS.md que preservam nomenclatura histórica do Harness/Iron Protocol. **Não substituem este arquivo** — mas podem ser úteis pra contexto em commits antigos ou se um agent file citar H1..H8:
+
+- `.agent/rules/iron-protocol.md` — 5 Leis na forma original + boot sequence histórica.
+- `.agent/rules/harness-engineering.md` — H1..H8 (equivalente às 5 Leis + Harness 7 passos + formato 6+1 deste arquivo).
+- `.agent/skills/end-to-end-completeness/SKILL.md` — skill legada que cobre Lei 3.
+- `.agent/skills/iron-protocol-bootstrap/SKILL.md` — bootstrap histórico.
+
+**Mapa H → Lei/seção:** H1+H7 ≡ Lei 1 · H2+H8 ≡ Lei 2 · H3 ≡ Harness 7 passos · H4 ≡ Lei 5 · H5 ≡ formato 6+1 · H6 ≡ pirâmide de testes. Lei 3 (completude e2e) e Lei 4 (tenant safety) só existem aqui.
+
+Em conflito entre `.agent/rules/*` e este `AGENTS.md`: **este arquivo vence.**
+
+---
+
 ## 📂 Estrutura de Diretórios Relevantes
 
 ```

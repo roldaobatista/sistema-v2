@@ -99,7 +99,7 @@ Sugestao: /fix "<sintoma da falha>"
 | Lint falha | Rodar fixer apropriado (`./vendor/bin/pint`, `npm run lint -- --fix`). Re-rodar verify. |
 | Typecheck falha | Investigar tipo TS afetado. Sincronizar com backend se campo mudou. |
 | Teste falha | NUNCA mascarar. Causa raiz no codigo de producao. /fix + re-rodar. |
-| Suite muito lenta no diff | Usar `--filter` com nome do teste especifico (piramide CLAUDE.md). |
+| Suite muito lenta no diff | Usar `--filter` com nome do teste especifico (piramide AGENTS.md). |
 
 ## Reportar (formato Harness 6+1)
 
@@ -118,7 +118,7 @@ Sugestao: /fix "<sintoma da falha>"
 
 ## Referências
 
-- `CLAUDE.md` — quality gates, pirâmide de testes (H8).
+- `AGENTS.md` — quality gates, pirâmide de testes (H8).
 - `backend/TESTING_GUIDE.md` — como rodar a suite.
 - `backend/tests/README.md` — padrão de testes.
 - `backend/phpunit.xml` — configuração dos testsuites.

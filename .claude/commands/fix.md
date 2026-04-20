@@ -14,7 +14,7 @@ allowed-tools: Read, Edit, Write, Bash, Grep, Glob
 
 ## Por que existe
 
-Quando uma revisao (security, tests, functional) aponta um problema, a correcao precisa ser cirurgica: causa raiz, teste de regressao, sem mascarar. Este comando dispara o fluxo padrao de fix do Kalibrium ERP, alinhado com as 5 leis do CLAUDE.md.
+Quando uma revisao (security, tests, functional) aponta um problema, a correcao precisa ser cirurgica: causa raiz, teste de regressao, sem mascarar. Este comando dispara o fluxo padrao de fix do Kalibrium ERP, alinhado com as 5 leis do AGENTS.md.
 
 ## Quando invocar
 
@@ -54,7 +54,7 @@ Posso prosseguir?
 ### 3. Aplicar correcao
 
 - Edit cirurgico no arquivo afetado.
-- Revisar arquivo inteiro (regra CLAUDE.md): se houver outros problemas, corrigir junto (com guardrail de escopo: max 5 arquivos em cascata).
+- Revisar arquivo inteiro (regra AGENTS.md): se houver outros problemas, corrigir junto (com guardrail de escopo: max 5 arquivos em cascata).
 - Atualizar tipos TS, FormRequest, migration se na cadeia.
 
 ### 4. Criar/atualizar teste de regressao
@@ -96,7 +96,7 @@ Escalar pirâmide so se o teste especifico passar.
 
 ## Referências
 
-- `CLAUDE.md` — 5 leis invioláveis, formato Harness 6+1, pirâmide de testes.
+- `AGENTS.md` — 5 leis invioláveis, formato Harness 6+1, pirâmide de testes.
 - `.agent/rules/iron-protocol.md` — regras H1/H2/H3/H7/H8 (tenant safety, migrations fósseis, zero tolerância).
 - `.agent/rules/harness-engineering.md` — 7 passos operacionais.
 - `.claude/agents/builder.md` — agente que executa o fix.

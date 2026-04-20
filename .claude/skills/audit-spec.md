@@ -16,7 +16,7 @@ argument-hint: "\"identificador do RF/AC ou descricao da funcionalidade\""
 
 ## Por que existe
 
-`docs/PRD-KALIBRIUM.md` e a fonte funcional. O codigo e o juiz final (CLAUDE.md). Esta skill audita 1 requisito/AC contra a implementacao real para confirmar gap genuino antes de qualquer trabalho de implementacao ou correcao.
+`docs/PRD-KALIBRIUM.md` e a fonte funcional. O codigo e o juiz final (AGENTS.md). Esta skill audita 1 requisito/AC contra a implementacao real para confirmar gap genuino antes de qualquer trabalho de implementacao ou correcao.
 
 > O `docs/raio-x-sistema.md` foi removido em 2026-04-10 por gerar falsos negativos. Esta skill e a substituta correta: grep no codigo antes de declarar gap.
 

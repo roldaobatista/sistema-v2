@@ -89,7 +89,7 @@ Acao necessaria: corrigir e re-rodar /functional-review.
 
 ## Referências
 
-- `CLAUDE.md` — hierarquia de verdade, stack.
+- `AGENTS.md` — hierarquia de verdade, stack.
 - `docs/PRD-KALIBRIUM.md` — RFs, ACs e glossário de terminologia.
 - `.claude/agents/product-expert.md` — gap PRD vs código.
 - `.claude/agents/ux-designer.md` — frontend, acessibilidade, fluxos.

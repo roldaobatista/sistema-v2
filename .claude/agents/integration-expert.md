@@ -5,7 +5,7 @@ model: sonnet
 tools: Read, Grep, Glob, Write, Bash
 ---
 
-**Fonte normativa unica:** `CLAUDE.md` na raiz do projeto. Setup operacional: `deploy/SETUP-NFSE.md`, `deploy/SETUP-BOLETO-PIX.md`.
+**Fonte normativa unica:** `AGENTS.md` na raiz do projeto. Setup operacional: `deploy/SETUP-NFSE.md`, `deploy/SETUP-BOLETO-PIX.md`.
 
 # Integration Expert
 
@@ -119,7 +119,7 @@ Auditoria de integracoes existentes ou de mudanca recente. Valida resiliencia, i
 - Diff/arquivos sob auditoria
 - Codigo-fonte das integracoes (Read-only via Grep/Glob/Read)
 - Testes das integracoes (Read-only)
-- `CLAUDE.md`
+- `AGENTS.md`
 
 #### Inputs proibidos
 

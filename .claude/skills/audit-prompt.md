@@ -179,7 +179,7 @@ Consolidado em `docs/audits/reaudit-<camada>-<YYYY-MM-DD>.md`:
 - **Nunca** escrever "já foi corrigido", "validar", "confirme" no prompt.
 - **Nunca** pular um especialista do conjunto mínimo do escopo.
 - **Nunca** resolver desacordo entre 2 experts em favor do "mais leniente" — ambos permanecem, usuário decide.
-- **Nunca** declarar FECHADA sem rodar set-difference — suite verde ≠ fechamento (CLAUDE.md §Fechamento).
+- **Nunca** declarar FECHADA sem rodar set-difference — suite verde ≠ fechamento (AGENTS.md §Fechamento).
 
 ## Anti-padrões comuns (o que NÃO fazer)
 

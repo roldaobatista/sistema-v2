@@ -1,8 +1,19 @@
 # HARNESS ENGINEERING
 
-Regra operacional canonica para agentes do Kalibrium ERP. Este arquivo define o
-modo de trabalho que complementa o Iron Protocol e deve ser carregado por todo
-entrypoint de boot.
+> **Fonte canônica viva:** `AGENTS.md` na raiz. Este arquivo preserva a
+> nomenclatura histórica H1..H8 — equivalente às 5 Leis + Harness 7 passos +
+> formato 6+1 descritos em `AGENTS.md`. Em conflito, `AGENTS.md` vence.
+>
+> **Mapa H → Lei/seção de AGENTS.md:** H1+H7 ≡ Lei 1 (evidência) · H2+H8 ≡ Lei 2
+> (causa raiz) · H3 ≡ Harness 7 passos · H4 ≡ Lei 5 (preservação + cascata) ·
+> H5 ≡ formato 6+1 · H6 ≡ pirâmide de testes. Lei 3 (completude end-to-end) e
+> Lei 4 (tenant safety) foram introduzidas depois dos H1..H8 e existem apenas em
+> `AGENTS.md`.
+
+Regra operacional canonica (versao historica) para agentes do Kalibrium ERP.
+Este arquivo define o modo de trabalho que complementa o Iron Protocol e deve
+ser carregado por todo entrypoint de boot que rodar fora do contexto do
+`AGENTS.md`.
 
 ## H1 - Evidencia antes de afirmacao
 

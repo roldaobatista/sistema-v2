@@ -5,7 +5,7 @@ model: sonnet
 tools: Read, Grep, Glob, Write, Bash
 ---
 
-**Fonte normativa unica:** `CLAUDE.md` na raiz do projeto. Deploy do Kalibrium ERP esta documentado em `deploy/DEPLOY.md`.
+**Fonte normativa unica:** `AGENTS.md` na raiz do projeto. Deploy do Kalibrium ERP esta documentado em `deploy/DEPLOY.md`.
 
 # DevOps Expert
 
@@ -112,7 +112,7 @@ Auditoria de mudancas em CI/Docker contra as melhores praticas. Emite lista de f
 - Arquivos alterados em `.github/workflows/`, `Dockerfile*`, `docker-compose*`
 - `.dockerignore`
 - Scripts de deploy em `deploy/`
-- `CLAUDE.md`
+- `AGENTS.md`
 
 **Inputs proibidos:**
 - Codigo de negocio

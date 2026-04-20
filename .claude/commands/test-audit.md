@@ -18,7 +18,7 @@ Testes verdes nao significam testes bons. Esta auditoria verifica:
 - Cada AC do plano tem teste correspondente.
 - Edge cases cobertos (input vazio, valores limites, cross-tenant 404).
 - Sem anti-patterns (`assertTrue(true)`, mock excessivo, depende de timestamp).
-- Padrao do CLAUDE.md respeitado (5 cenarios obrigatorios, cross-tenant, validacao 422, permissao 403, assertJsonStructure).
+- Padrao do AGENTS.md respeitado (5 cenarios obrigatorios, cross-tenant, validacao 422, permissao 403, assertJsonStructure).
 
 ## Quando invocar
 
@@ -89,7 +89,7 @@ Acao: /fix <TEST-id> -> re-rodar /test-audit.
 |---|---|
 | Suite nao roda | Causa raiz primeiro (H8 - falha bloqueante). NAO auditar com suite quebrada. |
 | Plano/spec sem ACs claros | Apontar como finding critico para o plano antes do teste. |
-| Diff sem testes novos para feature nova | Finding critico: criar testes (regra absoluta CLAUDE.md). |
+| Diff sem testes novos para feature nova | Finding critico: criar testes (regra absoluta AGENTS.md). |
 
 ## Handoff
 
@@ -98,7 +98,7 @@ Acao: /fix <TEST-id> -> re-rodar /test-audit.
 
 ## Referências
 
-- `CLAUDE.md` — padrão obrigatório de testes (5 cenários, cross-tenant).
+- `AGENTS.md` — padrão obrigatório de testes (5 cenários, cross-tenant).
 - `backend/tests/README.md` — templates Pest.
 - `backend/TESTING_GUIDE.md` — guia completo.
 - `.claude/agents/qa-expert.md` — checklist de cobertura e flakiness.

@@ -13,9 +13,9 @@ System design owner do Kalibrium ERP (sistema legado em producao, Laravel 13 + R
 
 1. **design** — propoe novas decisoes estruturais (contratos REST, separacao de responsabilidades, escolhas de pattern) e atualiza `docs/TECHNICAL-DECISIONS.md`.
 2. **plan** — gera plano tecnico minimo para uma feature/correcao pedida.
-3. **code-review** — auditoria estrutural de codigo existente ou de mudanca recente, contra os padroes do CLAUDE.md.
+3. **code-review** — auditoria estrutural de codigo existente ou de mudanca recente, contra os padroes do AGENTS.md.
 
-**Fonte normativa unica:** `CLAUDE.md` na raiz do projeto. Foco operacional e estabilizar e manter — nao greenfield.
+**Fonte normativa unica:** `AGENTS.md` na raiz do projeto. Foco operacional e estabilizar e manter — nao greenfield.
 
 ---
 
@@ -64,7 +64,7 @@ Laravel 13 (FormRequests, API Resources, Eloquent, Policies, Gates, Middleware),
 Propoe ou revisa decisao estrutural pontual.
 
 **Inputs permitidos:**
-- `CLAUDE.md`
+- `AGENTS.md`
 - `docs/TECHNICAL-DECISIONS.md` (decisoes existentes — fonte de verdade)
 - `docs/PRD-KALIBRIUM.md` (RFs/ACs)
 - `docs/audits/RELATORIO-AUDITORIA-SISTEMA.md` (Deep Audit OS/Calibracao/Financeiro)
@@ -72,7 +72,7 @@ Propoe ou revisa decisao estrutural pontual.
 - Codigo de producao (Read/Grep/Glob — para inventario de patterns existentes)
 
 **Inputs proibidos:**
-- `docs/.archive/` (regra do CLAUDE.md)
+- `docs/.archive/` (regra do AGENTS.md)
 
 **Output esperado:**
 - Proposta tecnica (1-3 paginas) com decisao + contexto + alternativas + razao + reversibilidade.
@@ -87,7 +87,7 @@ Gera plano tecnico minimo para implementar uma feature ou corrigir um bug.
 
 **Inputs permitidos:**
 - Descricao da tarefa (do orchestrator/usuario)
-- `CLAUDE.md`, `docs/TECHNICAL-DECISIONS.md`, `docs/PRD-KALIBRIUM.md`
+- `AGENTS.md`, `docs/TECHNICAL-DECISIONS.md`, `docs/PRD-KALIBRIUM.md`
 - Codigo de producao do dominio afetado (Read-only)
 
 **Output esperado:** plano com:
@@ -95,7 +95,7 @@ Gera plano tecnico minimo para implementar uma feature ou corrigir um bug.
 1. **Objetivo:** o que muda e por que (1-2 frases)
 2. **Arquivos afetados:** lista com `path:LN` quando pertinente
 3. **Decisoes:** cada decisao com alternativa considerada + razao + reversibilidade (facil/media/dificil)
-4. **Cadeia end-to-end (CLAUDE.md):** rota -> controller -> service -> model -> migration -> tipo TypeScript -> cliente API -> componente React. Identificar elos faltantes.
+4. **Cadeia end-to-end (AGENTS.md):** rota -> controller -> service -> model -> migration -> tipo TypeScript -> cliente API -> componente React. Identificar elos faltantes.
 5. **Eager loading strategy:** para cada relacao Eloquent tocada
 6. **Middleware pipeline:** explicito para cada rota nova
 7. **Multi-tenant:** confirmar `BelongsToTenant`, `tenant_id` via `$request->user()->current_tenant_id`
@@ -111,8 +111,8 @@ Auditoria estrutural de codigo existente ou de uma mudanca recente. Foco: aderen
 
 **Inputs permitidos:**
 - Diff/arquivos sob revisao
-- `CLAUDE.md`, `docs/TECHNICAL-DECISIONS.md`
-- Padroes em `backend/tests/README.md` (templates) e CLAUDE.md secao "Padrao de Controllers e FormRequests"
+- `AGENTS.md`, `docs/TECHNICAL-DECISIONS.md`
+- Padroes em `backend/tests/README.md` (templates) e AGENTS.md secao "Padrao de Controllers e FormRequests"
 
 **Output esperado:** lista de findings, cada um com:
 

@@ -10,7 +10,7 @@ operacional que envolva o repositorio.
 
 ## Sequencia
 
-1. Ler `AGENTS.md`, `CLAUDE.md` e `GEMINI.md` quando disponiveis.
+1. Ler `AGENTS.md` (fonte canônica viva) e `CLAUDE.md` (só se agente for Claude Code).
 2. Ler `.agent/rules/iron-protocol.md`.
 3. Ler `.agent/rules/harness-engineering.md`.
 4. Executar o fluxo Harness: entender, localizar, propor, implementar,

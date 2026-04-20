@@ -90,4 +90,4 @@ Nenhum. Executada pelo orquestrador.
 
 - `.claude/commands/where-am-i.md` — detalhamento por arquivo (comando irmão).
 - `.claude/commands/resume.md` — restauração de sessão anterior.
-- `CLAUDE.md` §Documentação — hierarquia de verdade (planos, auditorias, handoffs).
+- `AGENTS.md` §Documentação — hierarquia de verdade (planos, auditorias, handoffs).

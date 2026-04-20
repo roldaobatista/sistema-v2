@@ -1,5 +1,5 @@
 ---
-description: Faz revisao de codigo de um PR ou diff local contra criterios do Kalibrium ERP (5 leis CLAUDE.md, padroes de Controller/FormRequest, tenant safety, testes). Uso: /review-pr [<numero-do-PR>].
+description: Faz revisao de codigo de um PR ou diff local contra criterios do Kalibrium ERP (5 leis AGENTS.md, padroes de Controller/FormRequest, tenant safety, testes). Uso: /review-pr [<numero-do-PR>].
 allowed-tools: Read, Bash, Grep, Glob
 ---
 
@@ -35,7 +35,7 @@ allowed-tools: Read, Bash, Grep, Glob
 
 Avaliar contra:
 
-- **5 leis CLAUDE.md**: evidencia antes de afirmacao, causa raiz, completude end-to-end, tenant safety absoluto, sequenciamento + preservacao.
+- **5 leis AGENTS.md**: evidencia antes de afirmacao, causa raiz, completude end-to-end, tenant safety absoluto, sequenciamento + preservacao.
 - **Iron Protocol H1-H8**: tenant_id nunca do body, escopo BelongsToTenant em tudo, migrations imutaveis, falha de verificacao bloqueante.
 - **Padrao de Controllers**: FormRequest com authorize() real (nao `return true`), endpoints index com `paginate(15)`, eager loading com `with([...])`, tenant_id atribuido no controller.
 - **Padrao de testes**: 5 cenarios obrigatorios, cross-tenant 404, validacao 422, assertJsonStructure().
@@ -92,7 +92,7 @@ Revisao de codigo: REPROVADO
 
 ## Referências
 
-- `CLAUDE.md` — 5 leis invioláveis, padrões Controller/FormRequest, proibições absolutas.
+- `AGENTS.md` — 5 leis invioláveis, padrões Controller/FormRequest, proibições absolutas.
 - `.agent/rules/iron-protocol.md` — regras H1/H2/H3/H7/H8.
 - `.claude/agents/governance.md` — conformidade com padrões.
 - `.claude/agents/architecture-expert.md` — acoplamento/camadas.

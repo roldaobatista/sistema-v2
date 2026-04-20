@@ -21,7 +21,7 @@ Re-auditoria **pós-correção** de uma Camada/Wave. Responde em ordem:
 1. Os findings originais da camada foram **efetivamente resolvidos**?
 2. A correção introduziu **novos findings**?
 
-**Suite verde NÃO basta para fechamento** (CLAUDE.md §Fechamento). Este comando é a rodada de auditoria que confirma fechamento.
+**Suite verde NÃO basta para fechamento** (AGENTS.md §Fechamento). Este comando é a rodada de auditoria que confirma fechamento.
 
 ## Por que existe
 
@@ -128,7 +128,7 @@ Match por `arquivo:linha + palavra-chave`. Ambiguidade → mantém em "não reso
 
 ## Referências
 
-- `CLAUDE.md` §Fechamento de Camada/Wave/Etapa — critério binário de fechamento.
+- `AGENTS.md` §Fechamento de Camada/Wave/Etapa — critério binário de fechamento.
 - `.claude/skills/audit-prompt.md` — template neutro obrigatório para prompts de agente.
 - `.claude/agents/governance.md` — conformidade sempre obrigatória.
 - `.claude/agents/qa-expert.md` — cobertura sempre obrigatória.

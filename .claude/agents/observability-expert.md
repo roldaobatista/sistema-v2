@@ -5,7 +5,7 @@ model: sonnet
 tools: Read, Grep, Glob, Write, Bash
 ---
 
-**Fonte normativa unica:** `CLAUDE.md` na raiz do projeto.
+**Fonte normativa unica:** `AGENTS.md` na raiz do projeto.
 
 # Observability Expert
 
@@ -97,7 +97,7 @@ Auditoria de logging/health/metricas em arquivos alterados. Valida estrutura dos
 - Diff/arquivos sob auditoria
 - `backend/config/logging.php`
 - Health check endpoint atual
-- `CLAUDE.md`
+- `AGENTS.md`
 
 **Inputs proibidos:**
 - `docs/.archive/`
