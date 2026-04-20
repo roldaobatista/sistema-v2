@@ -9,7 +9,10 @@ use App\Models\AuditLog;
 use App\Models\User;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Schema;
 
 class PasswordResetController extends Controller
 {
@@ -33,13 +36,35 @@ class PasswordResetController extends Controller
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function (User $user, string $password) {
-                // AUTH-002: Confiar no cast 'hashed' do Model — sem Hash::make() manual
-                $user->forceFill([
-                    'password' => $password,
-                ])->save();
+                // AUTH-002: Confiar no cast 'hashed' do Model — sem Hash::make() manual.
+                // sec-07 (Re-auditoria Camada 1 r3): persistir password_changed_at
+                // para suportar politicas de rotacao (OWASP ASVS V2.1.10). Coluna
+                // fora de $fillable (SEC-08) — atribuida via forceFill.
+                $fill = ['password' => $password];
+                if (Schema::hasColumn('users', 'password_changed_at')) {
+                    $fill['password_changed_at'] = now();
+                }
+                $user->forceFill($fill)->save();
 
-                // Revoga todos os tokens existentes por segurança
+                // Revoga todos os tokens Sanctum existentes (API / mobile / portal).
                 $user->tokens()->delete();
+
+                // sec-07: invalida QUALQUER sessao web stateful do usuario em
+                // outros devices, rotacionando o remember_token. Usa a senha
+                // ja setada (hashed pelo cast) — Auth::logoutOtherDevices valida
+                // com Hash::check antes de regenerar, entao passamos a senha
+                // em texto claro recebida no request.
+                try {
+                    Auth::guard('web')->setUser($user);
+                    Auth::guard('web')->logoutOtherDevices($password);
+                } catch (\Throwable $e) {
+                    // Falha de guard web (ex: ambiente sem sessao) nao deve
+                    // bloquear reset — mas e registrada para observabilidade.
+                    Log::warning(
+                        'PasswordReset: logoutOtherDevices falhou',
+                        ['user_id' => $user->id, 'message' => $e->getMessage()]
+                    );
+                }
 
                 // Registra no audit log
                 $tenantId = $user->current_tenant_id ?? $user->tenant_id;

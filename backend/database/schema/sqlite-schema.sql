@@ -1,5 +1,5 @@
 -- SQLite Schema Dump (converted from MySQL)
--- Generated: 2026-04-19 23:46:33
+-- Generated: 2026-04-20 01:39:16
 
 CREATE TABLE "access_time_restrictions" (
  "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,

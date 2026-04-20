@@ -137,6 +137,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
             'password' => 'hashed',
+            'password_changed_at' => 'datetime',
             'is_active' => 'boolean',
             'location_lat' => 'float',
             'location_lng' => 'float',
